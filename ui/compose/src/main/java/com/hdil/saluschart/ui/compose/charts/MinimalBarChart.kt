@@ -18,6 +18,10 @@ import com.hdil.saluschart.core.chart.chartDraw.BarChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 
 /**
  * 미니멀 바 차트 - 위젯이나 스마트워치 등 작은 화면용
@@ -36,7 +40,14 @@ fun MinimalBarChart(
     data: List<ChartPoint>,
     color: Color = Color.Blue,
     padding: Float = 4f,
-    chartType: ChartType = ChartType.MINIMAL_BAR // 차트 타입 (툴팁 위치 결정용
+    chartType: ChartType = ChartType.MINIMAL_BAR, // 차트 타입 (툴팁 위치 결정용
+    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
+    referenceLineColor: Color = Color.Red,
+    referenceLineStrokeWidth: Dp = 1.dp,
+    referenceLineStyle: LineStyle = LineStyle.DASHED,
+    showReferenceLineLabel: Boolean = false, // 미니멀 차트는 기본적으로 레이블 비활성화
+    referenceLineLabelFormat: String = "%.0f",
+    referenceLineInteractive: Boolean = false
 ) {
     if (data.isEmpty()) return
 
@@ -73,6 +84,26 @@ fun MinimalBarChart(
                 interactive = false,
                 chartType = chartType
             )
+        }
+        
+        // 기준선 표시
+        if (referenceLineType != ReferenceLineType.NONE) {
+            chartMetrics?.let { metrics ->
+                ReferenceLine.ReferenceLine(
+                    modifier = Modifier.fillMaxSize(),
+                    data = data,
+                    metrics = metrics,
+                    chartType = chartType,
+                    referenceLineType = referenceLineType,
+                    color = referenceLineColor,
+                    strokeWidth = referenceLineStrokeWidth,
+                    lineStyle = referenceLineStyle,
+                    showLabel = showReferenceLineLabel,
+                    labelFormat = referenceLineLabelFormat,
+                    yAxisPosition = YAxisPosition.LEFT, // 미니멀 차트는 기본 왼쪽
+                    interactive = referenceLineInteractive
+                )
+            }
         }
     }
 }

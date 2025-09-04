@@ -29,6 +29,9 @@ import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.ui.theme.ChartColor
 
@@ -54,7 +57,15 @@ fun LineChart(
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     chartType : ChartType = ChartType.LINE, // 차트 타입 (툴팁 위치 결정용
-    maxXTicksLimit: Int? = null             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
+    referenceLineColor: Color = Color.Red,
+    referenceLineStrokeWidth: Dp = 2.dp,
+    referenceLineStyle: LineStyle = LineStyle.DASHED,
+    showReferenceLineLabel: Boolean = false,
+    referenceLineLabelFormat: String = "평균: %.0f",
+    referenceLineInteractive: Boolean = false,
+    onReferenceLineClick: (() -> Unit)? = null
 ) {
     if (data.isEmpty()) return
 
@@ -210,6 +221,27 @@ fun LineChart(
                             showValue = showValue,
                             chartType = chartType,
                             showTooltipForIndex = null
+                        )
+                    }
+                }
+                
+                // 기준선 표시
+                if (referenceLineType != ReferenceLineType.NONE) {
+                    chartMetrics?.let { metrics ->
+                        ReferenceLine.ReferenceLine(
+                            modifier = Modifier.fillMaxSize(),
+                            data = data,
+                            metrics = metrics,
+                            chartType = chartType,
+                            referenceLineType = referenceLineType,
+                            color = referenceLineColor,
+                            strokeWidth = referenceLineStrokeWidth,
+                            lineStyle = referenceLineStyle,
+                            showLabel = showReferenceLineLabel,
+                            labelFormat = referenceLineLabelFormat,
+                            yAxisPosition = yAxisPosition,
+                            interactive = referenceLineInteractive,
+                            onClick = onReferenceLineClick
                         )
                     }
                 }

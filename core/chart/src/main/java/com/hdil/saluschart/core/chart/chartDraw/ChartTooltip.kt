@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.BaseChartPoint
+import kotlin.math.abs
 
 /**
  * 차트 툴팁을 표시하는 컴포저블
@@ -81,7 +82,7 @@ fun ChartTooltip(
                                     )
                             )
                             Text(
-                                text = value.toString(),
+                                text = formatValueForDisplay(value),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = textColor.copy(alpha = 0.9f),
@@ -103,7 +104,7 @@ fun ChartTooltip(
                                 )
                         )
                         Text(
-                            text = chartPoint.y.toString(),
+                            text = formatValueForDisplay(chartPoint.y),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = textColor.copy(alpha = 0.9f),
@@ -113,5 +114,18 @@ fun ChartTooltip(
                 }
             }
         }
+    }
+}
+
+/**
+ * Float 값을 적절한 형태로 포맷팅
+ * 정수값(소수점 이하가 0)인 경우 정수로 표시, 그렇지 않으면 Float로 표시
+ */
+private fun formatValueForDisplay(value: Float): String {
+    return if (abs(value - value.toInt()) < 0.001f) {
+        // 값이 실질적으로 정수인 경우 (부동소수점 오차 고려)
+        value.toInt().toString()
+    } else {
+        value.toString()
     }
 }

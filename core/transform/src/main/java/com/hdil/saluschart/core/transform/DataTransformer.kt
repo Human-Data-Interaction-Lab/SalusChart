@@ -140,7 +140,7 @@ class DataTransformer {
         targetTimeUnit: TimeUnitGroup
     ): List<Pair<LocalDateTime, Float>> {
         if (timeValuePairs.isEmpty()) return emptyList()
-        
+
         // 데이터의 시간 범위 결정
         val minTime = timeValuePairs.minByOrNull { it.first }!!.first
         val maxTime = timeValuePairs.maxByOrNull { it.first }!!.first

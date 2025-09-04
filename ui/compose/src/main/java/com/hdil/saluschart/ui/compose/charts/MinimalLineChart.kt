@@ -13,6 +13,14 @@ import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartDraw.LineChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 /**
  * 미니멀 라인 차트 (스파크라인) - 위젯이나 스마트워치 등 작은 화면용
@@ -36,9 +44,18 @@ fun MinimalLineChart(
     strokeWidth: Float = 2f,
     padding: Float = 4f,
     showPoints: Boolean = false,
-    chartType: ChartType = ChartType.MINIMAL_LINE
+    chartType: ChartType = ChartType.MINIMAL_LINE,
+    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
+    referenceLineColor: Color = Color.Red,
+    referenceLineStrokeWidth: Dp = 1.dp,
+    referenceLineStyle: LineStyle = LineStyle.DASHED,
+    showReferenceLineLabel: Boolean = false, // 미니멀 차트는 기본적으로 레이블 비활성화
+    referenceLineLabelFormat: String = "%.0f",
+    referenceLineInteractive: Boolean = false
 ) {
     if (data.isEmpty()) return
+
+    var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 
     Box(
         modifier = modifier
@@ -48,14 +65,38 @@ fun MinimalLineChart(
             val metrics = ChartMath.computeMetrics(
                 size = size,
                 values = data.map { it.y },
+                chartType = chartType,
                 isMinimal = true,
                 paddingX = padding,
                 paddingY = padding
             )
             val points = ChartMath.mapToCanvasPoints(data, size, metrics)
 
+            // Store metrics for ReferenceLine
+            chartMetrics = metrics
+
             // 라인 그리기 (포인트 표시 포함)
             LineChartDraw.drawLine(this, points, color, strokeWidth)
+        }
+        
+        // 기준선 표시
+        if (referenceLineType != ReferenceLineType.NONE) {
+            chartMetrics?.let { metrics ->
+                ReferenceLine.ReferenceLine(
+                    modifier = Modifier.fillMaxSize(),
+                    data = data,
+                    metrics = metrics,
+                    chartType = chartType,
+                    referenceLineType = referenceLineType,
+                    color = referenceLineColor,
+                    strokeWidth = referenceLineStrokeWidth,
+                    lineStyle = referenceLineStyle,
+                    showLabel = showReferenceLineLabel,
+                    labelFormat = referenceLineLabelFormat,
+                    yAxisPosition = YAxisPosition.LEFT, // 미니멀 차트는 기본 왼쪽
+                    interactive = referenceLineInteractive
+                )
+            }
         }
     }
 }

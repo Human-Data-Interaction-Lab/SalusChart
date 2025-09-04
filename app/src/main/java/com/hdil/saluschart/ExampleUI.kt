@@ -40,6 +40,8 @@ import com.hdil.saluschart.core.chart.StackedChartPoint
 import com.hdil.saluschart.core.transform.TimeDataPoint
 import com.hdil.saluschart.core.transform.toChartPoints
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.core.transform.transform
@@ -211,6 +213,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
 
 @Composable
 fun BarChart_1() {
+    val avgY = if (chartPoints.isNotEmpty()) chartPoints.map { it.y }.average().toFloat() else 0f
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
         data = chartPoints,
@@ -223,7 +226,10 @@ fun BarChart_1() {
         labelTextSize = 40f,
         tooltipTextSize = 5f,
         interactionType = InteractionType.TOUCH_AREA,
-        yAxisPosition = YAxisPosition.LEFT
+        yAxisPosition = YAxisPosition.LEFT,
+        referenceLineType = ReferenceLineType.AVERAGE,
+        referenceLineStyle = LineStyle.DASHED ,
+        showReferenceLineLabel = true,
     )
 }
 
@@ -296,7 +302,9 @@ fun LineChart_2() {
         minY = 5f,
         maxY = 70f,
         interactionType = InteractionType.POINT,
-        yAxisPosition = YAxisPosition.LEFT
+        yAxisPosition = YAxisPosition.LEFT,
+        referenceLineType = ReferenceLineType.TREND,
+        referenceLineStyle = LineStyle.DASHDOT
     )
 }
 

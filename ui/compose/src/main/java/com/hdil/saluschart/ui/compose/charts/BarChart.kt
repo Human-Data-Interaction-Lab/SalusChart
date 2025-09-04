@@ -54,7 +54,7 @@ fun BarChart(
     labelTextSize: Float = 28f,             // X축 레이블 텍스트 크기
     tooltipTextSize: Float = 32f,           // 툴팁 텍스트 크기
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,  // Y축 위치
-    interactionType: InteractionType = InteractionType.BAR, // 상호작용 타입
+    interactionType: InteractionType.Bar = InteractionType.BAR, // 상호작용 타입
     onBarClick: ((Int, Float) -> Unit)? = null,  // 바 클릭 콜백
     showLabel: Boolean = false,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)

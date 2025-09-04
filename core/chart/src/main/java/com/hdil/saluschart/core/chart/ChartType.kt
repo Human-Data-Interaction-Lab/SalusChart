@@ -22,11 +22,25 @@ enum class ChartType {
     }
 }
 
-enum class InteractionType {
-    POINT,         // Direct point touching using PointMarker()
-    TOUCH_AREA,    // Area-based touching using BarMarker()
-    BAR,           // Bar touching using BarMarker()
-    STACKED_BAR;   // Individual segment touching in stacked bar charts
+//enum class InteractionType {
+//    POINT,         // Direct point touching using PointMarker()
+//    TOUCH_AREA,    // Area-based touching using BarMarker()
+//    BAR,           // Bar touching using BarMarker()
+//    STACKED_BAR;   // Individual segment touching in stacked bar charts
+//}
+
+sealed interface InteractionType {
+    // 차트별 허용 집합을 타입으로 분리
+    sealed interface Bar : InteractionType
+    sealed interface Line : InteractionType
+    sealed interface StackedBar : InteractionType
+
+    data object BAR        : Bar, Line, InteractionType
+    data object TOUCH_AREA : Bar, Line, InteractionType
+
+    data object STACKED_BAR: StackedBar
+
+    data object POINT      : InteractionType
 }
 
 

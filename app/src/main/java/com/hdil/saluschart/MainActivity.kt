@@ -305,7 +305,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                     yLabel = "활동량",
                     xLabel = "요일",
                     strokeWidth = 10f,
-                    interactionType = InteractionType.TOUCH_AREA
+                    interactionType = InteractionType.Line.TOUCH_AREA
                 )
             }
             "Scatter" -> {
@@ -314,7 +314,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                     title = "요일별 활동량",
                     yLabel = "활동량",
                     xLabel = "요일",
-                    interactionType = InteractionType.TOUCH_AREA
+                    interactionType = InteractionType.Scatter.TOUCH_AREA
                 )
             }
             "Bar" -> {
@@ -324,7 +324,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                     yLabel = "활동량",
                     xLabel = "요일",
                     maxY = 88f,
-                    interactionType = InteractionType.TOUCH_AREA
+                    interactionType = InteractionType.Bar.TOUCH_AREA
                 )
             }
             "Stacked" -> {
@@ -340,7 +340,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                         Color(0xFFFF9800), // 주황 (지방) 
                         Color(0xFF4CAF50)  // 초록 (탄수화물)
                     ),
-                    interactionType = InteractionType.STACKED_BAR
+                    interactionType = InteractionType.StackedBar.BAR
                 )
             }
             "Range" -> {
@@ -350,7 +350,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                     yLabel = "심박수 (bpm)",
                     xLabel = "날짜",
                     barColor = Color(0xFFFF9800),
-                    interactionType = InteractionType.TOUCH_AREA
+                    interactionType = InteractionType.RangeBar.TOUCH_AREA
                 )
             }
             "Pie" -> {

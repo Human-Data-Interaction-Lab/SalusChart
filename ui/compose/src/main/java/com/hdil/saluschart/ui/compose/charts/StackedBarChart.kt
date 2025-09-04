@@ -82,7 +82,7 @@ fun StackedBarChart(
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT, // Y축 위치
-    interactionType: InteractionType = InteractionType.STACKED_BAR,
+    interactionType: InteractionType.StackedBar = InteractionType.StackedBar.BAR,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)? = null,
     chartType: ChartType = ChartType.STACKED_BAR, // 차트 타입 (툴팁 위치 결정용)
     maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
@@ -184,7 +184,7 @@ fun StackedBarChart(
 
                         // 상호작용 처리
                         when (interactionType) {
-                            InteractionType.STACKED_BAR -> {
+                            InteractionType.StackedBar.BAR -> {
                                 // Individual segment interaction - each segment is touchable
                                 chartMetrics?.let { metrics ->
                                     val segmentCounts = data.map { it.values.size }
@@ -265,7 +265,7 @@ fun StackedBarChart(
                                 }
                             }
 
-                            InteractionType.TOUCH_AREA -> {
+                            InteractionType.StackedBar.TOUCH_AREA -> {
                                 // Area-based interaction - show all segment values in tooltip
                                 chartMetrics?.let { metrics ->
                                     val segmentCounts = data.map { it.values.size }
@@ -467,7 +467,7 @@ fun StackedBarChart(
 
                         // 상호작용 처리
                         when (interactionType) {
-                            InteractionType.STACKED_BAR -> {
+                            InteractionType.StackedBar.BAR -> {
                                 // Individual segment interaction - each segment is touchable
                                 chartMetrics?.let { metrics ->
                                     val segmentCounts = data.map { it.values.size }
@@ -536,7 +536,7 @@ fun StackedBarChart(
                                 }
 
                             }
-                            InteractionType.TOUCH_AREA -> {
+                            InteractionType.StackedBar.TOUCH_AREA -> {
                                 // Area-based interaction - show all segment values in tooltip
                                 chartMetrics?.let { metrics ->
                                     val segmentCounts = data.map { it.values.size }

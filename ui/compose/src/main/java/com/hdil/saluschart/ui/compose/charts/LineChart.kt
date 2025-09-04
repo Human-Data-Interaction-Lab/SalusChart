@@ -49,7 +49,7 @@ fun LineChart(
     labelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,  // Y축 위치
-    interactionType: InteractionType = InteractionType.POINT,
+    interactionType: InteractionType.Line = InteractionType.Line.POINT,
     showPoint: Boolean = false, // 포인트 표시 여부
     pointRadius: Pair<Dp, Dp> = Pair(4.dp, 2.dp), // 포인트 외부 반지름, 내부 반지름
     showValue: Boolean = false, // 값 표시 여부
@@ -148,7 +148,7 @@ fun LineChart(
 
                 // Conditional interaction based on interactionType parameter
                 when (interactionType) {
-                    InteractionType.TOUCH_AREA -> {
+                    InteractionType.Line.TOUCH_AREA -> {
                         // BarMarker interactions (invisible bars for easier touching)
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
@@ -183,7 +183,7 @@ fun LineChart(
                         )
                     }
 
-                    InteractionType.POINT -> {
+                    InteractionType.Line.POINT -> {
                         // PointMarker interactions (interactive data points)
                         ChartDraw.Scatter.PointMarker(
                             data = data,

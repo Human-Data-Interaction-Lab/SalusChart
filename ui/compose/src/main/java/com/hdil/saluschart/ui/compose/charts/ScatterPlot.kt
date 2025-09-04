@@ -43,7 +43,7 @@ fun ScatterPlot(
     pointType: PointType = PointType.Circle, // 포인트 타입 (Circle, Square, Triangle 등)
     tooltipTextSize: Float = 32f,        // 툴팁 텍스트 크기
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT, // Y축 위치
-    interactionType: InteractionType = InteractionType.POINT,
+    interactionType: InteractionType.Scatter = InteractionType.Scatter.POINT,
     chartType: ChartType = ChartType.SCATTERPLOT, // 차트 타입 (툴팁 위치 결정용
     maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
@@ -87,7 +87,7 @@ fun ScatterPlot(
 
             // Conditional interaction based on interactionType parameter
             when (interactionType) {
-                InteractionType.TOUCH_AREA -> {
+                InteractionType.Scatter.TOUCH_AREA -> {
                     // BarMarker interactions (invisible bars for easier touching)
                     chartMetrics?.let { metrics ->
                         ChartDraw.Bar.BarMarker(
@@ -117,7 +117,7 @@ fun ScatterPlot(
                     )
                 }
 
-                InteractionType.POINT -> {
+                InteractionType.Scatter.POINT -> {
                     // PointMarker interactions (direct point touching)
                     ChartDraw.Scatter.PointMarker(
                         data = data,

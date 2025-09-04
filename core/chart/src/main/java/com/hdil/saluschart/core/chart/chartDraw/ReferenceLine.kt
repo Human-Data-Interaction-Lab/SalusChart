@@ -241,18 +241,16 @@ object ReferenceLine {
                     pathEffect = pathEffect
                 )
             }
-        }
-        if (showLabel) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            
+            // 레이블 (포그라운드 레이어 - 선 위에 그려짐)
+            if (showLabel) {
                 ReferenceLineLabel(
                     value = average,
                     yPosition = y,
                     color = color,
                     labelFormat = labelFormat,
                     metrics = metrics,
-                    yAxisPosition = yAxisPosition,
-                    interactive = interactive,
-                    onClick = onClick
+                    yAxisPosition = yAxisPosition
                 )
             }
         }
@@ -332,13 +330,18 @@ object ReferenceLine {
         color: Color,
         labelFormat: String,
         metrics: ChartMath.ChartMetrics,
-        yAxisPosition: YAxisPosition,
-        interactive: Boolean,
-        onClick: (() -> Unit)?
+        yAxisPosition: YAxisPosition
     ) {
         val density = LocalDensity.current
         val labelText = labelFormat.format(value)
         
+        // 레이블 박스의 예상 높이 계산
+        val textSize = 12.sp
+        val verticalPadding = 5.dp
+        val estimatedLabelHeight = with(density) {
+            textSize.toPx() + (verticalPadding * 2).toPx()
+        }
+
         // Y축 위치에 따라 레이블 X 위치 결정
         val labelX = when (yAxisPosition) {
             YAxisPosition.LEFT -> {
@@ -359,12 +362,15 @@ object ReferenceLine {
             yPosition.toDp().coerceIn(20.dp, (metrics.chartHeight - 20f).toDp())
         }
         
+        // 레이블을 기준선 위로 전체 높이만큼 이동
+        val labelHeightOffset = with(density) { estimatedLabelHeight.toDp() }
+
         Box(
             modifier = Modifier
                 .offset {
                     IntOffset(
                         x = adjustedX.roundToPx(),
-                        y = (adjustedY - 12.dp).roundToPx() // 텍스트 중앙 정렬을 위한 조정
+                        y = (adjustedY - labelHeightOffset).roundToPx() // 레이블 박스 높이만큼 위로 이동
                     )
                 }
                 .background(
@@ -372,13 +378,6 @@ object ReferenceLine {
                     shape = RoundedCornerShape(4.dp)
                 )
                 .clip(RoundedCornerShape(4.dp))
-                .then(
-                    if (interactive) {
-                        Modifier.clickable {
-                            onClick?.invoke()
-                        }
-                    } else Modifier
-                )
                 .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
             Text(

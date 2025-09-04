@@ -5,6 +5,7 @@ import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,7 @@ fun BarChart(
     labelTextSize: Float = 28f,             // X축 레이블 텍스트 크기
     tooltipTextSize: Float = 32f,           // 툴팁 텍스트 크기
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,  // Y축 위치
-    interactionType: InteractionType.Bar = InteractionType.BAR, // 상호작용 타입
+    interactionType: InteractionType.Bar = InteractionType.Bar.BAR, // 상호작용 타입
     onBarClick: ((Int, Float) -> Unit)? = null,  // 바 클릭 콜백
     showLabel: Boolean = false,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
@@ -149,7 +150,7 @@ fun BarChart(
 
                 // Conditional interaction based on interactionType parameter
                 when (interactionType) {
-                    InteractionType.TOUCH_AREA -> {
+                    InteractionType.Bar.TOUCH_AREA -> {
                         // Visual bars (non-interactive)
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
@@ -184,7 +185,7 @@ fun BarChart(
                         }
                     }
 
-                    InteractionType.BAR -> {
+                    InteractionType.Bar.BAR -> {
                         // Interactive visual bars (direct bar touching)
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(

@@ -225,7 +225,7 @@ fun BarChart_1() {
         barWidthRatio = 0.8f,
         labelTextSize = 40f,
         tooltipTextSize = 5f,
-        interactionType = InteractionType.TOUCH_AREA,
+        interactionType = InteractionType.Bar.TOUCH_AREA,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.AVERAGE,
         referenceLineStyle = LineStyle.DASHED ,
@@ -246,7 +246,7 @@ fun BarChart_2() {
         barWidthRatio = 0.5f,
         labelTextSize = 28f,
         tooltipTextSize = 32f,
-        interactionType = InteractionType.BAR,
+        interactionType = InteractionType.Bar.BAR,
         windowSize = 3,
         showLabel = true,
         yAxisPosition = YAxisPosition.RIGHT,
@@ -281,7 +281,7 @@ fun LineChart_1() {
             showPoint = false,
             showValue = true,
             windowSize = 3,
-            interactionType = InteractionType.TOUCH_AREA,
+            interactionType = InteractionType.Line.TOUCH_AREA,
             yAxisPosition = YAxisPosition.RIGHT
         )
     }
@@ -301,7 +301,7 @@ fun LineChart_2() {
         strokeWidth = 4f,
         minY = 5f,
         maxY = 70f,
-        interactionType = InteractionType.POINT,
+        interactionType = InteractionType.Line.POINT,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.TREND,
         referenceLineStyle = LineStyle.DASHDOT
@@ -356,7 +356,7 @@ fun ScatterPlot_1() {
         title = "요일별 활동량",
         yLabel = "활동량",
         xLabel = "요일",
-        interactionType = InteractionType.POINT,
+        interactionType = InteractionType.Scatter.POINT,
         pointType = PointType.Triangle,
         yAxisPosition = YAxisPosition.LEFT
     )
@@ -577,7 +577,7 @@ fun StackedBarChart_1() {
         legendPosition = LegendPosition.BOTTOM,
         windowSize = 3,
         yAxisPosition = YAxisPosition.RIGHT,
-        interactionType = InteractionType.TOUCH_AREA,
+        interactionType = InteractionType.StackedBar.TOUCH_AREA,
         colors = listOf(
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
@@ -596,7 +596,7 @@ fun RangeBarChart_1() {
         xLabel = "날짜",
         windowSize = 4,
         barColor = Color(0xFFFF9800),
-        interactionType = InteractionType.TOUCH_AREA
+        interactionType = InteractionType.RangeBar.TOUCH_AREA
     )
 }
 

@@ -40,7 +40,7 @@ fun RangeBarChart(
     barColor: androidx.compose.ui.graphics.Color = ChartColor.Default,
     barWidthRatio: Float = 0.6f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT, // Y축 위치
-    interactionType: InteractionType = InteractionType.BAR,
+    interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
     onBarClick: ((Int, RangeChartPoint) -> Unit)? = null,
     chartType: ChartType = ChartType.RANGE_BAR,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
@@ -107,7 +107,7 @@ fun RangeBarChart(
 
                 // Conditional interaction based on interactionType parameter
                 when (interactionType) {
-                    InteractionType.BAR -> {
+                    InteractionType.RangeBar.BAR -> {
                         // Interactive range bars
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
@@ -127,7 +127,7 @@ fun RangeBarChart(
                             )
                         }
                     }
-                    InteractionType.TOUCH_AREA -> {
+                    InteractionType.RangeBar.TOUCH_AREA -> {
                         // Non-interactive range bars
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(

@@ -1,6 +1,7 @@
 package com.hdil.saluschart.core.util
 
 enum class TimeUnitGroup {
+    MINUTE,
     HOUR,
     DAY,
     WEEK,

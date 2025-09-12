@@ -39,13 +39,15 @@ import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.StackedChartPoint
 import com.hdil.saluschart.core.transform.TimeDataPoint
 import com.hdil.saluschart.core.transform.toChartPoints
+import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.util.TimeUnitGroup
-import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
+import com.hdil.saluschart.data.model.model.HealthData
+import com.hdil.saluschart.data.model.model.StepCount
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
@@ -67,6 +69,7 @@ import com.hdil.saluschart.ui.theme.Yellow
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 
 // 스택 바 차트용 세그먼트 레이블 (한 번만 정의)
 private val segmentLabels = listOf("단백질", "지방", "탄수화물")
@@ -75,44 +78,44 @@ private val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
 private val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
 private val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
 
-private val isoTime = listOf(
-    "2025-05-05T00:00:00Z", "2025-05-05T06:00:00Z", "2025-05-05T12:00:00Z", "2025-05-05T18:00:00Z",
-    "2025-05-06T00:00:00Z", "2025-05-06T06:00:00Z", "2025-05-06T12:00:00Z", "2025-05-06T18:00:00Z",
-    "2025-05-07T00:00:00Z", "2025-05-07T06:00:00Z", "2025-05-07T12:00:00Z", "2025-05-07T18:00:00Z",
-    "2025-05-08T00:00:00Z", "2025-05-08T06:00:00Z", "2025-05-08T12:00:00Z", "2025-05-08T18:00:00Z",
-    "2025-05-09T00:00:00Z", "2025-05-09T06:00:00Z", "2025-05-09T12:00:00Z", "2025-05-09T18:00:00Z",
-    "2025-05-10T00:00:00Z", "2025-05-10T06:00:00Z", "2025-05-10T12:00:00Z", "2025-05-10T18:00:00Z",
-    "2025-05-11T00:00:00Z", "2025-05-11T06:00:00Z", "2025-05-11T12:00:00Z", "2025-05-11T18:00:00Z",
-    "2025-05-12T00:00:00Z", "2025-05-12T06:00:00Z", "2025-05-12T12:00:00Z", "2025-05-12T18:00:00Z",
-    "2025-05-13T00:00:00Z", "2025-05-13T06:00:00Z", "2025-05-13T12:00:00Z", "2025-05-13T18:00:00Z",
-    "2025-05-14T00:00:00Z", "2025-05-14T06:00:00Z", "2025-05-14T12:00:00Z", "2025-05-14T18:00:00Z",
-    "2025-05-15T00:00:00Z", "2025-05-15T06:00:00Z", "2025-05-15T12:00:00Z", "2025-05-15T18:00:00Z",
-    "2025-05-16T00:00:00Z", "2025-05-16T06:00:00Z", "2025-05-16T12:00:00Z", "2025-05-16T18:00:00Z",
-    "2025-05-17T00:00:00Z", "2025-05-17T06:00:00Z", "2025-05-17T12:00:00Z", "2025-05-17T18:00:00Z",
-    "2025-05-18T00:00:00Z", "2025-05-18T06:00:00Z", "2025-05-18T12:00:00Z", "2025-05-18T18:00:00Z"
-).map { Instant.parse(it) }
-
-private val stepCounts = listOf(
-    8123f, 523f, 9672f, 7540f,
-    6453f, 984f, 8732f, 6891f,
-    7215f, 642f, 9321f, 8990f,
-    8320f, 885f, 7124f, 9983f,
-    6152f, 751f, 8023f, 7654f,
-    9472f, 934f, 8820f, 5932f,
-    6723f, 653f, 9021f, 7114f,
-    5987f, 752f, 8653f, 9411f,
-    7840f, 801f, 9192f, 6833f,
-    8794f, 912f, 7364f, 9950f,
-    9332f, 891f, 9045f, 6021f,
-    7981f, 912f, 6740f, 8942f,
-    8024f, 992f, 9684f, 7782f,
-    6875f, 864f, 8550f, 9333f,
-    7121f, 941f, 9821f, 8732f
+// Real step count data from JSON - 30-minute activity periods
+private val stepCountHealthData = listOf(
+    StepCount(Instant.parse("2025-05-04T08:00:00Z"), Instant.parse("2025-05-04T08:30:00Z"), 2431),
+    StepCount(Instant.parse("2025-05-04T09:00:00Z"), Instant.parse("2025-05-04T09:30:00Z"), 1359),
+    StepCount(Instant.parse("2025-05-04T10:00:00Z"), Instant.parse("2025-05-04T10:30:00Z"), 6149),
+    StepCount(Instant.parse("2025-05-04T11:00:00Z"), Instant.parse("2025-05-04T11:30:00Z"), 4246),
+    StepCount(Instant.parse("2025-05-04T12:00:00Z"), Instant.parse("2025-05-04T12:30:00Z"), 2855),
+    StepCount(Instant.parse("2025-05-04T13:00:00Z"), Instant.parse("2025-05-04T13:30:00Z"), 9831),
+    StepCount(Instant.parse("2025-05-04T14:00:00Z"), Instant.parse("2025-05-04T14:30:00Z"), 1498),
+    StepCount(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:30:00Z"), 8455),
+    StepCount(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:30:00Z"), 4662),
+    StepCount(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:30:00Z"), 1329),
+    StepCount(Instant.parse("2025-05-04T18:00:00Z"), Instant.parse("2025-05-04T18:30:00Z"), 2327),
+    StepCount(Instant.parse("2025-05-04T19:00:00Z"), Instant.parse("2025-05-04T19:30:00Z"), 7369),
+    StepCount(Instant.parse("2025-05-04T20:00:00Z"), Instant.parse("2025-05-04T20:30:00Z"), 1649),
+    StepCount(Instant.parse("2025-05-04T21:00:00Z"), Instant.parse("2025-05-04T21:30:00Z"), 8768),
+    StepCount(Instant.parse("2025-05-04T22:00:00Z"), Instant.parse("2025-05-04T22:30:00Z"), 5235),
+    StepCount(Instant.parse("2025-05-04T23:00:00Z"), Instant.parse("2025-05-04T23:30:00Z"), 8286),
+    StepCount(Instant.parse("2025-05-05T00:00:00Z"), Instant.parse("2025-05-05T00:30:00Z"), 9606),
+    StepCount(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:30:00Z"), 8043),
+    StepCount(Instant.parse("2025-05-05T02:00:00Z"), Instant.parse("2025-05-05T02:30:00Z"), 6046),
+    StepCount(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), 4874),
+    StepCount(Instant.parse("2025-05-05T04:00:00Z"), Instant.parse("2025-05-05T04:30:00Z"), 5893),
+    StepCount(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:30:00Z"), 5060),
+    StepCount(Instant.parse("2025-05-05T06:00:00Z"), Instant.parse("2025-05-05T06:30:00Z"), 4520),
+    StepCount(Instant.parse("2025-05-05T07:00:00Z"), Instant.parse("2025-05-05T07:30:00Z"), 6420),
+    StepCount(Instant.parse("2025-05-05T08:00:00Z"), Instant.parse("2025-05-05T08:30:00Z"), 1837),
+    StepCount(Instant.parse("2025-05-05T09:00:00Z"), Instant.parse("2025-05-05T09:30:00Z"), 5893),
+    StepCount(Instant.parse("2025-05-05T10:00:00Z"), Instant.parse("2025-05-05T10:30:00Z"), 4000),
+    StepCount(Instant.parse("2025-05-05T11:00:00Z"), Instant.parse("2025-05-05T11:30:00Z"), 5760),
+    StepCount(Instant.parse("2025-05-05T12:00:00Z"), Instant.parse("2025-05-05T12:30:00Z"), 3621),
+    StepCount(Instant.parse("2025-05-05T13:00:00Z"), Instant.parse("2025-05-05T13:30:00Z"), 7387)
 )
 
+// Keep the old TimeDataPoint for other examples that still need it
 private val timeDataPoint = TimeDataPoint(
-    x = isoTime,
-    y = stepCounts,
+    x = stepCountHealthData.map { it.startTime },
+    y = stepCountHealthData.map { it.stepCount.toFloat() },
     timeUnit = TimeUnitGroup.HOUR,
 )
 
@@ -736,8 +739,10 @@ fun XAxisTickReductionDemo() {
 
 @Composable
 fun TimeStepBarChart() {
+    // Updated to use real step count data with 30-minute intervals
+    // Data spans from May 4, 2025 08:00 to May 5, 2025 13:30 (30 data points)
     var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf("시간대별") }
+    var selectedOption by remember { mutableStateOf("30분대별") }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(
@@ -745,7 +750,7 @@ fun TimeStepBarChart() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "시간대별 걸음 수",
+                text = "실제 걸음 수 데이터 (5/4-5/5)",
                 modifier = Modifier.weight(1f),
                 fontSize = 20.sp,
                 color = Color.Black
@@ -767,6 +772,14 @@ fun TimeStepBarChart() {
             modifier = Modifier.fillMaxWidth()
         ) {
             DropdownMenuItem(
+                text = { Text("30분대별") },
+                onClick = {
+                    selectedOption = "30분대별"
+                    expanded = false
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            DropdownMenuItem(
                 text = { Text("시간대별") },
                 onClick = {
                     selectedOption = "시간대별"
@@ -782,14 +795,6 @@ fun TimeStepBarChart() {
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            DropdownMenuItem(
-                text = { Text("주별") },
-                onClick = {
-                    selectedOption = "주별"
-                    expanded = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -797,25 +802,31 @@ fun TimeStepBarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(500.dp),
             data = when (selectedOption) {
-                "시간대별" -> timeDataPoint.toChartPoints()
-                "일별" -> timeDataPoint.transform(
+                "30분대별" -> stepCountHealthData.transform(
+                    timeUnit = TimeUnitGroup.MINUTE,
+                    aggregationType = AggregationType.SUM
+                )
+                "시간대별" -> stepCountHealthData.transform(
+                    timeUnit = TimeUnitGroup.HOUR,
+                    aggregationType = AggregationType.SUM
+                )
+                "일별" -> stepCountHealthData.transform(
                     timeUnit = TimeUnitGroup.DAY,
-                    aggregationType = AggregationType.AVERAGE
-                ).toChartPoints()
-                "주별" -> timeDataPoint.transform(
-                    timeUnit = TimeUnitGroup.WEEK,
-                    aggregationType = AggregationType.AVERAGE
-                ).toChartPoints()
-                else -> timeDataPoint.toChartPoints()
+                    aggregationType = AggregationType.SUM
+                )
+                else -> stepCountHealthData.transform(
+                    timeUnit = TimeUnitGroup.MINUTE,
+                    aggregationType = AggregationType.SUM
+                )
             },
-            title = "걸음 수 (${selectedOption}) - ${if (selectedOption == "시간대별") "가로 스크롤" else "Smart Label Reduction"}",
+            title = "걸음 수 (${selectedOption}) - ${if (selectedOption == "30분대별") "Raw Data" else "Aggregated"}",
             barColor = Primary_Purple,
             barWidthRatio = 0.5f,
             labelTextSize = 20f,
-            // 시간대별일 때는 windowSize로 스크롤링 활성화
+            // 30분대별과 시간대별일 때는 windowSize로 스크롤링 활성화
             windowSize = when (selectedOption) {
+                "30분대별" -> 10
                 "시간대별" -> 8
-                "일별" -> 4
                 else -> null
             }
         )

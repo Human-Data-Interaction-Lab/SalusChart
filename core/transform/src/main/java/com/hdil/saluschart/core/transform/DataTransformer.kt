@@ -56,14 +56,63 @@ class DataTransformer {
             LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
         }
 
-        // 시간과 데이터값을 1:1로 연결
-        val timeValuePairs = parsedTimes.zip(data.y)
+        return if (data.isSingleValue) {
+            // 단일 값 처리
+            val timeValuePairs = parsedTimes.zip(data.y!!)
+            val aggregatedData = processAggregation(timeValuePairs, targetTimeUnit, aggregationType)
+            
+            val newXValues = aggregatedData.map { (time, _) ->
+                time.atZone(ZoneId.systemDefault()).toInstant()
+            }
+            val newYValues = aggregatedData.map { it.second }
 
-        val aggregatedData = when (aggregationType) {
+            TimeDataPoint(
+                x = newXValues,
+                y = newYValues,
+                timeUnit = targetTimeUnit
+            )
+        } else {
+            // 다중 값 처리
+            val aggregatedMultipleData = mutableMapOf<String, List<Pair<LocalDateTime, Float>>>()
+            
+            // 각 속성별로 집계 수행
+            data.yMultiple!!.forEach { (property, values) ->
+                val timeValuePairs = parsedTimes.zip(values)
+                aggregatedMultipleData[property] = processAggregation(timeValuePairs, targetTimeUnit, aggregationType)
+            }
+            
+            // 모든 속성이 동일한 시간 키를 가져야 하므로 첫 번째 속성의 시간을 기준으로 사용
+            val firstProperty = aggregatedMultipleData.keys.first()
+            val newXValues = aggregatedMultipleData[firstProperty]!!.map { (time, _) ->
+                time.atZone(ZoneId.systemDefault()).toInstant()
+            }
+            
+            // 각 속성의 값들을 새로운 yMultiple 맵으로 구성
+            val newYMultiple = aggregatedMultipleData.mapValues { (_, timeValueList) ->
+                timeValueList.map { it.second }
+            }
+
+            TimeDataPoint(
+                x = newXValues,
+                yMultiple = newYMultiple,
+                timeUnit = targetTimeUnit,
+            )
+        }
+    }
+
+    /**
+     * 시간-값 쌍에 대한 집계 처리 (공통 로직)
+     */
+    private fun processAggregation(
+        timeValuePairs: List<Pair<LocalDateTime, Float>>,
+        targetTimeUnit: TimeUnitGroup,
+        aggregationType: AggregationType
+    ): List<Pair<LocalDateTime, Float>> {
+        return when (aggregationType) {
             AggregationType.SUM -> {
-                // 기존 그룹핑 방식으로 합계 계산
                 val groupedData = when (targetTimeUnit) {
-                    TimeUnitGroup.HOUR -> timeValuePairs.map { it.first to listOf(it.second) }.toMap()
+                    TimeUnitGroup.MINUTE -> timeValuePairs.map { it.first to listOf(it.second) }.toMap()
+                    TimeUnitGroup.HOUR -> groupByHour(timeValuePairs)
                     TimeUnitGroup.DAY -> groupByDay(timeValuePairs)
                     TimeUnitGroup.WEEK -> groupByWeek(timeValuePairs)
                     TimeUnitGroup.MONTH -> groupByMonth(timeValuePairs)
@@ -71,27 +120,22 @@ class DataTransformer {
                 }
                 
                 groupedData.map { (time, values) ->
-                    time to values.sum().toFloat()
+                    time to values.sum()
                 }.sortedBy { it.first }
             }
             AggregationType.AVERAGE -> {
-                // 새로운 간격 기반 평균 계산
                 calculateIntervalAverages(timeValuePairs, targetTimeUnit)
             }
         }
+    }
 
-        // 결과를 Instant와 값 리스트로 변환
-        val newXValues = aggregatedData.map { (time, _) ->
-            time.atZone(ZoneId.systemDefault()).toInstant()
-        }
-        val newYValues = aggregatedData.map { it.second }
-
-        return TimeDataPoint(
-            x = newXValues,
-            y = newYValues,
-            timeUnit = targetTimeUnit,
-            label = null // 단순화: 레이블은 toChartPoints()에서 처리
-        )
+    /**
+     * 시간별 그룹핑
+     */
+    private fun groupByHour(timeValuePairs: List<Pair<LocalDateTime, Float>>): Map<LocalDateTime, List<Float>> {
+        return timeValuePairs.groupBy { (time, _) ->
+            time.truncatedTo(ChronoUnit.HOURS)
+        }.mapValues { (_, pairs) -> pairs.map { it.second } }
     }
 
     /**
@@ -179,6 +223,14 @@ class DataTransformer {
         val intervals = mutableListOf<LocalDateTime>()
         
         when (targetTimeUnit) {
+            TimeUnitGroup.MINUTE -> {
+                var current = minTime.truncatedTo(ChronoUnit.MINUTES)
+                val end = maxTime.truncatedTo(ChronoUnit.MINUTES).plusMinutes(1)
+                while (current.isBefore(end)) {
+                    intervals.add(current)
+                    current = current.plusMinutes(1)
+                }
+            }
             TimeUnitGroup.HOUR -> {
                 var current = minTime.truncatedTo(ChronoUnit.HOURS)
                 val end = maxTime.truncatedTo(ChronoUnit.HOURS).plusHours(1)
@@ -230,6 +282,7 @@ class DataTransformer {
      */
     private fun getIntervalEnd(intervalStart: LocalDateTime, targetTimeUnit: TimeUnitGroup): LocalDateTime {
         return when (targetTimeUnit) {
+            TimeUnitGroup.MINUTE -> intervalStart.plusMinutes(1)
             TimeUnitGroup.HOUR -> intervalStart.plusHours(1)
             TimeUnitGroup.DAY -> intervalStart.plusDays(1)
             TimeUnitGroup.WEEK -> intervalStart.plusWeeks(1)

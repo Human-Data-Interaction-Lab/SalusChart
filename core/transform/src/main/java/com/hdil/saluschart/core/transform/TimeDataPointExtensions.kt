@@ -12,12 +12,6 @@ import java.time.ZoneId
  * HealthData 리스트를 TimeDataPoint로 변환하는 확장 함수들
  */
 
-// ============================================================================
-// TYPE-SPECIFIC toTimeDataPoint() EXTENSION FUNCTIONS
-// ============================================================================
-// Note: Due to JVM type erasure, we cannot use the same method name for all 
-// List<T> types. Each type needs a unique method name to avoid platform declaration clashes.
-
 /**
  * StepCount 리스트를 TimeDataPoint로 변환
  * 시간 간격 데이터를 분별로 집계하여 단일 시점 데이터로 변환
@@ -95,18 +89,29 @@ fun List<Diet>.toDietTimeDataPoint(): TimeDataPoint {
 
 /**
  * HeartRate 리스트를 TimeDataPoint로 변환
- * 샘플 데이터의 평균값을 시작 시간 기준으로 변환
+ * 시간 간격 데이터를 분별로 집계하여 단일 시점 데이터로 변환
+ * 각 HeartRate의 샘플들의 평균 BPM을 해당 측정 기간에 걸쳐 분별로 분산
  */
 fun List<HeartRate>.toHeartRateTimeDataPoint(): TimeDataPoint {
-    return TimeDataPoint(
-        x = this.map { it.startTime },
-        y = this.map { heartRate ->
-            if (heartRate.samples.isNotEmpty()) {
+    val aggregatedData = aggregateActivityDataTime(
+        activities = this,
+        getStartTime = { it.startTime },
+        getEndTime = { it.endTime },
+        extractValues = { heartRate ->
+            // 해당 HeartRate의 평균 BPM 계산
+            val avgBpm = if (heartRate.samples.isNotEmpty()) {
                 heartRate.samples.map { it.beatsPerMinute.toFloat() }.average().toFloat()
             } else {
                 0f
             }
-        },
+            mapOf("bpm" to avgBpm)
+        }
+    )
+    
+    val sortedTimes = aggregatedData.keys.sorted()
+    return TimeDataPoint(
+        x = sortedTimes,
+        y = sortedTimes.map { aggregatedData[it]?.get("bpm") ?: 0f },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -143,17 +148,77 @@ fun List<HeartRate>.toRangeTimeDataPoint(): TimeDataPoint {
 
 /**
  * SleepSession 리스트를 TimeDataPoint로 변환
- * 수면 시간(시간 단위)을 시작 시간 기준으로 변환
+ * 시간 간격 데이터를 분별로 집계하여 단일 시점 데이터로 변환
+ * 수면 세션의 총 시간(시간 단위)을 해당 수면 기간에 걸쳐 분별로 분산
+ * 
+ * 참고: 수면 단계(sleep stages) 정보는 현재 TimeDataPoint에서 보존되지 않습니다.
+ * 향후 수면 단계 차트 구현 시 별도의 변환 함수가 필요할 수 있습니다.
  */
 fun List<SleepSession>.toSleepSessionTimeDataPoint(): TimeDataPoint {
+    val aggregatedData = aggregateActivityDataTime(
+        activities = this,
+        getStartTime = { it.startTime },
+        getEndTime = { it.endTime },
+        extractValues = { sleepSession ->
+            // 수면 세션의 총 시간을 시간 단위로 계산
+            val totalSleepHours = Duration.between(sleepSession.startTime, sleepSession.endTime).toMinutes() / 60.0f
+            mapOf("sleepHours" to totalSleepHours)
+        }
+    )
+    
+    val sortedTimes = aggregatedData.keys.sorted()
     return TimeDataPoint(
-        x = this.map { it.startTime },
-        y = this.map {
-            Duration.between(it.startTime, it.endTime).toMinutes() / 60.0f
-        },
+        x = sortedTimes,
+        y = sortedTimes.map { aggregatedData[it]?.get("sleepHours") ?: 0f },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
+
+///**
+// * SleepSession 리스트를 수면 단계별 다중 값 TimeDataPoint로 변환
+// * 각 수면 단계별 시간(시간 단위)을 해당 수면 기간에 걸쳐 분별로 분산
+// *
+// * 이 함수는 향후 수면 단계 차트 구현을 위해 준비된 함수입니다.
+// * 현재는 기본 차트 컴포넌트에서 사용 가능하지만, 전용 수면 단계 차트에서 더 효과적으로 활용될 예정입니다.
+// */
+//fun List<SleepSession>.toSleepStageTimeDataPoint(): TimeDataPoint {
+//    val aggregatedData = aggregateActivityDataTime(
+//        activities = this,
+//        getStartTime = { it.startTime },
+//        getEndTime = { it.endTime },
+//        extractValues = { sleepSession ->
+//            // 각 수면 단계별 총 시간 계산 (시간 단위)
+//            val stageHours = mutableMapOf<String, Float>()
+//
+//            sleepSession.stages.forEach { stage ->
+//                val stageDuration = Duration.between(stage.startTime, stage.endTime).toMinutes() / 60.0f
+//                val stageKey = stage.stage.name.lowercase()
+//                stageHours[stageKey] = stageHours.getOrDefault(stageKey, 0f) + stageDuration
+//            }
+//
+//            // 모든 가능한 수면 단계에 대해 0으로 초기화 후 실제 값 설정
+//            val allStages = listOf("deep", "light", "rem", "awake", "awake_in_bed", "out_of_bed", "sleeping", "unknown")
+//            allStages.associateWith { stage ->
+//                stageHours.getOrDefault(stage, 0f)
+//            }
+//        }
+//    )
+//
+//    val sortedTimes = aggregatedData.keys.sorted()
+//    val allStageNames = listOf("deep", "light", "rem", "awake", "awake_in_bed", "out_of_bed", "sleeping", "unknown")
+//
+//    val yMultiple = allStageNames.associateWith { stageName ->
+//        sortedTimes.map { time ->
+//            aggregatedData[time]?.get(stageName) ?: 0f
+//        }
+//    }
+//
+//    return TimeDataPoint(
+//        x = sortedTimes,
+//        yMultiple = yMultiple,
+//        timeUnit = TimeUnitGroup.MINUTE
+//    )
+//}
 
 /**
  * BloodPressure 리스트를 다중 값 TimeDataPoint로 변환
@@ -221,35 +286,6 @@ fun List<SkeletalMuscleMass>.toSkeletalMuscleMassTimeDataPoint(): TimeDataPoint 
     )
 }
 
-// ============================================================================
-// UNIFIED API USING @JvmName - SOLUTION 2 (RECOMMENDED)
-// ============================================================================
-
-/*
-/**
- * SOLUTION 1: Factory object with different method names
- * No type erasure issues, clear and explicit
- */
-object TimeDataPointConverter {
-    fun fromStepCount(data: List<StepCount>): TimeDataPoint = data.toStepCountTimeDataPoint()
-    fun fromExercise(data: List<Exercise>): TimeDataPoint = data.toExerciseTimeDataPoint()
-    fun fromDiet(data: List<Diet>): TimeDataPoint = data.toDietTimeDataPoint()
-    fun fromHeartRate(data: List<HeartRate>): TimeDataPoint = data.toHeartRateTimeDataPoint()
-    fun fromSleepSession(data: List<SleepSession>): TimeDataPoint = data.toSleepSessionTimeDataPoint()
-    fun fromBloodPressure(data: List<BloodPressure>): TimeDataPoint = data.toBloodPressureTimeDataPoint()
-    fun fromBloodGlucose(data: List<BloodGlucose>): TimeDataPoint = data.toBloodGlucoseTimeDataPoint()
-    fun fromWeight(data: List<Weight>): TimeDataPoint = data.toWeightTimeDataPoint()
-    fun fromBodyFat(data: List<BodyFat>): TimeDataPoint = data.toBodyFatTimeDataPoint()
-    fun fromSkeletalMuscleMass(data: List<SkeletalMuscleMass>): TimeDataPoint = data.toSkeletalMuscleMassTimeDataPoint()
-}
-*/
-
-/**
- * SOLUTION 2: Using @JvmName for unified method names
- * Allows same method name in Kotlin, different JVM signatures
- * This is the RECOMMENDED approach for a clean, unified API
- */
-
 @JvmName("stepCountToTimeDataPoint")
 fun List<StepCount>.toTimeDataPoint(): TimeDataPoint = this.toStepCountTimeDataPoint()
 
@@ -280,85 +316,11 @@ fun List<BodyFat>.toTimeDataPoint(): TimeDataPoint = this.toBodyFatTimeDataPoint
 @JvmName("skeletalMuscleMassToTimeDataPoint")
 fun List<SkeletalMuscleMass>.toTimeDataPoint(): TimeDataPoint = this.toSkeletalMuscleMassTimeDataPoint()
 
-/*
-// ============================================================================
-// SOLUTION 3: Type-Safe Wrapper Classes (Alternative Approach)
-// ============================================================================
-
-/**
- * Type-safe wrapper for HealthData lists that eliminates type erasure issues
- * This approach uses sealed classes to maintain type information at runtime
- */
-sealed class HealthDataList<T : HealthData>(val data: List<T>) {
-    class StepCountList(data: List<StepCount>) : HealthDataList<StepCount>(data)
-    class ExerciseList(data: List<Exercise>) : HealthDataList<Exercise>(data)
-    class DietList(data: List<Diet>) : HealthDataList<Diet>(data)
-    class HeartRateList(data: List<HeartRate>) : HealthDataList<HeartRate>(data)
-    class SleepSessionList(data: List<SleepSession>) : HealthDataList<SleepSession>(data)
-    class BloodPressureList(data: List<BloodPressure>) : HealthDataList<BloodPressure>(data)
-    class BloodGlucoseList(data: List<BloodGlucose>) : HealthDataList<BloodGlucose>(data)
-    class WeightList(data: List<Weight>) : HealthDataList<Weight>(data)
-    class BodyFatList(data: List<BodyFat>) : HealthDataList<BodyFat>(data)
-    class SkeletalMuscleMassList(data: List<SkeletalMuscleMass>) : HealthDataList<SkeletalMuscleMass>(data)
-    
-    /**
-     * Unified toTimeDataPoint() method that works for all types without type erasure
-     */
-    fun toTimeDataPoint(): TimeDataPoint {
-        return when (this) {
-            is StepCountList -> data.toStepCountTimeDataPoint()
-            is ExerciseList -> data.toExerciseTimeDataPoint()
-            is DietList -> data.toDietTimeDataPoint()
-            is HeartRateList -> data.toHeartRateTimeDataPoint()
-            is SleepSessionList -> data.toSleepSessionTimeDataPoint()
-            is BloodPressureList -> data.toBloodPressureTimeDataPoint()
-            is BloodGlucoseList -> data.toBloodGlucoseTimeDataPoint()
-            is WeightList -> data.toWeightTimeDataPoint()
-            is BodyFatList -> data.toBodyFatTimeDataPoint()
-            is SkeletalMuscleMassList -> data.toSkeletalMuscleMassTimeDataPoint()
-        }
-    }
-    
-    /**
-     * Unified transform() method for direct HealthData -> ChartPoint conversion
-     */
-    fun transform(
-        timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-        aggregationType: AggregationType = AggregationType.SUM
-    ): List<ChartPoint> {
-        return toTimeDataPoint()
-            .transform(timeUnit, aggregationType)
-            .let { transformedTimeData ->
-                when (this) {
-                    is DietList -> transformedTimeData.toChartPointsByProperty("calories")
-                    is BloodPressureList -> transformedTimeData.toChartPointsByProperty("systolic")
-                    else -> transformedTimeData.toChartPoints()
-                }
-            }
-    }
-}
-
-/**
- * Convenience factory functions for creating wrapper instances
- */
-fun List<StepCount>.asHealthDataList(): HealthDataList.StepCountList = HealthDataList.StepCountList(this)
-fun List<Exercise>.asHealthDataList(): HealthDataList.ExerciseList = HealthDataList.ExerciseList(this)
-fun List<Diet>.asHealthDataList(): HealthDataList.DietList = HealthDataList.DietList(this)
-fun List<HeartRate>.asHealthDataList(): HealthDataList.HeartRateList = HealthDataList.HeartRateList(this)
-fun List<SleepSession>.asHealthDataList(): HealthDataList.SleepSessionList = HealthDataList.SleepSessionList(this)
-fun List<BloodPressure>.asHealthDataList(): HealthDataList.BloodPressureList = HealthDataList.BloodPressureList(this)
-fun List<BloodGlucose>.asHealthDataList(): HealthDataList.BloodGlucoseList = HealthDataList.BloodGlucoseList(this)
-fun List<Weight>.asHealthDataList(): HealthDataList.WeightList = HealthDataList.WeightList(this)
-fun List<BodyFat>.asHealthDataList(): HealthDataList.BodyFatList = HealthDataList.BodyFatList(this)
-fun List<SkeletalMuscleMass>.asHealthDataList(): HealthDataList.SkeletalMuscleMassList = HealthDataList.SkeletalMuscleMassList(this)
-
-*/
-
 
 /**
  * 혼합 HealthData 리스트를 TimeDataPoint로 변환 (첫 번째 일치하는 타입 사용)
  * 단일 데이터 타입만 포함된 리스트에 권장됨
- * 
+ *
  * @return TimeDataPoint 또는 지원되지 않는 타입인 경우 null
  */
 fun List<HealthData>.toTimeDataPoint(): TimeDataPoint? {
@@ -378,65 +340,61 @@ fun List<HealthData>.toTimeDataPoint(): TimeDataPoint? {
 }
 
 
-/**
- * 여러 datatype이 혼합된 HealthData 리스트를 타입별로 분리된 TimeDataPoint 맵으로 변환
- * 
- * @return 데이터 타입명을 키로 하고 해당 TimeDataPoint를 값으로 하는 맵
- */
-fun List<HealthData>.toTimeDataPointsByType(): Map<String, TimeDataPoint> {
-    val result = mutableMapOf<String, TimeDataPoint>()
-    
-    // 타입별로 그룹핑
-    val stepCounts = filterIsInstance<StepCount>()
-    val exercises = filterIsInstance<Exercise>()
-    val diets = filterIsInstance<Diet>()
-    val heartRates = filterIsInstance<HeartRate>()
-    val sleepSessions = filterIsInstance<SleepSession>()
-    val bloodPressures = filterIsInstance<BloodPressure>()
-    val bloodGlucoses = filterIsInstance<BloodGlucose>()
-    val weights = filterIsInstance<Weight>()
-    val bodyFats = filterIsInstance<BodyFat>()
-    val skeletalMuscleMasses = filterIsInstance<SkeletalMuscleMass>()
-    
-    // 각 타입별로 TimeDataPoint 생성
-    if (stepCounts.isNotEmpty()) {
-        result["StepCount"] = stepCounts.toStepCountTimeDataPoint()
-    }
-    if (exercises.isNotEmpty()) {
-        result["Exercise"] = exercises.toExerciseTimeDataPoint()
-    }
-    if (diets.isNotEmpty()) {
-        result["Diet"] = diets.toDietTimeDataPoint()
-    }
-    if (heartRates.isNotEmpty()) {
-        result["HeartRate"] = heartRates.toHeartRateTimeDataPoint()
-    }
-    if (sleepSessions.isNotEmpty()) { 
-        result["SleepSession"] = sleepSessions.toSleepSessionTimeDataPoint()
-    }
-    if (bloodPressures.isNotEmpty()) {
-        result["BloodPressure"] = bloodPressures.toBloodPressureTimeDataPoint()
-    }
-    if (bloodGlucoses.isNotEmpty()) {
-        result["BloodGlucose"] = bloodGlucoses.toBloodGlucoseTimeDataPoint()
-    }
-    if (weights.isNotEmpty()) {
-        result["Weight"] = weights.toWeightTimeDataPoint()
-    }
-    if (bodyFats.isNotEmpty()) {
-        result["BodyFat"] = bodyFats.toBodyFatTimeDataPoint()
-    }
-    if (skeletalMuscleMasses.isNotEmpty()) {
-        result["SkeletalMuscleMass"] = skeletalMuscleMasses.toSkeletalMuscleMassTimeDataPoint()
-    }
-    
-    return result
-}
-
-// ============================================================================
-// UNIFIED transform() API using @JvmName
-// ============================================================================
-// Direct HealthData -> ChartPoint transformation with same method name for all types
+// TODO: HealthData 여러 타입이 하나의 리스트에 섞여있는 경우
+///**
+// * 여러 datatype이 혼합된 HealthData 리스트를 타입별로 분리된 TimeDataPoint 맵으로 변환
+// *
+// * @return 데이터 타입명을 키로 하고 해당 TimeDataPoint를 값으로 하는 맵
+// */
+//fun List<HealthData>.toTimeDataPointsByType(): Map<String, TimeDataPoint> {
+//    val result = mutableMapOf<String, TimeDataPoint>()
+//
+//    // 타입별로 그룹핑
+//    val stepCounts = filterIsInstance<StepCount>()
+//    val exercises = filterIsInstance<Exercise>()
+//    val diets = filterIsInstance<Diet>()
+//    val heartRates = filterIsInstance<HeartRate>()
+//    val sleepSessions = filterIsInstance<SleepSession>()
+//    val bloodPressures = filterIsInstance<BloodPressure>()
+//    val bloodGlucoses = filterIsInstance<BloodGlucose>()
+//    val weights = filterIsInstance<Weight>()
+//    val bodyFats = filterIsInstance<BodyFat>()
+//    val skeletalMuscleMasses = filterIsInstance<SkeletalMuscleMass>()
+//
+//    // 각 타입별로 TimeDataPoint 생성
+//    if (stepCounts.isNotEmpty()) {
+//        result["StepCount"] = stepCounts.toStepCountTimeDataPoint()
+//    }
+//    if (exercises.isNotEmpty()) {
+//        result["Exercise"] = exercises.toExerciseTimeDataPoint()
+//    }
+//    if (diets.isNotEmpty()) {
+//        result["Diet"] = diets.toDietTimeDataPoint()
+//    }
+//    if (heartRates.isNotEmpty()) {
+//        result["HeartRate"] = heartRates.toHeartRateTimeDataPoint()
+//    }
+//    if (sleepSessions.isNotEmpty()) {
+//        result["SleepSession"] = sleepSessions.toSleepSessionTimeDataPoint()
+//    }
+//    if (bloodPressures.isNotEmpty()) {
+//        result["BloodPressure"] = bloodPressures.toBloodPressureTimeDataPoint()
+//    }
+//    if (bloodGlucoses.isNotEmpty()) {
+//        result["BloodGlucose"] = bloodGlucoses.toBloodGlucoseTimeDataPoint()
+//    }
+//    if (weights.isNotEmpty()) {
+//        result["Weight"] = weights.toWeightTimeDataPoint()
+//    }
+//    if (bodyFats.isNotEmpty()) {
+//        result["BodyFat"] = bodyFats.toBodyFatTimeDataPoint()
+//    }
+//    if (skeletalMuscleMasses.isNotEmpty()) {
+//        result["SkeletalMuscleMass"] = skeletalMuscleMasses.toSkeletalMuscleMassTimeDataPoint()
+//    }
+//
+//    return result
+//}
 
 /**
  * 단일 타입 HealthData 리스트를 직접 ChartPoint로 변환하는 편의 함수
@@ -445,6 +403,10 @@ fun List<HealthData>.toTimeDataPointsByType(): Map<String, TimeDataPoint> {
  * @param timeUnit 변환할 시간 단위 (기본값: DAY)
  * @param aggregationType 집계 방법 (기본값: SUM)
  * @return ChartPoint 리스트
+ */
+
+/**
+ * StepCount 리스트를 직접 ChartPoint로 변환하는 편의 함수
  */
 @JvmName("stepCountTransform")
 fun List<StepCount>.transform(
@@ -470,16 +432,26 @@ fun List<Exercise>.transform(
 }
 
 /**
- * Diet 리스트를 직접 ChartPoint로 변환하는 편의 함수 (다중 값 - 칼로리만 사용)
+ * Diet 리스트를 직접 ChartPoint로 변환하는 편의 함수
  */
 @JvmName("dietTransform")
 fun List<Diet>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
     aggregationType: AggregationType = AggregationType.SUM
 ): List<ChartPoint> {
-    return this.toTimeDataPoint()
+    val chartPointsMap = this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
-        .toChartPointsByProperty("calories")
+        .toChartPointsMap()
+
+    return chartPointsMap.flatMap { (property, chartPoints) ->
+        chartPoints.map { chartPoint ->
+            ChartPoint(
+                x = chartPoint.x,
+                y = chartPoint.y,
+                label = "${chartPoint.label} ($property)"
+            )
+        }
+    }
 }
 
 /**
@@ -497,16 +469,26 @@ fun List<Diet>.transformByProperty(
 }
 
 /**
- * BloodPressure 리스트를 직접 ChartPoint로 변환하는 편의 함수 (수축기혈압 기본값)
+ * BloodPressure 리스트를 직접 ChartPoint로 변환하는 편의 함수
  */
 @JvmName("bloodPressureTransform")
 fun List<BloodPressure>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.AVERAGE
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
-    return this.toTimeDataPoint()
+    val chartPointsMap = this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
-        .toChartPointsByProperty("systolic")
+        .toChartPointsMap()
+
+    return chartPointsMap.flatMap { (property, chartPoints) ->
+        chartPoints.map { chartPoint ->
+            ChartPoint(
+                x = chartPoint.x,
+                y = chartPoint.y,
+                label = "${chartPoint.label} ($property)"
+            )
+        }
+    }
 }
 
 /**
@@ -516,7 +498,7 @@ fun List<BloodPressure>.transform(
 fun List<BloodPressure>.transformByProperty(
     property: String, // "systolic" or "diastolic"
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.AVERAGE
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
     return this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
@@ -529,7 +511,7 @@ fun List<BloodPressure>.transformByProperty(
 @JvmName("bloodGlucoseTransform")
 fun List<BloodGlucose>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.AVERAGE
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
     return this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
@@ -537,12 +519,53 @@ fun List<BloodGlucose>.transform(
 }
 
 /**
+ * HeartRate 리스트를 직접 ChartPoint로 변환하는 편의 함수
+ */
+@JvmName("heartRateTransform")
+fun List<HeartRate>.transform(
+    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
+): List<ChartPoint> {
+    return this.toTimeDataPoint()
+        .transform(timeUnit, aggregationType)
+        .toChartPoints()
+}
+
+/**
+ * SleepSession 리스트를 직접 ChartPoint로 변환하는 편의 함수
+ */
+@JvmName("sleepSessionTransform")
+fun List<SleepSession>.transform(
+    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
+    aggregationType: AggregationType = AggregationType.SUM
+): List<ChartPoint> {
+    return this.toTimeDataPoint()
+        .transform(timeUnit, aggregationType)
+        .toChartPoints()
+}
+
+///**
+// * SleepSession 리스트에서 특정 수면 단계를 선택하여 ChartPoint로 변환하는 편의 함수
+// * 향후 수면 단계 차트 구현을 위한 준비 함수
+// */
+//@JvmName("sleepSessionTransformByStage")
+//fun List<SleepSession>.transformByStage(
+//    stage: String, // "deep", "light", "rem", "awake", etc.
+//    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
+//    aggregationType: AggregationType = AggregationType.SUM
+//): List<ChartPoint> {
+//    return this.toSleepStageTimeDataPoint()
+//        .transform(timeUnit, aggregationType)
+//        .toChartPointsByProperty(stage)
+//}
+
+/**
  * Weight 리스트를 직접 ChartPoint로 변환하는 편의 함수
  */
 @JvmName("weightTransform")
 fun List<Weight>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.AVERAGE
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
     return this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
@@ -555,7 +578,7 @@ fun List<Weight>.transform(
 @JvmName("bodyFatTransform")
 fun List<BodyFat>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.AVERAGE
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
     return this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
@@ -568,76 +591,73 @@ fun List<BodyFat>.transform(
 @JvmName("skeletalMuscleMassTransform")
 fun List<SkeletalMuscleMass>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.AVERAGE
+    aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
     return this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
         .toChartPoints()
 }
 
-// ============================================================================
-// CONVENIENCE FUNCTIONS: Mixed HealthData types
-// ============================================================================
-
-/**
- * 혼합 HealthData 리스트를 타입별로 변환하여 ChartPoint 맵으로 반환하는 편의 함수
- *
- * @param timeUnit 변환할 시간 단위
- * @param aggregationType 집계 방법
- * @return 타입명을 키로 하고 ChartPoint 리스트를 값으로 하는 맵
- */
-fun List<HealthData>.transformByType(
-    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-    aggregationType: AggregationType = AggregationType.SUM
-): Map<String, List<ChartPoint>> {
-    val result = mutableMapOf<String, List<ChartPoint>>()
-    
-    // 타입별로 그룹핑
-    val stepCounts = filterIsInstance<StepCount>()
-    val exercises = filterIsInstance<Exercise>()
-    val diets = filterIsInstance<Diet>()
-    val heartRates = filterIsInstance<HeartRate>()
-    val sleepSessions = filterIsInstance<SleepSession>()
-    val bloodPressures = filterIsInstance<BloodPressure>()
-    val bloodGlucoses = filterIsInstance<BloodGlucose>()
-    val weights = filterIsInstance<Weight>()
-    val bodyFats = filterIsInstance<BodyFat>()
-    val skeletalMuscleMasses = filterIsInstance<SkeletalMuscleMass>()
-    
-    // 각 타입별로 ChartPoint로 직접 변환
-    if (stepCounts.isNotEmpty()) {
-        result["StepCount"] = stepCounts.transform(timeUnit, aggregationType)
-    }
-    if (exercises.isNotEmpty()) {
-        result["Exercise"] = exercises.transform(timeUnit, aggregationType)
-    }
-    if (diets.isNotEmpty()) {
-        result["Diet"] = diets.transform(timeUnit, aggregationType) // 기본적으로 calories
-    }
-    if (heartRates.isNotEmpty()) {
-        result["HeartRate"] = heartRates.toTimeDataPoint().transform(timeUnit, aggregationType).toChartPoints()
-    }
-    if (sleepSessions.isNotEmpty()) {
-        result["SleepSession"] = sleepSessions.toTimeDataPoint().transform(timeUnit, aggregationType).toChartPoints()
-    }
-    if (bloodPressures.isNotEmpty()) {
-        result["BloodPressure"] = bloodPressures.transform(timeUnit, aggregationType) // 기본적으로 systolic
-    }
-    if (bloodGlucoses.isNotEmpty()) {
-        result["BloodGlucose"] = bloodGlucoses.transform(timeUnit, aggregationType)
-    }
-    if (weights.isNotEmpty()) {
-        result["Weight"] = weights.transform(timeUnit, aggregationType)
-    }
-    if (bodyFats.isNotEmpty()) {
-        result["BodyFat"] = bodyFats.transform(timeUnit, aggregationType)
-    }
-    if (skeletalMuscleMasses.isNotEmpty()) {
-        result["SkeletalMuscleMass"] = skeletalMuscleMasses.transform(timeUnit, aggregationType)
-    }
-
-    return result
-}
+// TODO: HealthData 여러 타입이 하나의 리스트에 섞여있는 경우
+///**
+// * 혼합 HealthData 리스트를 타입별로 변환하여 ChartPoint 맵으로 반환하는 편의 함수
+// *
+// * @param timeUnit 변환할 시간 단위
+// * @param aggregationType 집계 방법
+// * @return 타입명을 키로 하고 ChartPoint 리스트를 값으로 하는 맵
+// */
+//fun List<HealthData>.transformByType(
+//    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
+//    aggregationType: AggregationType = AggregationType.SUM
+//): Map<String, List<ChartPoint>> {
+//    val result = mutableMapOf<String, List<ChartPoint>>()
+//
+//    // 타입별로 그룹핑
+//    val stepCounts = filterIsInstance<StepCount>()
+//    val exercises = filterIsInstance<Exercise>()
+//    val diets = filterIsInstance<Diet>()
+//    val heartRates = filterIsInstance<HeartRate>()
+//    val sleepSessions = filterIsInstance<SleepSession>()
+//    val bloodPressures = filterIsInstance<BloodPressure>()
+//    val bloodGlucoses = filterIsInstance<BloodGlucose>()
+//    val weights = filterIsInstance<Weight>()
+//    val bodyFats = filterIsInstance<BodyFat>()
+//    val skeletalMuscleMasses = filterIsInstance<SkeletalMuscleMass>()
+//
+//    // 각 타입별로 ChartPoint로 직접 변환
+//    if (stepCounts.isNotEmpty()) {
+//        result["StepCount"] = stepCounts.transform(timeUnit, aggregationType)
+//    }
+//    if (exercises.isNotEmpty()) {
+//        result["Exercise"] = exercises.transform(timeUnit, aggregationType)
+//    }
+//    if (diets.isNotEmpty()) {
+//        result["Diet"] = diets.transform(timeUnit, aggregationType) // 기본적으로 calories
+//    }
+//    if (heartRates.isNotEmpty()) {
+//        result["HeartRate"] = heartRates.toTimeDataPoint().transform(timeUnit, aggregationType).toChartPoints()
+//    }
+//    if (sleepSessions.isNotEmpty()) {
+//        result["SleepSession"] = sleepSessions.toTimeDataPoint().transform(timeUnit, aggregationType).toChartPoints()
+//    }
+//    if (bloodPressures.isNotEmpty()) {
+//        result["BloodPressure"] = bloodPressures.transform(timeUnit, aggregationType) // 기본적으로 systolic
+//    }
+//    if (bloodGlucoses.isNotEmpty()) {
+//        result["BloodGlucose"] = bloodGlucoses.transform(timeUnit, aggregationType)
+//    }
+//    if (weights.isNotEmpty()) {
+//        result["Weight"] = weights.transform(timeUnit, aggregationType)
+//    }
+//    if (bodyFats.isNotEmpty()) {
+//        result["BodyFat"] = bodyFats.transform(timeUnit, aggregationType)
+//    }
+//    if (skeletalMuscleMasses.isNotEmpty()) {
+//        result["SkeletalMuscleMass"] = skeletalMuscleMasses.transform(timeUnit, aggregationType)
+//    }
+//
+//    return result
+//}
 
 /**
  * 시간 간격 기반 활동 데이터를 분별로 집계
@@ -708,6 +728,7 @@ private fun <T> aggregateActivityDataTime(
     return minuteValues
 }
 
+// TODO: HealthData 여러 타입이 하나의 리스트에 섞여있는 경우, 굳이 필요할까
 ///**
 // * 혼합 HealthData 리스트에서 다중 값 타입의 특정 속성들을 선택하여 변환하는 편의 함수
 // *

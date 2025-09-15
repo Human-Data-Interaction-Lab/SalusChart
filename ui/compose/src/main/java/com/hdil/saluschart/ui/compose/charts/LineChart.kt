@@ -93,7 +93,7 @@ fun LineChart(
                 null
             }
 
-            val xLabels = data.map { it.x }
+            val xLabels = data.map { it.label ?: it.x.toString() }
             val yValues = data.map { it.y }
 
             var canvasPoints by remember { mutableStateOf(listOf<androidx.compose.ui.geometry.Offset>()) }
@@ -139,7 +139,7 @@ fun LineChart(
                     ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
                     ChartDraw.Line.drawXAxisLabels(
                         ctx = drawContext,
-                        labels = xLabels.map { it.toString() },
+                        labels = xLabels,
                         metrics = metrics,
                         textSize = labelTextSize,
                         maxXTicksLimit = maxXTicksLimit

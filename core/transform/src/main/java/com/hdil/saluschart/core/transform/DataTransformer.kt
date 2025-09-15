@@ -26,10 +26,10 @@ class DataTransformer {
     ): TimeDataPoint {
 
         // 평균 계산 시 유효성 검증
-        if (aggregationType == AggregationType.AVERAGE) {
+        if (aggregationType == AggregationType.DAILY_AVERAGE) {
             // 원본 시간 단위가 변환 시간 단위보다 작거나 같아야 함
-            require(data.timeUnit.isSmallerThanOrEqual(transformTimeUnit)) {
-                "평균 계산을 위해서는 원본 시간 단위(${data.timeUnit})가 변환 시간 단위($transformTimeUnit)보다 작거나 같아야 합니다."
+            require(TimeUnitGroup.DAY.isSmallerThanOrEqual(transformTimeUnit)) {
+                "평균 계산을 위해서는 변환 시간 단위($transformTimeUnit)가 일 단위보다 크거나 같아야 합니다."
             }
         }
 
@@ -123,7 +123,7 @@ class DataTransformer {
                     time to values.sum()
                 }.sortedBy { it.first }
             }
-            AggregationType.AVERAGE -> {
+            AggregationType.DAILY_AVERAGE -> {
                 calculateIntervalAverages(timeValuePairs, targetTimeUnit)
             }
         }
@@ -177,7 +177,12 @@ class DataTransformer {
     }
     /**
      * 간격 기반 평균 계산
-     * 데이터를 완전한 간격으로 나누고 각 간격의 평균을 계산
+     * DAILY_AVERAGE의 경우 targetTimeUnit 윈도우 내에서 일별 평균을 계산
+     * 
+     * 알고리즘:
+     * 1. 일별로 데이터를 집계 (normalization to daily bins)
+     * 2. targetTimeUnit 윈도우별로 그룹핑 
+     * 3. 각 윈도우 내에서 실제 데이터가 있는 일수로만 나누어 평균 계산
      */
     private fun calculateIntervalAverages(
         timeValuePairs: List<Pair<LocalDateTime, Float>>,
@@ -185,30 +190,37 @@ class DataTransformer {
     ): List<Pair<LocalDateTime, Float>> {
         if (timeValuePairs.isEmpty()) return emptyList()
 
-        // 데이터의 시간 범위 결정
-        val minTime = timeValuePairs.minByOrNull { it.first }!!.first
-        val maxTime = timeValuePairs.maxByOrNull { it.first }!!.first
-        
-        // 완전한 간격 생성
-        val intervals = generateCompleteIntervals(minTime, maxTime, targetTimeUnit)
-        
-        // 각 간격에 대해 평균 계산
-        return intervals.map { intervalStart ->
+        // Step 1: 일별로 데이터 집계 (normalize to daily bins)
+        val dailyAggregatedData = groupByDay(timeValuePairs).map { (date, values) ->
+            date to values.sum() // 하루 내 모든 값들의 합계
+        }.sortedBy { it.first }
+
+        if (dailyAggregatedData.isEmpty()) return emptyList()
+
+        // Step 2: targetTimeUnit 윈도우 생성
+        val minTime = dailyAggregatedData.first().first
+        val maxTime = dailyAggregatedData.last().first
+        val targetIntervals = generateCompleteIntervals(minTime, maxTime, targetTimeUnit)
+
+        // Step 3: 각 targetTimeUnit 윈도우에서 일별 평균 계산
+        return targetIntervals.map { intervalStart ->
             val intervalEnd = getIntervalEnd(intervalStart, targetTimeUnit)
-            
-            // 해당 간격에 속하는 데이터 포인트들 필터링
-            val dataInInterval = timeValuePairs.filter { (time, _) ->
-                time >= intervalStart && time < intervalEnd
+
+            // 해당 윈도우에 속하는 일별 데이터들 필터링
+            val dailyDataInWindow = dailyAggregatedData.filter { (date, _) ->
+                date >= intervalStart && date < intervalEnd
             }
             
-            // 평균 계산 (실제 데이터 포인트 수로 나눔)
-            val average = if (dataInInterval.isNotEmpty()) {
-                dataInInterval.map { it.second }.average().toFloat()
+            // 실제 데이터가 있는 일수로만 나누어 평균 계산
+            val dailyAverage = if (dailyDataInWindow.isNotEmpty()) {
+                val totalSum = dailyDataInWindow.sumOf { it.second.toDouble() }
+                val actualDaysWithData = dailyDataInWindow.size
+                (totalSum / actualDaysWithData).toFloat()
             } else {
-                0f // 데이터가 없는 간격은 0
+                0f // 데이터가 없는 윈도우는 0
             }
             
-            intervalStart to average
+            intervalStart to dailyAverage
         }.sortedBy { it.first }
     }
     
@@ -221,24 +233,8 @@ class DataTransformer {
         targetTimeUnit: TimeUnitGroup
     ): List<LocalDateTime> {
         val intervals = mutableListOf<LocalDateTime>()
-        
+
         when (targetTimeUnit) {
-            TimeUnitGroup.MINUTE -> {
-                var current = minTime.truncatedTo(ChronoUnit.MINUTES)
-                val end = maxTime.truncatedTo(ChronoUnit.MINUTES).plusMinutes(1)
-                while (current.isBefore(end)) {
-                    intervals.add(current)
-                    current = current.plusMinutes(1)
-                }
-            }
-            TimeUnitGroup.HOUR -> {
-                var current = minTime.truncatedTo(ChronoUnit.HOURS)
-                val end = maxTime.truncatedTo(ChronoUnit.HOURS).plusHours(1)
-                while (current.isBefore(end)) {
-                    intervals.add(current)
-                    current = current.plusHours(1)
-                }
-            }
             TimeUnitGroup.DAY -> {
                 var current = minTime.truncatedTo(ChronoUnit.DAYS)
                 val end = maxTime.truncatedTo(ChronoUnit.DAYS).plusDays(1)
@@ -272,11 +268,14 @@ class DataTransformer {
                     current = current.plusYears(1)
                 }
             }
+            else -> {
+                throw IllegalArgumentException("DAILY_AVERAGE 집계는 DAY, WEEK, MONTH, YEAR 단위에서만 지원됩니다.")
+            }
         }
-        
+
         return intervals
     }
-    
+
     /**
      * 간격의 끝 시간 계산
      */

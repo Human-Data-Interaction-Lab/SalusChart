@@ -47,7 +47,9 @@ import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.data.model.model.HealthData
+import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.StepCount
+import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
@@ -78,7 +80,6 @@ private val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
 private val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
 private val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
 
-// Real step count data from JSON - 30-minute activity periods
 private val stepCountHealthData = listOf(
     StepCount(Instant.parse("2025-05-04T08:00:00Z"), Instant.parse("2025-05-04T08:30:00Z"), 2431),
     StepCount(Instant.parse("2025-05-04T09:00:00Z"), Instant.parse("2025-05-04T09:30:00Z"), 1359),
@@ -112,16 +113,42 @@ private val stepCountHealthData = listOf(
     StepCount(Instant.parse("2025-05-05T13:00:00Z"), Instant.parse("2025-05-05T13:30:00Z"), 7387)
 )
 
-// Keep the old TimeDataPoint for other examples that still need it
-private val timeDataPoint = TimeDataPoint(
-    x = stepCountHealthData.map { it.startTime },
-    y = stepCountHealthData.map { it.stepCount.toFloat() },
-    timeUnit = TimeUnitGroup.HOUR,
+private val weightHealthData = listOf(
+    Weight(Instant.parse("2025-05-04T08:00:00Z"), Mass.kilograms(74.7)),
+    Weight(Instant.parse("2025-05-03T08:00:00Z"), Mass.kilograms(68.6)),
+    Weight(Instant.parse("2025-05-02T08:00:00Z"), Mass.kilograms(71.6)),
+    Weight(Instant.parse("2025-05-01T08:00:00Z"), Mass.kilograms(74.2)),
+    Weight(Instant.parse("2025-04-30T08:00:00Z"), Mass.kilograms(60.6)),
+    Weight(Instant.parse("2025-04-29T08:00:00Z"), Mass.kilograms(73.8)),
+    Weight(Instant.parse("2025-04-28T08:00:00Z"), Mass.kilograms(65.8)),
+    Weight(Instant.parse("2025-04-27T08:00:00Z"), Mass.kilograms(73.2)),
+    Weight(Instant.parse("2025-04-26T08:00:00Z"), Mass.kilograms(73.8)),
+    Weight(Instant.parse("2025-04-25T08:00:00Z"), Mass.kilograms(67.5)),
+    Weight(Instant.parse("2025-04-24T08:00:00Z"), Mass.kilograms(70.4)),
+    Weight(Instant.parse("2025-04-23T08:00:00Z"), Mass.kilograms(61.4)),
+    Weight(Instant.parse("2025-04-22T08:00:00Z"), Mass.kilograms(74.8)),
+    Weight(Instant.parse("2025-04-21T08:00:00Z"), Mass.kilograms(66.1)),
+    Weight(Instant.parse("2025-04-20T08:00:00Z"), Mass.kilograms(63.9)),
+    Weight(Instant.parse("2025-04-19T08:00:00Z"), Mass.kilograms(67.9)),
+    Weight(Instant.parse("2025-04-18T08:00:00Z"), Mass.kilograms(67.3)),
+    Weight(Instant.parse("2025-04-17T08:00:00Z"), Mass.kilograms(66.8)),
+    Weight(Instant.parse("2025-04-16T08:00:00Z"), Mass.kilograms(67.9)),
+    Weight(Instant.parse("2025-04-15T08:00:00Z"), Mass.kilograms(66.4)),
+    Weight(Instant.parse("2025-04-14T08:00:00Z"), Mass.kilograms(74.6)),
+    Weight(Instant.parse("2025-04-13T08:00:00Z"), Mass.kilograms(66.1)),
+    Weight(Instant.parse("2025-04-12T08:00:00Z"), Mass.kilograms(71.5)),
+    Weight(Instant.parse("2025-04-11T08:00:00Z"), Mass.kilograms(72.9)),
+    Weight(Instant.parse("2025-04-10T08:00:00Z"), Mass.kilograms(70.8)),
+    Weight(Instant.parse("2025-04-09T08:00:00Z"), Mass.kilograms(69.9)),
+    Weight(Instant.parse("2025-04-08T08:00:00Z"), Mass.kilograms(60.9)),
+    Weight(Instant.parse("2025-04-07T08:00:00Z"), Mass.kilograms(66.9)),
+    Weight(Instant.parse("2025-04-06T08:00:00Z"), Mass.kilograms(69.3)),
+    Weight(Instant.parse("2025-04-05T08:00:00Z"), Mass.kilograms(61.1))
 )
 
 private val yearMonth = YearMonth.now()
-private val startDate = LocalDate.of(yearMonth.year, 8, 1)
-private val endDate = LocalDate.of(yearMonth.year, 8, 25)
+private val startDate = LocalDate.of(yearMonth.year, yearMonth.monthValue, 1)
+private val endDate = LocalDate.of(yearMonth.year, yearMonth.monthValue, yearMonth.lengthOfMonth())
 private val random = java.util.Random(0)
 private val entries = generateSequence(startDate) { date ->
     if (date.isBefore(endDate)) date.plusDays(1) else null
@@ -228,11 +255,12 @@ fun BarChart_1() {
         barWidthRatio = 0.8f,
         labelTextSize = 40f,
         tooltipTextSize = 5f,
-        interactionType = InteractionType.Bar.TOUCH_AREA,
+        interactionType = InteractionType.Bar.BAR,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.AVERAGE,
-        referenceLineStyle = LineStyle.DASHED ,
-        showReferenceLineLabel = true,
+        referenceLineStyle = LineStyle.DASHED,
+        showReferenceLineLabel = false,  // Turn off default label
+        referenceLineInteractive = true,  // Enable interactive mode
     )
 }
 
@@ -240,19 +268,24 @@ fun BarChart_1() {
 fun BarChart_2() {
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints,
+        data = stepCountHealthData.transform(
+            timeUnit = TimeUnitGroup.HOUR,
+            aggregationType = AggregationType.SUM
+        ),
         xLabel = "Week",
         yLabel = "Value",
         title = "Weekly Data",
         barColor = Primary_Purple,
-        maxY = 60f,
-        barWidthRatio = 0.5f,
+        barWidthRatio = 0.8f,
         labelTextSize = 28f,
         tooltipTextSize = 32f,
         interactionType = InteractionType.Bar.BAR,
-        windowSize = 3,
+        windowSize = 6,
         showLabel = true,
         yAxisPosition = YAxisPosition.RIGHT,
+        referenceLineType = ReferenceLineType.AVERAGE,
+        referenceLineStyle = LineStyle.DASHED,
+        showReferenceLineLabel = true,  // Turn off default label
     )
 }
 
@@ -272,18 +305,21 @@ fun DonutChart_1() {
 @Composable
 fun LineChart_1() {
     Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
-
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
-            data = chartPoints,
-            title = "요일별 활동량",
-            yLabel = "활동량",
-            xLabel = "요일",
+            data = weightHealthData.transform(
+                timeUnit = TimeUnitGroup.DAY,
+                aggregationType = AggregationType.SUM
+            ),
+            title = "일별 체중 변화",
+            yLabel = "체중 (kg)",
+            xLabel = "날짜",
             lineColor = Primary_Purple,
             strokeWidth = 12f,
+            minY = 50f,
             showPoint = false,
-            showValue = true,
-            windowSize = 3,
+            showValue = false,
+            windowSize = 6,
             interactionType = InteractionType.Line.TOUCH_AREA,
             yAxisPosition = YAxisPosition.RIGHT
         )
@@ -307,7 +343,9 @@ fun LineChart_2() {
         interactionType = InteractionType.Line.POINT,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.TREND,
-        referenceLineStyle = LineStyle.DASHDOT
+        referenceLineStyle = LineStyle.DASHDOT,
+        showReferenceLineLabel = false,  // Turn off default label
+        referenceLineInteractive = true,  // Enable interactive mode
     )
 }
 
@@ -580,7 +618,7 @@ fun StackedBarChart_1() {
         legendPosition = LegendPosition.BOTTOM,
         windowSize = 3,
         yAxisPosition = YAxisPosition.RIGHT,
-        interactionType = InteractionType.StackedBar.TOUCH_AREA,
+        interactionType = InteractionType.StackedBar.BAR,
         colors = listOf(
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
@@ -739,8 +777,6 @@ fun XAxisTickReductionDemo() {
 
 @Composable
 fun TimeStepBarChart() {
-    // Updated to use real step count data with 30-minute intervals
-    // Data spans from May 4, 2025 08:00 to May 5, 2025 13:30 (30 data points)
     var expanded by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf("30분대별") }
 
@@ -772,14 +808,6 @@ fun TimeStepBarChart() {
             modifier = Modifier.fillMaxWidth()
         ) {
             DropdownMenuItem(
-                text = { Text("30분대별") },
-                onClick = {
-                    selectedOption = "30분대별"
-                    expanded = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            DropdownMenuItem(
                 text = { Text("시간대별") },
                 onClick = {
                     selectedOption = "시간대별"
@@ -802,10 +830,6 @@ fun TimeStepBarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(500.dp),
             data = when (selectedOption) {
-                "30분대별" -> stepCountHealthData.transform(
-                    timeUnit = TimeUnitGroup.MINUTE,
-                    aggregationType = AggregationType.SUM
-                )
                 "시간대별" -> stepCountHealthData.transform(
                     timeUnit = TimeUnitGroup.HOUR,
                     aggregationType = AggregationType.SUM
@@ -815,7 +839,7 @@ fun TimeStepBarChart() {
                     aggregationType = AggregationType.SUM
                 )
                 else -> stepCountHealthData.transform(
-                    timeUnit = TimeUnitGroup.MINUTE,
+                    timeUnit = TimeUnitGroup.HOUR,
                     aggregationType = AggregationType.SUM
                 )
             },

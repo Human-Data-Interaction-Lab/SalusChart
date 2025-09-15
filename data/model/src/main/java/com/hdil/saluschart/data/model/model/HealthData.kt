@@ -9,6 +9,7 @@ data class Mass private constructor(
         fun grams(value: Double): Mass = Mass(value)
         fun kilograms(value: Double): Mass = Mass(value * 1000.0)
         fun pounds(value: Double): Mass = Mass(value * 453.59237)
+        fun ounces(value: Double): Mass = Mass(value * 28.3495231)
     }
 
     fun toGrams(): Double = inGrams

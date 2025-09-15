@@ -73,6 +73,7 @@ private val segmentLabels = listOf("단백질", "지방", "탄수화물")
 private val sampleData = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f)
 private val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
 private val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
+private val sampleData4 = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f, 5f, 15f, 60f, 45f, 35f, 25f, 10f, 8f, 22f, 10f, 40f, 18f, 32f, 12f)
 private val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
 
 private val isoTime = listOf(
@@ -139,11 +140,20 @@ private val chartPoints = sampleData.mapIndexed { index, value ->
     )
 }
 
+private val chartPoints4 = sampleData4.mapIndexed { index, value ->
+    ChartPoint(
+        x = index.toFloat(),
+        y = value,
+        label = weekDays[index % weekDays.size]
+    )
+}
+
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
         "BarChart 1",
         "BarChart 2",
+        "BarChart 3",
         "DonutChart 1",
         "LineChart 1",
         "LineChart 2",
@@ -191,6 +201,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "BarChart 1" -> BarChart_1()
                 "BarChart 2" -> BarChart_2()
+                "BarChart 3" -> BarChart_3()
                 "DonutChart 1" -> DonutChart_1()
                 "LineChart 1" -> LineChart_1()
                 "LineChart 2" -> LineChart_2()
@@ -250,6 +261,23 @@ fun BarChart_2() {
         windowSize = 3,
         showLabel = true,
         yAxisPosition = YAxisPosition.RIGHT,
+        yAxisFixedWidth = 16.dp
+    )
+}
+
+@Composable
+fun BarChart_3() {
+    BarChart(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        data = chartPoints4,
+        title = "Weekly Data",
+        barColor = Primary_Purple,
+        yAxisPosition = YAxisPosition.RIGHT,
+        showLabel = true,
+        // paged mode:
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f
     )
 }
 

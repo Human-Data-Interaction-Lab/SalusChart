@@ -142,29 +142,72 @@ object ChartMath {
      * @return 차트 메트릭 객체
      */
     fun computeMetrics(
-        size: Size, 
-        values: List<Float>, 
-        tickCount: Int = 5, 
+        size: Size,
+        values: List<Float>,
+        tickCount: Int = 5,
         chartType: ChartType? = null,
         isMinimal: Boolean = false,
         paddingX: Float = if (isMinimal) 4f else 30f,
         paddingY: Float = if (isMinimal) 8f else 40f,
         minY: Float? = null,
-        maxY: Float? = null
-    ): ChartMetrics {
-        val chartWidth = size.width - paddingX * 2
-        val chartHeight = size.height - paddingY
+        maxY: Float? = null,
 
+        includeYAxisPadding: Boolean = true,
+        // defaults to current paddingX
+        yAxisPaddingPx: Float = paddingX,
+        // force a constant tick step (e.g., 10f)
+        fixedTickStep: Float? = null
+    ): ChartMetrics {
+        val effectivePaddingX = if (includeYAxisPadding) yAxisPaddingPx else 0f
+
+        // data range
         val dataMax = values.maxOrNull() ?: 1f
         val dataMin = values.minOrNull() ?: 0f
 
-        val yTicks = computeNiceTicks(dataMin, dataMax, tickCount, chartType, actualMin = minY, actualMax = maxY)
+        // decide min/max used for ticks
+        val wantsZeroMin = (chartType == ChartType.BAR ||
+                chartType == ChartType.STACKED_BAR ||
+                chartType == ChartType.MINIMAL_BAR)
 
-        // Y축 범위 계산: 사용자 지정 값이 있으면 우선 사용, 없으면 nice ticks 또는 데이터 범위 사용
-        val actualMinY = minY ?: (yTicks.minOrNull() ?: dataMin)
-        val actualMaxY = maxY ?: (yTicks.maxOrNull() ?: dataMax)
+        val baseMin = minY ?: if (wantsZeroMin) 0f else dataMin
+        val baseMax = maxY ?: dataMax
 
-        return ChartMetrics(paddingX, paddingY, chartWidth, chartHeight, actualMinY, actualMaxY, yTicks)
+        // ticks
+        val yTicks: List<Float>
+        val actualMinY: Float
+        val actualMaxY: Float
+
+        if (fixedTickStep != null && fixedTickStep > 0f) {
+            val start = if (wantsZeroMin) 0f else kotlin.math.floor(baseMin / fixedTickStep) * fixedTickStep
+            val end = kotlin.math.ceil(baseMax / fixedTickStep) * fixedTickStep
+            val ticks = mutableListOf<Float>()
+            var t = start
+            while (t <= end + 1e-6f) {
+                ticks.add(t)
+                t += fixedTickStep
+            }
+            yTicks = ticks
+            actualMinY = if (minY != null) minY else start
+            actualMaxY = if (maxY != null) maxY else end
+        } else {
+            val ticksNice = computeNiceTicks(dataMin, dataMax, tickCount, chartType, actualMin = minY, actualMax = maxY)
+            yTicks = ticksNice
+            actualMinY = minY ?: (ticksNice.minOrNull() ?: dataMin)
+            actualMaxY = maxY ?: (ticksNice.maxOrNull() ?: dataMax)
+        }
+
+        val chartWidth  = size.width  - effectivePaddingX * 2f
+        val chartHeight = size.height - paddingY
+
+        return ChartMetrics(
+            paddingX = effectivePaddingX,
+            paddingY = paddingY,
+            chartWidth = chartWidth,
+            chartHeight = chartHeight,
+            minY = actualMinY,
+            maxY = actualMaxY,
+            yTicks = yTicks
+        )
     }
 
     /**

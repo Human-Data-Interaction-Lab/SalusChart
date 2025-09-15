@@ -51,7 +51,7 @@ object ChartDraw {
      * @param metrics 차트 메트릭 정보
      * @param yAxisPosition Y축 위치
      */
-    fun drawGrid(drawScope: DrawScope, size: Size, metrics: ChartMath.ChartMetrics, yAxisPosition: YAxisPosition = YAxisPosition.LEFT) {
+    fun drawGrid(drawScope: DrawScope, size: Size, metrics: ChartMath.ChartMetrics, yAxisPosition: YAxisPosition = YAxisPosition.LEFT, drawLabels: Boolean = true) {
         // Y축 라인의 실제 X 좌표 계산
         val yAxisX = when (yAxisPosition) {
             YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth
@@ -59,7 +59,8 @@ object ChartDraw {
         }
 
         metrics.yTicks.forEach { yVal ->
-            val y = metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+            val y =
+                metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
 
             // 그리드 라인은 차트 영역 전체에 걸쳐 그리기
             val gridStart = metrics.paddingX // 왼쪽 Y축까지
@@ -74,31 +75,34 @@ object ChartDraw {
                 end = Offset(gridEnd, y),
                 strokeWidth = 1f
             )
-            
-            val labelText = formatTickLabel(yVal)
 
-            // Y축 레이블 위치를 yAxisPosition에 따라 결정
-            val labelX = when (yAxisPosition) {
-                YAxisPosition.RIGHT -> yAxisX + 20f // 오른쪽 Y축 라인의 오른쪽에 위치
-                YAxisPosition.LEFT -> 20f // 기본값: 왼쪽 위치
-            }
+            // only draw labels when drawLabels = true
+            if (drawLabels) {
+                val labelText = formatTickLabel(yVal)
 
-            // Y축 레이블 정렬을 yAxisPosition에 따라 결정
-            val textAlign = when (yAxisPosition) {
-                YAxisPosition.RIGHT -> android.graphics.Paint.Align.LEFT // 오른쪽 Y축일 때는 왼쪽 정렬
-                YAxisPosition.LEFT -> android.graphics.Paint.Align.RIGHT // 왼쪽 Y축일 때는 오른쪽 정렬
-            }
-
-            drawScope.drawContext.canvas.nativeCanvas.drawText(
-                labelText,
-                labelX,
-                y + 10f,
-                android.graphics.Paint().apply {
-                    color = android.graphics.Color.DKGRAY
-                    textSize = 28f
-                    this.textAlign = textAlign
+                // Y축 레이블 위치를 yAxisPosition에 따라 결정
+                val labelX = when (yAxisPosition) {
+                    YAxisPosition.RIGHT -> yAxisX + 20f // 오른쪽 Y축 라인의 오른쪽에 위치
+                    YAxisPosition.LEFT -> 20f // 기본값: 왼쪽 위치
                 }
-            )
+
+                // Y축 레이블 정렬을 yAxisPosition에 따라 결정
+                val textAlign = when (yAxisPosition) {
+                    YAxisPosition.RIGHT -> android.graphics.Paint.Align.LEFT // 오른쪽 Y축일 때는 왼쪽 정렬
+                    YAxisPosition.LEFT -> android.graphics.Paint.Align.RIGHT // 왼쪽 Y축일 때는 오른쪽 정렬
+                }
+
+                drawScope.drawContext.canvas.nativeCanvas.drawText(
+                    labelText,
+                    labelX,
+                    y + 10f,
+                    android.graphics.Paint().apply {
+                        color = android.graphics.Color.DKGRAY
+                        textSize = 28f
+                        this.textAlign = textAlign
+                    }
+                )
+            }
         }
     }
 
@@ -138,6 +142,55 @@ object ChartDraw {
             strokeWidth = 2f
         )
     }
+
+    fun drawYAxisStandalone(
+        drawScope: DrawScope,
+        metrics: ChartMath.ChartMetrics,
+        yAxisPosition: YAxisPosition,
+        paneWidthPx: Float,
+        labelTextSizePx: Float = 28f
+    ) {
+        // Axis X anchored to the pane edge (1px in from the edge)
+        val axisX = if (yAxisPosition == YAxisPosition.RIGHT) paneWidthPx - 1f else 1f
+
+        // Axis line
+        drawScope.drawLine(
+            color = Color.Black,
+            start = Offset(axisX, 0f),
+            end = Offset(axisX, metrics.chartHeight),
+            strokeWidth = 2f
+        )
+
+        // Ticks & labels
+        metrics.yTicks.forEach { yVal ->
+            val y = metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+
+            // small tick mark
+            val tickLen = 8f
+            val tickStartX = if (yAxisPosition == YAxisPosition.RIGHT) axisX else axisX
+            val tickEndX = if (yAxisPosition == YAxisPosition.RIGHT) axisX - tickLen else axisX + tickLen
+            drawScope.drawLine(
+                color = Color.DarkGray,
+                start = Offset(tickStartX, y),
+                end = Offset(tickEndX, y),
+                strokeWidth = 1f
+            )
+
+            val label = formatTickLabel(yVal)
+            val paint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                color = android.graphics.Color.DKGRAY
+                textSize = labelTextSizePx
+                textAlign = if (yAxisPosition == YAxisPosition.RIGHT)
+                    android.graphics.Paint.Align.LEFT else android.graphics.Paint.Align.RIGHT
+            }
+            val labelX = if (yAxisPosition == YAxisPosition.RIGHT)
+                axisX + 10f else axisX - 10f
+
+            drawScope.drawContext.canvas.nativeCanvas.drawText(label, labelX, y + 10f, paint)
+        }
+    }
+
 
 // ** 쓰이지 않는 Canvas API를 사용한 코드 **
 //

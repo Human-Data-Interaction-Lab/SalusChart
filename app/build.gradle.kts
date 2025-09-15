@@ -60,6 +60,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":data:model"))
     implementation(project(":core:chart"))
     implementation(project(":core:util"))
     implementation(project(":core:transform"))

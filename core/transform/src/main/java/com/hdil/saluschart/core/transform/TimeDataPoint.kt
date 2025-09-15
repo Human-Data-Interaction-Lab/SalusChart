@@ -15,19 +15,48 @@ import java.time.DayOfWeek
  * 시간 기반 원시 데이터 포인트
  * ChartPoint로 변환해서 사용
  * @param x 시간 데이터 (Instant 타입)
- * @param y 측정값 리스트
+ * @param y 측정값 리스트 (단일 값용)
+ * @param yMultiple 다중 측정값 맵 (다중 값용) - 키는 속성명, 값은 해당 속성의 값 리스트
  * @param timeUnit 시간 단위
- * @param label 데이터 레이블 (선택사항)
  */
 data class TimeDataPoint(
     val x : List<Instant>,
-    val y : List<Float>,
-    val timeUnit : TimeUnitGroup = TimeUnitGroup.HOUR,
-    val label: String? = null
-)
+    val y : List<Float>? = null,
+    val yMultiple : Map<String, List<Float>>? = null,
+    val timeUnit : TimeUnitGroup = TimeUnitGroup.HOUR
+) {
+    init {
+        require((y != null) xor (yMultiple != null)) {
+            "Either y or yMultiple must be provided, but not both"
+        }
+        
+        if (y != null) {
+            require(x.size == y.size) {
+                "x and y lists must have the same size"
+            }
+        }
+        
+        if (yMultiple != null) {
+            require(yMultiple.isNotEmpty()) {
+                "yMultiple cannot be empty"
+            }
+            yMultiple.values.forEach { valueList ->
+                require(x.size == valueList.size) {
+                    "All value lists in yMultiple must have the same size as x"
+                }
+            }
+        }
+    }
+    
+    val isSingleValue: Boolean get() = y != null     // 단일 값 여부 확인
+    val isMultiValue: Boolean get() = yMultiple != null    // 다중 값 여부 확인
+    fun getValues(property: String): List<Float>? = yMultiple?.get(property)    // 다중 값에서 특정 속성의 값 가져오기
+    val propertyNames: Set<String> get() = yMultiple?.keys ?: emptySet()    // 다중 값의 속성명 목록 가져오기
+}
 
 /**
  * TimeDataPoint를 ChartPoint 리스트로 변환하는 확장 함수
+ * 단일 값 데이터용
  *
  * @return ChartPoint 리스트
  *
@@ -39,17 +68,83 @@ data class TimeDataPoint(
  * YEAR: "2025년" (for year 2025)
  */
 fun TimeDataPoint.toChartPoints(): List<ChartPoint> {
-    // DataTransformer에서 변환된 데이터의 경우, 적절한 레이블 생성
-    val labels = when (timeUnit) {
+    require(isSingleValue) { "Use toChartPointsByProperty() for multi-value TimeDataPoint" }
+    
+    val labels = generateTimeLabels()
+
+    return x.indices.map { index ->
+        ChartPoint(
+            x = index.toFloat(),
+            y = y!![index],
+            label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+        )
+    }
+}
+
+/**
+ * 다중 값 TimeDataPoint에서 특정 속성을 추출하여 ChartPoint 리스트로 변환하는 확장 함수
+ *
+ * @param property 추출할 속성명 (예: "systolic", "diastolic", "calories", "protein" 등)
+ * @return 해당 속성의 ChartPoint 리스트
+ */
+fun TimeDataPoint.toChartPointsByProperty(property: String): List<ChartPoint> {
+    require(isMultiValue) { "Use toChartPoints() for single-value TimeDataPoint" }
+    require(propertyNames.contains(property)) { 
+        "Property '$property' not found. Available properties: ${propertyNames.joinToString()}" 
+    }
+    
+    val values = getValues(property)!!
+    val labels = generateTimeLabels()
+
+    return x.indices.map { index ->
+        ChartPoint(
+            x = index.toFloat(),
+            y = values[index],
+            label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+        )
+    }
+}
+
+/**
+ * 다중 값 TimeDataPoint를 모든 속성별로 분리된 ChartPoint 맵으로 변환하는 확장 함수
+ *
+ * @return 속성명을 키로 하고 해당 속성의 ChartPoint 리스트를 값으로 하는 맵
+ */
+fun TimeDataPoint.toChartPointsMap(): Map<String, List<ChartPoint>> {
+    require(isMultiValue) { "Use toChartPoints() for single-value TimeDataPoint" }
+    
+    val labels = generateTimeLabels()
+    
+    return propertyNames.associateWith { property ->
+        val values = getValues(property)!!
+        x.indices.map { index ->
+            ChartPoint(
+                x = index.toFloat(),
+                y = values[index],
+                label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+            )
+        }
+    }
+}
+
+/**
+ * 시간 단위에 따른 레이블 생성 (공통 로직)
+ */
+private fun TimeDataPoint.generateTimeLabels(): List<String> {
+    return when (timeUnit) {
+        TimeUnitGroup.MINUTE -> {
+            x.map { instant ->
+                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+                "${dateTime.hour}:${dateTime.minute.toString().padStart(2, '0')}"
+            }
+        }
         TimeUnitGroup.HOUR -> {
-            // Instant에서 시간 추출하여 "시간시" 형태로 변환
             x.map { instant ->
                 val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
                 "${dateTime.hour}시"
             }
         }
         TimeUnitGroup.DAY -> {
-            // Instant에서 날짜와 요일 추출하여 "월/일 요일" 형태로 변환 (요일 기능 포함)
             x.map { instant ->
                 val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
                 val dayOfWeekKorean = when (dateTime.dayOfWeek.value) {
@@ -66,12 +161,9 @@ fun TimeDataPoint.toChartPoints(): List<ChartPoint> {
             }
         }
         TimeUnitGroup.WEEK -> {
-            // Instant에서 주 정보 추출하여 "월 주차" 형태로 변환 (일요일 기준)
             x.map { instant ->
                 val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                // 일요일을 기준으로 해당 주의 시작 날짜 계산
                 val sunday = dateTime.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-                // 해당 월의 첫 번째 일요일 찾기
                 val firstSundayOfMonth = LocalDate.of(sunday.year, sunday.month, 1)
                     .let { firstDay ->
                         val dayOfWeek = firstDay.dayOfWeek.value
@@ -82,26 +174,16 @@ fun TimeDataPoint.toChartPoints(): List<ChartPoint> {
             }
         }
         TimeUnitGroup.MONTH -> {
-            // Instant에서 월 정보 추출하여 "년 월" 형태로 변환
             x.map { instant ->
                 val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
                 "${dateTime.year}년 ${dateTime.monthValue}월"
             }
         }
         TimeUnitGroup.YEAR -> {
-            // Instant에서 연도 정보 추출하여 "년" 형태로 변환
             x.map { instant ->
                 val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
                 "${dateTime.year}년"
             }
         }
-    }
-
-    return x.indices.map { index ->
-        ChartPoint(
-            x = index.toFloat(),
-            y = y[index],
-            label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
-        )
     }
 }

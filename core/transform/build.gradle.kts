@@ -38,6 +38,7 @@ android {
 dependencies {
     implementation(project(":core:chart")) // ChartPoint 사용
     implementation(project(":core:util")) // TimeUnitGroup 사용
+    implementation(project(":data:model")) // HealthData models 사용
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0") // 시간 필터링 등
     // Core Android dependencies
     implementation(libs.androidx.core.ktx)

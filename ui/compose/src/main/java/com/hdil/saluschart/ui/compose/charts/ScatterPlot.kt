@@ -165,6 +165,20 @@ fun ScatterPlot(
                         ChartDraw.Line.drawXAxisLabels(drawContext, xLabels, metrics, maxXTicksLimit = maxXTicksLimit)
                     }
 
+                    ChartDraw.Scatter.PointMarker(
+                        data = data,
+                        points = canvasPoints,
+                        values = yValues,
+                        selectedPointIndex = selectedPointIndex,
+                        onPointClick = null, // No point interaction in this mode
+                        pointType = pointType,
+                        interactive = false, // Visual only, no interactions
+                        chartType = chartType,
+                        showTooltipForIndex = selectedPointIndex,
+                        canvasSize = canvasSize,
+                    )
+                }
+
                     // Conditional interaction based on interactionType parameter
                     when (interactionType) {
                         InteractionType.Scatter.POINT -> {
@@ -184,7 +198,8 @@ fun ScatterPlot(
                                 showTooltipForIndex = selectedPointIndex,
                                 pointRadius = pointSize,
                                 innerRadius = 0.dp,
-                                interactive = true
+                                interactive = true,
+                                canvasSize = canvasSize,
                             )
                         }
 
@@ -201,7 +216,8 @@ fun ScatterPlot(
                                 showTooltipForIndex = null,
                                 pointRadius = pointSize,
                                 innerRadius = 0.dp,
-                                interactive = false
+                                interactive = false,
+                                canvasSize = canvasSize,
                             )
                         }
                     }

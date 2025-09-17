@@ -6,6 +6,6 @@ package com.hdil.saluschart.core.util
 enum class AggregationType {
     /** 합계 계산 */
     SUM,
-    /** 평균 계산 (원본 시간 단위 기준) */
-    AVERAGE
+    /** 일일 평균 계산 */
+    DAILY_AVERAGE
 }

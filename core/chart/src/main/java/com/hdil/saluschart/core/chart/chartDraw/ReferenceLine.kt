@@ -3,21 +3,27 @@ package com.hdil.saluschart.core.chart.chartDraw
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -29,6 +35,7 @@ import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.StackedChartPoint
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -205,27 +212,31 @@ object ReferenceLine {
         val density = LocalDensity.current
         val interactionSource = remember { MutableInteractionSource() }
         
+        // 인터랙티브 모드를 위한 상태
+        var isPressed by remember { mutableStateOf(false) }
+
         // Y축 좌표 계산
         val y = metrics.chartHeight - ((average - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
         
-        Box(modifier = Modifier.fillMaxSize()) {
-            // 기준선 Canvas
+        val lineWidth = with(density) { metrics.chartWidth.toDp() }
+        val touchThreshold = 20.dp
+        val touchAreaHeight = touchThreshold * 2 // ±20dp around the line
+        
+        Box(
+            modifier = Modifier
+                .offset(
+                    x = with(density) { metrics.paddingX.toDp() },
+                    y = with(density) { (y - touchThreshold.toPx()).toDp() }
+                )
+                .size(width = lineWidth, height = touchAreaHeight)
+        ) {
+            // 기준선 Canvas - positioned relative to the Box
             Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (interactive) {
-                            Modifier.clickable(
-                                interactionSource = interactionSource,
-                                indication = null
-                            ) {
-                                onClick?.invoke()
-                            }
-                        } else Modifier
-                    )
+                modifier = Modifier.size(width = lineWidth, height = touchAreaHeight)
             ) {
-                val startX = metrics.paddingX
-                val endX = metrics.paddingX + metrics.chartWidth
+                val startX = 0f // Relative to Box
+                val endX = size.width
+                val lineY = touchThreshold.toPx() // Center of the touch area
 
                 // 점선 효과 설정
                 val pathEffect = lineStyle.dashPattern?.let {
@@ -235,22 +246,48 @@ object ReferenceLine {
                 // 평균선 그리기
                 drawLine(
                     color = color,
-                    start = Offset(startX, y),
-                    end = Offset(endX, y),
+                    start = Offset(startX, lineY),
+                    end = Offset(endX, lineY),
                     strokeWidth = strokeWidth.toPx(),
                     pathEffect = pathEffect
                 )
             }
             
-            // 레이블 (포그라운드 레이어 - 선 위에 그려짐)
-            if (showLabel) {
+            // 인터랙티브 오버레이
+            if (interactive) {
+                Box(
+                    modifier = Modifier
+                        .size(width = lineWidth, height = touchAreaHeight)
+                        .pointerInput(Unit) {
+                            detectTapGestures { offset ->
+                                // Touch is anywhere within the line's touch area
+                                isPressed = !isPressed // Toggle the pressed state
+                            }
+                        }
+                )
+            } else if (onClick != null) {
+                Box(
+                    modifier = Modifier
+                        .size(width = lineWidth, height = touchAreaHeight)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) {
+                            onClick.invoke()
+                        }
+                )
+            }
+            
+            // 레이블 표시 조건: showLabel이 true이거나 interactive이면서 pressed 상태일 때
+            if (showLabel || (interactive && isPressed)) {
                 ReferenceLineLabel(
                     value = average,
-                    yPosition = y,
+                    yPosition = with(density) { touchThreshold.toPx() },
                     color = color,
                     labelFormat = labelFormat,
                     metrics = metrics,
-                    yAxisPosition = yAxisPosition
+                    yAxisPosition = yAxisPosition,
+                    useRelativePositioning = true 
                 )
             }
         }
@@ -272,43 +309,31 @@ object ReferenceLine {
         onClick: (() -> Unit)?,
     ) {
         val (slope, intercept) = calculateTrendLine(data)
-        val density = LocalDensity.current
-        val interactionSource = remember { MutableInteractionSource() }
-        
+
+        // 추세선의 시작점과 끝점 계산
+        val startX = metrics.paddingX
+        val endX = metrics.paddingX + metrics.chartWidth
+
+        // X 좌표를 데이터 좌표계로 변환
+        val dataStartX = if (data.isNotEmpty()) data.first().x else 0f
+        val dataEndX = if (data.isNotEmpty()) data.last().x else 1f
+
+        val startY = slope * dataStartX + intercept
+        val endY = slope * dataEndX + intercept
+
+        // Y 좌표를 화면 좌표계로 변환
+        val screenStartY = metrics.chartHeight - ((startY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+        val screenEndY = metrics.chartHeight - ((endY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+
+        // 추세선 Canvas (drawing only, no interaction)
         Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(
-                    if (interactive) {
-                        Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = null
-                        ) {
-                            onClick?.invoke()
-                        }
-                    } else Modifier
-                )
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 추세선의 시작점과 끝점 계산
-            val startX = metrics.paddingX
-            val endX = metrics.paddingX + metrics.chartWidth
-            
-            // X 좌표를 데이터 좌표계로 변환
-            val dataStartX = if (data.isNotEmpty()) data.first().x else 0f
-            val dataEndX = if (data.isNotEmpty()) data.last().x else 1f
-            
-            val startY = slope * dataStartX + intercept
-            val endY = slope * dataEndX + intercept
-            
-            // Y 좌표를 화면 좌표계로 변환
-            val screenStartY = metrics.chartHeight - ((startY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
-            val screenEndY = metrics.chartHeight - ((endY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
-            
             // 점선 효과 설정
-            val pathEffect = lineStyle.dashPattern?.let { 
-                PathEffect.dashPathEffect(it, 0f) 
+            val pathEffect = lineStyle.dashPattern?.let {
+                PathEffect.dashPathEffect(it, 0f)
             }
-            
+
             // 추세선 그리기
             drawLine(
                 color = color,
@@ -330,7 +355,8 @@ object ReferenceLine {
         color: Color,
         labelFormat: String,
         metrics: ChartMath.ChartMetrics,
-        yAxisPosition: YAxisPosition
+        yAxisPosition: YAxisPosition,
+        useRelativePositioning: Boolean = false
     ) {
         val density = LocalDensity.current
         val labelText = labelFormat.format(value)
@@ -342,26 +368,31 @@ object ReferenceLine {
             textSize.toPx() + (verticalPadding * 2).toPx()
         }
 
-        // Y축 위치에 따라 레이블 X 위치 결정
-        val labelX = when (yAxisPosition) {
-            YAxisPosition.LEFT -> {
-                // 왼쪽 Y축: 레이블을 Y축 왼쪽에 배치
-                with(density) { 10.dp.toPx() }
+        // Y축 위치와 같은 쪽에 레이블 위치
+        val labelX = if (useRelativePositioning) {
+            // For relative positioning, place label relative to the Box (which is already positioned)
+            when (yAxisPosition) {
+                YAxisPosition.LEFT -> -with(density) { 5.dp.toPx() }
+                YAxisPosition.RIGHT -> metrics.chartWidth + with(density) { 5.dp.toPx() }
             }
-            YAxisPosition.RIGHT -> {
-                // 오른쪽 Y축: 레이블을 Y축 오른쪽에 배치  
-                metrics.paddingX + metrics.chartWidth + with(density) { 10.dp.toPx() }
+        } else {
+            // For absolute positioning, use metrics
+            when (yAxisPosition) {
+                YAxisPosition.LEFT -> metrics.paddingX - with(density) { 5.dp.toPx() }
+                YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth + with(density) { 5.dp.toPx() }
             }
         }
-        
+
         // 화면 경계 내에서 위치 조정
-        val adjustedX = with(density) {
-            labelX.toDp().coerceAtMost((metrics.paddingX + metrics.chartWidth + 100f).toDp())
-        }
+        val adjustedX = with(density) { labelX.toDp() }
         val adjustedY = with(density) {
-            yPosition.toDp().coerceIn(20.dp, (metrics.chartHeight - 20f).toDp())
+            if (useRelativePositioning) {
+                yPosition.toDp() // Use position as-is for relative positioning
+            } else {
+                yPosition.toDp().coerceIn(20.dp, (metrics.chartHeight - 20f).toDp())
+            }
         }
-        
+
         // 레이블을 기준선 위로 전체 높이만큼 이동
         val labelHeightOffset = with(density) { estimatedLabelHeight.toDp() }
 

@@ -168,7 +168,7 @@ fun LineChart(
                 pointWidth * data.size
             } else null
 
-            val xLabels = data.map { it.x }
+            val xLabels = data.map { it.label ?: it.x.toString() }
             val yValues = data.map { it.y }
 
             var canvasPoints by remember { mutableStateOf(listOf<androidx.compose.ui.geometry.Offset>()) }
@@ -195,6 +195,30 @@ fun LineChart(
                             )
                         }
                     }
+                ) {
+                    val metrics = ChartMath.computeMetrics(
+                        size = size,
+                        values = yValues, // 전체 데이터 기준으로 Y축 스케일 계산
+                        chartType = ChartType.BAR,
+                        minY = minY,
+                        maxY = maxY
+                    )
+
+                    val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
+
+                    // 포인트 위치와 차트 메트릭스를 상태 변수에 저장
+                    canvasPoints = points
+                    chartMetrics = metrics
+
+                    ChartDraw.drawGrid(this, size, metrics, yAxisPosition)
+                    ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
+                    ChartDraw.Line.drawXAxisLabels(
+                        ctx = drawContext,
+                        labels = xLabels,
+                        metrics = metrics,
+                        textSize = labelTextSize,
+                        maxXTicksLimit = maxXTicksLimit
+                    )
                 }
 
                 Box(

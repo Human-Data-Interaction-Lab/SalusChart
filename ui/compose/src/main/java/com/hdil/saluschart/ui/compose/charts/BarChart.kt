@@ -207,6 +207,7 @@ fun BarChart(
             val yValues = data.map { it.y }
 
             var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
+            var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
 
             Row(Modifier.fillMaxSize()) {
                 // LEFT fixed axis pane
@@ -286,7 +287,8 @@ fun BarChart(
                                     color = barColor,
                                     barWidthRatio = barWidthRatio,
                                     interactive = false,
-                                    chartType = ChartType.BAR
+                                    chartType = ChartType.BAR,
+                                    showTooltipForIndex = selectedBarIndex
                                 )
                             }
                             chartMetrics?.let { metrics ->
@@ -296,6 +298,7 @@ fun BarChart(
                                     maxValues = yValues,
                                     metrics = metrics,
                                     onBarClick = { index, tooltipText ->
+                                        selectedBarIndex = if (selectedBarIndex == index) null else index
                                         onBarClick?.invoke(index, tooltipText.toFloat())
                                     },
                                     chartType = chartType,

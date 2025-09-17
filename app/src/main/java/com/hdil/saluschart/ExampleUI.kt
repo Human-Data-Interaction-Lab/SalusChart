@@ -31,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
@@ -46,6 +49,11 @@ import com.hdil.saluschart.core.transform.toChartPoints
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
+import com.hdil.saluschart.data.model.model.HealthData
+import com.hdil.saluschart.data.model.model.Mass
+import com.hdil.saluschart.data.model.model.StepCount
+import com.hdil.saluschart.data.model.model.Weight
+import com.hdil.saluschart.data.provider.SampleDataProvider
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
@@ -68,102 +76,39 @@ import com.hdil.saluschart.ui.theme.Yellow
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 
-// 스택 바 차트용 세그먼트 레이블 (한 번만 정의)
-private val segmentLabels = listOf("단백질", "지방", "탄수화물")
-private val sampleData = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f)
-private val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
-private val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
-private val sampleData4 = listOf(10f, 25f, 37f, 20f, 45f, 55f, 45f, 17f, 30f, 45f, 45f, 35f, 25f, 10f, 8f, 22f, 10f, 40f, 18f, 32f, 12f)
-private val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
+// Note: Sample data moved to SampleDataProvider for better organization
 
-private val isoTime = listOf(
-    "2025-05-05T00:00:00Z", "2025-05-05T06:00:00Z", "2025-05-05T12:00:00Z", "2025-05-05T18:00:00Z",
-    "2025-05-06T00:00:00Z", "2025-05-06T06:00:00Z", "2025-05-06T12:00:00Z", "2025-05-06T18:00:00Z",
-    "2025-05-07T00:00:00Z", "2025-05-07T06:00:00Z", "2025-05-07T12:00:00Z", "2025-05-07T18:00:00Z",
-    "2025-05-08T00:00:00Z", "2025-05-08T06:00:00Z", "2025-05-08T12:00:00Z", "2025-05-08T18:00:00Z",
-    "2025-05-09T00:00:00Z", "2025-05-09T06:00:00Z", "2025-05-09T12:00:00Z", "2025-05-09T18:00:00Z",
-    "2025-05-10T00:00:00Z", "2025-05-10T06:00:00Z", "2025-05-10T12:00:00Z", "2025-05-10T18:00:00Z",
-    "2025-05-11T00:00:00Z", "2025-05-11T06:00:00Z", "2025-05-11T12:00:00Z", "2025-05-11T18:00:00Z",
-    "2025-05-12T00:00:00Z", "2025-05-12T06:00:00Z", "2025-05-12T12:00:00Z", "2025-05-12T18:00:00Z",
-    "2025-05-13T00:00:00Z", "2025-05-13T06:00:00Z", "2025-05-13T12:00:00Z", "2025-05-13T18:00:00Z",
-    "2025-05-14T00:00:00Z", "2025-05-14T06:00:00Z", "2025-05-14T12:00:00Z", "2025-05-14T18:00:00Z",
-    "2025-05-15T00:00:00Z", "2025-05-15T06:00:00Z", "2025-05-15T12:00:00Z", "2025-05-15T18:00:00Z",
-    "2025-05-16T00:00:00Z", "2025-05-16T06:00:00Z", "2025-05-16T12:00:00Z", "2025-05-16T18:00:00Z",
-    "2025-05-17T00:00:00Z", "2025-05-17T06:00:00Z", "2025-05-17T12:00:00Z", "2025-05-17T18:00:00Z",
-    "2025-05-18T00:00:00Z", "2025-05-18T06:00:00Z", "2025-05-18T12:00:00Z", "2025-05-18T18:00:00Z"
-).map { Instant.parse(it) }
+// Sample data references - now organized in SampleDataProvider
+private val stepCountHealthData = SampleDataProvider.getStepCountData()
+private val weightHealthData = SampleDataProvider.getWeightData()
+private val bloodPressureHealthData = SampleDataProvider.getBloodPressureData()
+private val rangeData = SampleDataProvider.getHeartRateRangeData()
+private val stackedData = SampleDataProvider.getNutritionStackedData()
+private val segmentLabels = SampleDataProvider.segmentLabels
+private val chartPoints = SampleDataProvider.getBasicChartPoints()
+private val chartPoints4 = SampleDataProvider.getExtendedChartPoints()
 
-private val stepCounts = listOf(
-    8123f, 523f, 9672f, 7540f,
-    6453f, 984f, 8732f, 6891f,
-    7215f, 642f, 9321f, 8990f,
-    8320f, 885f, 7124f, 9983f,
-    6152f, 751f, 8023f, 7654f,
-    9472f, 934f, 8820f, 5932f,
-    6723f, 653f, 9021f, 7114f,
-    5987f, 752f, 8653f, 9411f,
-    7840f, 801f, 9192f, 6833f,
-    8794f, 912f, 7364f, 9950f,
-    9332f, 891f, 9045f, 6021f,
-    7981f, 912f, 6740f, 8942f,
-    8024f, 992f, 9684f, 7782f,
-    6875f, 864f, 8550f, 9333f,
-    7121f, 941f, 9821f, 8732f
-)
-
-private val timeDataPoint = TimeDataPoint(
-    x = isoTime,
-    y = stepCounts,
-    timeUnit = TimeUnitGroup.HOUR,
-)
 
 private val yearMonth = YearMonth.now()
-private val startDate = LocalDate.of(yearMonth.year, 8, 1)
-private val endDate = LocalDate.of(yearMonth.year, 8, 25)
-private val random = java.util.Random(0)
-private val entries = generateSequence(startDate) { date ->
-    if (date.isBefore(endDate)) date.plusDays(1) else null
-}.map { date ->
-    val value = random.nextFloat() * 100
-    CalendarEntry(
-        date = date,
-        value = value,
-    )
-}.toList()
-
-// ChartPoint 리스트로 변환
-private val chartPoints = sampleData.mapIndexed { index, value ->
-    ChartPoint(
-        x = index.toFloat(),
-        y = value,
-        label = weekDays.getOrElse(index) { "" }
-    )
-}
-
-private val chartPoints4 = sampleData4.mapIndexed { index, value ->
-    ChartPoint(
-        x = index.toFloat(),
-        y = value,
-        label = weekDays[index % weekDays.size]
-    )
-}
+private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
         "BarChart 1",
-        "BarChart 2",
+        "Step Count Data Bar Chart",
         "BarChart 3",
         "DonutChart 1",
-        "LineChart 1",
+        "Weight Data Line Chart",
         "LineChart 2",
         "LineChart 3",
         "PieChart 1",
         "CalendarChart 1",
         "CalendarChart 2",
         "CalendarChart 3",
-        "ScatterPlot 1",
+        "Blood Pressure Data Scatter Plot",
         "Minimal Chart",
         "Stacked Bar Chart",
         "Range Bar Chart",
@@ -173,7 +118,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Stacked Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Step Count Data Bar Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -203,18 +148,18 @@ fun ExampleUI(modifier: Modifier = Modifier) {
 
             when (selectedChartType) {
                 "BarChart 1" -> BarChart_1()
-                "BarChart 2" -> BarChart_2()
+                "Step Count Data Bar Chart" -> BarChart_2()
                 "BarChart 3" -> BarChart_3()
                 "DonutChart 1" -> DonutChart_1()
-                "LineChart 1" -> LineChart_1()
+                "Weight Data Line Chart" -> LineChart_1()
                 "LineChart 2" -> LineChart_2()
                 "LineChart 3" -> LineChart_3()
                 "PieChart 1" -> PieChart_1()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
                 "CalendarChart 3" -> CalendarChart_3()
-                "ScatterPlot 1" -> ScatterPlot_1()
-                "Minimal Chart" -> Minimal_BarChart() // Placeholder for minimal bar chart
+                "Blood Pressure Data Scatter Plot" -> ScatterPlot_1()
+                "Minimal Chart" -> Minimal_BarChart()
                 "Stacked Bar Chart" -> StackedBarChart_1()
                 "Range Bar Chart" -> RangeBarChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
@@ -244,8 +189,9 @@ fun BarChart_1() {
         interactionType = InteractionType.Bar.TOUCH_AREA,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.AVERAGE,
-        referenceLineStyle = LineStyle.DASHED ,
-        showReferenceLineLabel = true,
+        referenceLineStyle = LineStyle.DASHED,
+        showReferenceLineLabel = false,  // Turn off default label
+        referenceLineInteractive = true,  // Enable interactive mode
     )
 }
 
@@ -253,19 +199,25 @@ fun BarChart_1() {
 fun BarChart_2() {
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints,
+        data = stepCountHealthData.transform(
+            timeUnit = TimeUnitGroup.HOUR,
+            aggregationType = AggregationType.SUM
+        ),
         xLabel = "Week",
         yLabel = "Value",
         title = "Weekly Data",
         barColor = Primary_Purple,
-        maxY = 60f,
-        barWidthRatio = 0.5f,
+        barWidthRatio = 0.8f,
         labelTextSize = 28f,
         tooltipTextSize = 32f,
         interactionType = InteractionType.Bar.BAR,
-        windowSize = 3,
+        windowSize = 6,
         showLabel = true,
         yAxisPosition = YAxisPosition.RIGHT,
+        referenceLineType = ReferenceLineType.AVERAGE,
+        referenceLineStyle = LineStyle.DASHED,
+        showReferenceLineLabel = false,
+        referenceLineInteractive = true,
         yAxisFixedWidth = 16.dp
     )
 }
@@ -301,18 +253,22 @@ fun DonutChart_1() {
 
 @Composable
 fun LineChart_1() {
-
+    Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
-            data = chartPoints,
-            title = "요일별 활동량",
-            yLabel = "활동량",
-            xLabel = "요일",
+            data = weightHealthData.transform(
+                timeUnit = TimeUnitGroup.DAY,
+                aggregationType = AggregationType.SUM
+            ),
+            title = "일별 체중 변화",
+            yLabel = "체중 (kg)",
+            xLabel = "날짜",
             lineColor = Primary_Purple,
             strokeWidth = 12f,
+            minY = 50f,
             showPoint = false,
-            showValue = true,
-            windowSize = 3,
+            showValue = false,
+            windowSize = 6,
             interactionType = InteractionType.Line.TOUCH_AREA,
             yAxisPosition = YAxisPosition.RIGHT,
             yAxisFixedWidth = 28.dp,
@@ -337,7 +293,9 @@ fun LineChart_2() {
         interactionType = InteractionType.Line.POINT,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.TREND,
-        referenceLineStyle = LineStyle.DASHDOT
+        referenceLineStyle = LineStyle.DASHDOT,
+        showReferenceLineLabel = false,  // Turn off default label
+        referenceLineInteractive = true,  // Enable interactive mode
     )
 }
 
@@ -422,16 +380,36 @@ fun CalendarChart_3() {
 
 @Composable
 fun ScatterPlot_1() {
+    // Get blood pressure data as a map, then flatten to a single list
+    val bloodPressureMap = bloodPressureHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    )
+    
+    // Flatten the map into a single list of ChartPoints
+    // This allows multiple points (systolic + diastolic) at the same x-axis
+    val allBloodPressurePoints = bloodPressureMap.flatMap { (property, chartPoints) ->
+        chartPoints.map { chartPoint ->
+            ChartPoint(
+                x = chartPoint.x,
+                y = chartPoint.y,
+                label = "${chartPoint.label}"
+            )
+        }
+    }
+    
     ScatterPlot(
         modifier = Modifier.fillMaxWidth().height(500.dp),
-        data = chartPoints,
+        data = allBloodPressurePoints,
         pointColor = Primary_Purple,
-        title = "요일별 활동량",
-        yLabel = "활동량",
-        xLabel = "요일",
+        title = "혈압 데이터 (수축기 + 이완기)",
+        yLabel = "혈압 (mmHg)",
+        xLabel = "일자",
         interactionType = InteractionType.Scatter.POINT,
-        pointType = PointType.Triangle,
-        yAxisPosition = YAxisPosition.LEFT
+        pointType = PointType.Circle,
+        pointSize = 4.dp,
+        yAxisPosition = YAxisPosition.LEFT,
+        windowSize = 14
     )
 }
 
@@ -650,7 +628,7 @@ fun StackedBarChart_1() {
         legendPosition = LegendPosition.BOTTOM,
         windowSize = 3,
         yAxisPosition = YAxisPosition.RIGHT,
-        interactionType = InteractionType.StackedBar.TOUCH_AREA,
+        interactionType = InteractionType.StackedBar.BAR,
         colors = listOf(
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
@@ -675,29 +653,7 @@ fun RangeBarChart_1() {
 
 @Composable
 fun ProgressBarChart_1() {
-    val progressData = listOf(
-        ProgressChartPoint(
-            x = 0f,
-            current = 1200f,
-            max = 2000f,
-            label = "Move",
-            unit = "KJ"
-        ),
-        ProgressChartPoint(
-            x = 1f,
-            current = 20f,
-            max = 60f,
-            label = "Exercise",
-            unit = "min"
-        ),
-        ProgressChartPoint(
-            x = 2f,
-            current = 7f,
-            max = 10f,
-            label = "Stand",
-            unit = "h"
-        )
-    )
+    val progressData = SampleDataProvider.getActivityProgressData()
     ProgressChart(
         data = progressData,
         title = "일일 활동 진행률",
@@ -714,29 +670,7 @@ fun ProgressBarChart_1() {
 
 @Composable
 fun ProgressBarChart_2() {
-    val progressData = listOf(
-        ProgressChartPoint(
-            x = 0f,
-            current = 1200f,
-            max = 2000f,
-            label = "Move",
-            unit = "KJ"
-        ),
-        ProgressChartPoint(
-            x = 1f,
-            current = 20f,
-            max = 60f,
-            label = "Exercise",
-            unit = "min"
-        ),
-        ProgressChartPoint(
-            x = 2f,
-            current = 7f,
-            max = 10f,
-            label = "Stand",
-            unit = "h"
-        )
-    )
+    val progressData = SampleDataProvider.getActivityProgressData()
     ProgressChart(
         data = progressData,
         title = "일일 활동 진행률",
@@ -763,15 +697,7 @@ fun XAxisTickReductionDemo() {
         )
         
         // Create dense data with many labels (50 points)
-        val denseDataLabels = (1..50).map { "Day $it" }
-        val denseDataValues = (1..50).map { (20..80).random().toFloat() }
-        val denseChartPoints = denseDataLabels.mapIndexed { index, label ->
-            ChartPoint(
-                x = index.toFloat(),
-                y = denseDataValues[index],
-                label = label
-            )
-        }
+        val denseChartPoints = SampleDataProvider.getDenseChartPoints(50)
         
         Text(
             text = "Without Tick Reduction (50 labels)",
@@ -810,7 +736,7 @@ fun XAxisTickReductionDemo() {
 @Composable
 fun TimeStepBarChart() {
     var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf("시간대별") }
+    var selectedOption by remember { mutableStateOf("30분대별") }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(
@@ -818,7 +744,7 @@ fun TimeStepBarChart() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "시간대별 걸음 수",
+                text = "실제 걸음 수 데이터 (5/4-5/5)",
                 modifier = Modifier.weight(1f),
                 fontSize = 20.sp,
                 color = Color.Black
@@ -855,14 +781,6 @@ fun TimeStepBarChart() {
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            DropdownMenuItem(
-                text = { Text("주별") },
-                onClick = {
-                    selectedOption = "주별"
-                    expanded = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -870,79 +788,29 @@ fun TimeStepBarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(500.dp),
             data = when (selectedOption) {
-                "시간대별" -> timeDataPoint.toChartPoints()
-                "일별" -> timeDataPoint.transform(
+                "시간대별" -> stepCountHealthData.transform(
+                    timeUnit = TimeUnitGroup.HOUR,
+                    aggregationType = AggregationType.SUM
+                )
+                "일별" -> stepCountHealthData.transform(
                     timeUnit = TimeUnitGroup.DAY,
-                    aggregationType = AggregationType.AVERAGE
-                ).toChartPoints()
-                "주별" -> timeDataPoint.transform(
-                    timeUnit = TimeUnitGroup.WEEK,
-                    aggregationType = AggregationType.AVERAGE
-                ).toChartPoints()
-                else -> timeDataPoint.toChartPoints()
+                    aggregationType = AggregationType.SUM
+                )
+                else -> stepCountHealthData.transform(
+                    timeUnit = TimeUnitGroup.HOUR,
+                    aggregationType = AggregationType.SUM
+                )
             },
-            title = "걸음 수 (${selectedOption}) - ${if (selectedOption == "시간대별") "가로 스크롤" else "Smart Label Reduction"}",
+            title = "걸음 수 (${selectedOption}) - ${if (selectedOption == "30분대별") "Raw Data" else "Aggregated"}",
             barColor = Primary_Purple,
             barWidthRatio = 0.5f,
             labelTextSize = 20f,
-            // 시간대별일 때는 windowSize로 스크롤링 활성화
+            // 30분대별과 시간대별일 때는 windowSize로 스크롤링 활성화
             windowSize = when (selectedOption) {
+                "30분대별" -> 10
                 "시간대별" -> 8
-                "일별" -> 4
                 else -> null
             }
         )
     }
 }
-
-
-// 범위 차트용 샘플 데이터 (심박수 범위 예시)
-private val rangeData = listOf(
-    RangeChartPoint(x = 0f, yMin = 54f, yMax = 160f, label = "2일"),
-    RangeChartPoint(x = 1f, yMin = 65f, yMax = 145f, label = "3일"),
-    RangeChartPoint(x = 2f, yMin = 58f, yMax = 125f, label = "4일"),
-    RangeChartPoint(x = 3f, yMin = 75f, yMax = 110f, label = "6일"),
-    RangeChartPoint(x = 4f, yMin = 68f, yMax = 162f, label = "7일"),
-    RangeChartPoint(x = 5f, yMin = 72f, yMax = 168f, label = "8일"),
-    RangeChartPoint(x = 6f, yMin = 65f, yMax = 138f, label = "9일"),
-    RangeChartPoint(x = 7f, yMin = 85f, yMax = 105f, label = "10일")
-)
-
-// 스택 바 차트용 샘플 데이터 (일별 영양소 섭취량 예시)
-private val stackedData = listOf(
-    StackedChartPoint(
-        x = 0f,
-        values = listOf(80f, 45f, 120f), // 단백질, 지방, 탄수화물 (g)
-        label = "월"
-    ),
-    StackedChartPoint(
-        x = 1f,
-        values = listOf(75f, 38f, 110f),
-        label = "화"
-    ),
-    StackedChartPoint(
-        x = 2f,
-        values = listOf(90f, 52f, 140f),
-        label = "수"
-    ),
-    StackedChartPoint(
-        x = 3f,
-        values = listOf(85f, 41f, 135f),
-        label = "목"
-    ),
-    StackedChartPoint(
-        x = 4f,
-        values = listOf(95f, 58f, 150f),
-        label = "금"
-    ),
-    StackedChartPoint(
-        x = 5f,
-        values = listOf(70f, 35f, 100f),
-        label = "토"
-    ),
-    StackedChartPoint(
-        x = 6f,
-        values = listOf(88f, 48f, 125f),
-        label = "일"
-    )
-)

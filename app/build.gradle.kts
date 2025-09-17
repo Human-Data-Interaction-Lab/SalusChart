@@ -60,10 +60,12 @@ android {
 }
 
 dependencies {
+    implementation(project(":data:model"))
     implementation(project(":core:chart"))
     implementation(project(":core:util"))
     implementation(project(":core:transform"))
     implementation(project(":ui:compose"))
+    implementation(project(":data:provider"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

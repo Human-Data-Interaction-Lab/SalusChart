@@ -37,15 +37,15 @@ import com.hdil.saluschart.core.chart.PointType
 import com.hdil.saluschart.core.chart.ProgressChartPoint
 import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.StackedChartPoint
-import com.hdil.saluschart.core.transform.TimeDataPoint
-import com.hdil.saluschart.core.transform.toChartPoints
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
-import com.hdil.saluschart.core.util.TimeUnitGroup
+import com.hdil.saluschart.core.transform.TimeDataPoint
+import com.hdil.saluschart.core.transform.toChartPoints
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
+import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
@@ -55,6 +55,7 @@ import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
 import com.hdil.saluschart.ui.compose.charts.MinimalGaugeChart
 import com.hdil.saluschart.ui.compose.charts.MinimalLineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalRangeBarChart
+import com.hdil.saluschart.ui.compose.charts.PagedCalendarChart
 import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
@@ -73,7 +74,7 @@ private val segmentLabels = listOf("단백질", "지방", "탄수화물")
 private val sampleData = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f)
 private val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
 private val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
-private val sampleData4 = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f, 5f, 15f, 60f, 45f, 35f, 25f, 10f, 8f, 22f, 10f, 40f, 18f, 32f, 12f)
+private val sampleData4 = listOf(10f, 25f, 37f, 20f, 45f, 55f, 45f, 17f, 30f, 45f, 45f, 35f, 25f, 10f, 8f, 22f, 10f, 40f, 18f, 32f, 12f)
 private val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
 
 private val isoTime = listOf(
@@ -157,9 +158,11 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "DonutChart 1",
         "LineChart 1",
         "LineChart 2",
+        "LineChart 3",
         "PieChart 1",
         "CalendarChart 1",
         "CalendarChart 2",
+        "CalendarChart 3",
         "ScatterPlot 1",
         "Minimal Chart",
         "Stacked Bar Chart",
@@ -205,9 +208,11 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "DonutChart 1" -> DonutChart_1()
                 "LineChart 1" -> LineChart_1()
                 "LineChart 2" -> LineChart_2()
+                "LineChart 3" -> LineChart_3()
                 "PieChart 1" -> PieChart_1()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
+                "CalendarChart 3" -> CalendarChart_3()
                 "ScatterPlot 1" -> ScatterPlot_1()
                 "Minimal Chart" -> Minimal_BarChart() // Placeholder for minimal bar chart
                 "Stacked Bar Chart" -> StackedBarChart_1()
@@ -296,7 +301,6 @@ fun DonutChart_1() {
 
 @Composable
 fun LineChart_1() {
-    Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
 
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
@@ -310,9 +314,10 @@ fun LineChart_1() {
             showValue = true,
             windowSize = 3,
             interactionType = InteractionType.Line.TOUCH_AREA,
-            yAxisPosition = YAxisPosition.RIGHT
+            yAxisPosition = YAxisPosition.RIGHT,
+            yAxisFixedWidth = 28.dp,
+            yTickStep = 10f
         )
-    }
 }
 
 @Composable
@@ -333,6 +338,26 @@ fun LineChart_2() {
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.TREND,
         referenceLineStyle = LineStyle.DASHDOT
+    )
+}
+
+@Composable
+fun LineChart_3() {
+    LineChart(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        data = chartPoints4,
+        title = "요일별 활동량",
+        lineColor = Primary_Purple,
+        strokeWidth = 12f,
+        showPoint = false,
+        showValue = true,
+        yAxisPosition = YAxisPosition.RIGHT,
+        // paging:
+        pagingEnabled = true,
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yAxisFixedWidth = 28.dp,
+        yTickStep = 10f
     )
 }
 
@@ -374,6 +399,26 @@ fun CalendarChart_2() {
         minBubbleSize = 6f
     )
 }
+
+@Composable
+fun CalendarChart_3() {
+    val entriesByMonth = remember(entries) {
+        entries.groupBy { YearMonth.from(it.date) }
+    }
+    val initialYm = YearMonth.from(startDate)
+
+    PagedCalendarChart(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(600.dp),
+        initialYearMonth = initialYm,
+        entriesForMonth = { ym -> entriesByMonth[ym].orEmpty() },
+        color = Primary_Purple,
+        maxBubbleSize = 10f,
+        minBubbleSize = 6f
+    )
+}
+
 
 @Composable
 fun ScatterPlot_1() {

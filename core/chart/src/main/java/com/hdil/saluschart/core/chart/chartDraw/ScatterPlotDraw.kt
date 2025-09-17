@@ -35,6 +35,7 @@ import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.PointType
+import com.hdil.saluschart.core.chart.chartMath.LineChartMath
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -69,7 +70,8 @@ object ScatterPlotDraw {
         pointType: PointType = PointType.Circle,
         showValue: Boolean = false,
         chartType: ChartType,
-        showTooltipForIndex: Int? = null
+        showTooltipForIndex: Int? = null,
+        canvasSize: Size,
     ) {
         val density = LocalDensity.current
         var shouldShowTooltip = false
@@ -96,32 +98,20 @@ object ScatterPlotDraw {
                 tooltipData = data[index]
                 tooltipOffset = center
             }
-            val labelOffset = when (chartType) {
-                ChartType.LINE -> {
-                    // 라인 차트의 경우 calculateLabelPosition 사용
-                    val optimalPosition = ChartMath.Line.calculateLabelPosition(index, points)
-
-                    // 각 포인트마다 relative 위치를 계산
-                    val relativeDx = with(density) {
-                        (optimalPosition.x - center.x).toDp()
-                    }
-                    val relativeDy = with(density) {
-                        (optimalPosition.y - center.y).toDp()
-                    }
-
-                    // 포인트 반지름을 고려하여 위치 조정
-                    val adjustedDx = if (relativeDx > 0.dp) relativeDx + pointRadius
-                    else if (relativeDx == 0.dp) relativeDx
-                    else relativeDx - pointRadius
-                    val adjustedDy = if (relativeDy > 0.dp) relativeDy + pointRadius
-                    else if (relativeDy == 0.dp) relativeDy
-                    else relativeDy - pointRadius
-
-                    Modifier.offset(x = relativeDx + xDp, y = relativeDy + yDp)
-                }
-                else -> {
-                    // 스캐터 차트의 경우 기본 위치 (포인트 위쪽)
-                    Modifier.offset(x = 0.dp, y = -(pointRadius * 4))
+            val textPx = with(density) { 12.sp.toPx() }
+            val anchors = remember(points, values, canvasSize) {
+                // safe guard: if we can’t compute, return empty (no labels)
+                if (canvasSize.width <= 0f || canvasSize.height <= 0f || points.isEmpty()) {
+                    emptyList()
+                } else {
+                    LineChartMath.computeLabelAnchors(
+                        points = points,
+                        values = values,
+                        canvas = canvasSize,
+                        textPx = textPx,
+                        padPx = with(density) { 4.dp.toPx() },
+                        minGapToLinePx = with(density) { 4.dp.toPx() }
+                    )
                 }
             }
 
@@ -186,20 +176,25 @@ object ScatterPlotDraw {
                         }
                 }
             }
-            // 외부에서 제어되는 툴팁 표시
-            if (showValue) {
-                Box(
-                    modifier =
-                        labelOffset
-                        .width(IntrinsicSize.Min)
-                ) {
-                    Text(
-                        text = values.getOrElse(index) { 0f }.toInt().toString(),
-                        color = Color.Black,
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+            if (showValue && anchors.size == points.size) {
+                anchors.forEachIndexed { i, topLeft ->
+                    val label = values.getOrElse(i) { 0f }.let { v ->
+                        if (kotlin.math.abs(v - v.toInt()) < 0.001f) v.toInt().toString() else v.toString()
+                    }
+                    val xDp = with(density) { topLeft.x.toDp() }
+                    val yDp = with(density) { topLeft.y.toDp() }
+
+                    Box(
+                        modifier = Modifier
+                            .offset(x = xDp, y = yDp)
+                            .padding(horizontal = 2.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            color = Color.Black,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }

@@ -113,7 +113,8 @@ fun ScatterPlot(
                         pointType = pointType,
                         interactive = false, // Visual only, no interactions
                         chartType = chartType,
-                        showTooltipForIndex = selectedPointIndex
+                        showTooltipForIndex = selectedPointIndex,
+                        canvasSize = canvasSize,
                     )
                 }
 
@@ -134,7 +135,8 @@ fun ScatterPlot(
                         showTooltipForIndex = selectedPointIndex,
                         pointRadius = 8.dp,
                         innerRadius = 0.dp,
-                        interactive = true
+                        interactive = true,
+                        canvasSize = canvasSize,
                     )
                 }
 
@@ -148,7 +150,8 @@ fun ScatterPlot(
                         onPointClick = null,
                         pointType = pointType,
                         chartType = chartType,
-                        showTooltipForIndex = null
+                        showTooltipForIndex = null,
+                        canvasSize = canvasSize,
                     )
                 }
             }

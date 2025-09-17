@@ -314,7 +314,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                     title = "요일별 활동량",
                     yLabel = "활동량",
                     xLabel = "요일",
-                    interactionType = InteractionType.Scatter.TOUCH_AREA
+                    interactionType = InteractionType.Scatter.POINT
                 )
             }
             "Bar" -> {

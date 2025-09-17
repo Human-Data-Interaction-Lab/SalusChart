@@ -469,26 +469,17 @@ fun List<Diet>.transformByProperty(
 }
 
 /**
- * BloodPressure 리스트를 직접 ChartPoint로 변환하는 편의 함수
+ * BloodPressure 리스트를 속성별로 분리된 ChartPoint 맵으로 변환하는 편의 함수
+ * 다중 시리즈 차트에 유용함 (각 속성을 다른 색상으로 표시)
  */
 @JvmName("bloodPressureTransform")
 fun List<BloodPressure>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
     aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
-): List<ChartPoint> {
-    val chartPointsMap = this.toTimeDataPoint()
+): Map<String, List<ChartPoint>> {
+    return this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
         .toChartPointsMap()
-
-    return chartPointsMap.flatMap { (property, chartPoints) ->
-        chartPoints.map { chartPoint ->
-            ChartPoint(
-                x = chartPoint.x,
-                y = chartPoint.y,
-                label = "${chartPoint.label} ($property)"
-            )
-        }
-    }
 }
 
 /**
@@ -504,6 +495,7 @@ fun List<BloodPressure>.transformByProperty(
         .transform(timeUnit, aggregationType)
         .toChartPointsByProperty(property)
 }
+
 
 /**
  * BloodGlucose 리스트를 직접 ChartPoint로 변환하는 편의 함수

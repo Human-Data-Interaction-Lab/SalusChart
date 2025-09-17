@@ -29,7 +29,7 @@ enum class ChartType {
 //    TOUCH_AREA,    // Area-based touching using BarMarker()
 //    BAR,           // Bar touching using BarMarker()
 //    STACKED_BAR;   // Individual segment touching in stacked bar charts
-//
+
 
 sealed interface InteractionType {
     // 차트별 허용 집합을 타입으로 분리 - 각 차트 타입별 전용 sealed interface
@@ -45,7 +45,6 @@ sealed interface InteractionType {
     
     sealed interface Scatter : InteractionType {
         data object POINT : Scatter     // 스캐터 포인트 직접 터치
-        data object TOUCH_AREA : Scatter // 포인트 주변 영역 터치
     }
     
     sealed interface StackedBar : InteractionType {

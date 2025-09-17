@@ -70,7 +70,7 @@ fun MinimalLineChart(
                 paddingX = padding,
                 paddingY = padding
             )
-            val points = ChartMath.mapToCanvasPoints(data, size, metrics)
+            val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
 
             // Store metrics for ReferenceLine
             chartMetrics = metrics

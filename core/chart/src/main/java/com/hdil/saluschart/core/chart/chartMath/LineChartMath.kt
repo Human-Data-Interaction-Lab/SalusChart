@@ -1,6 +1,8 @@
 package com.hdil.saluschart.core.chart.chartMath
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import com.hdil.saluschart.core.chart.ChartPoint
 import kotlin.math.sqrt
 
 object LineChartMath {
@@ -86,6 +88,24 @@ object LineChartMath {
             Offset(vector.x / magnitude, vector.y / magnitude)
         } else {
             Offset(1f, 0f)
+        }
+    }
+
+    /**
+     * 라인 차트용 데이터 포인트를 화면 좌표로 변환합니다.
+     * 인덱스 기반 X축 포지셔닝 (일대일 매핑)
+     *
+     * @param data 차트 데이터 포인트 목록
+     * @param size Canvas의 전체 크기
+     * @param metrics 차트 메트릭 정보
+     * @return 화면 좌표로 변환된 Offset 목록
+     */
+    fun mapLineToCanvasPoints(data: List<ChartPoint>, size: Size, metrics: ChartMath.ChartMetrics): List<Offset> {
+        val spacing = metrics.chartWidth / (data.size - 1)
+        return data.mapIndexed { i, point ->
+            val x = metrics.paddingX + i * spacing
+            val y = metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+            Offset(x, y)
         }
     }
 }

@@ -20,6 +20,7 @@ object ChartMath {
     var Calendar = CalendarChartMath
     val RangeBar = RangeBarChartMath
     val Line = LineChartMath
+    val Scatter = ScatterPlotMath
     val Progress = ProgressChartMath
 
     /**
@@ -253,20 +254,4 @@ object ChartMath {
         return Pair(reducedLabels, reducedIndices)
     }
 
-    /**
-     * 데이터 포인트를 화면 좌표로 변환합니다.
-     *
-     * @param data 차트 데이터 포인트 목록
-     * @param size Canvas의 전체 크기
-     * @param metrics 차트 메트릭 정보
-     * @return 화면 좌표로 변환된 Offset 목록
-     */
-    fun mapToCanvasPoints(data: List<ChartPoint>, size: Size, metrics: ChartMetrics): List<Offset> {
-        val spacing = metrics.chartWidth / (data.size - 1)
-        return data.mapIndexed { i, point ->
-            val x = metrics.paddingX + i * spacing
-            val y = metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
-            Offset(x, y)
-        }
-    }
 }

@@ -129,7 +129,7 @@ fun LineChart(
                         maxY = maxY
                     )
 
-                    val points = ChartMath.mapToCanvasPoints(data, size, metrics)
+                    val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
 
                     // 포인트 위치와 차트 메트릭스를 상태 변수에 저장
                     canvasPoints = points

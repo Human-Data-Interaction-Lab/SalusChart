@@ -31,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
@@ -50,6 +53,7 @@ import com.hdil.saluschart.data.model.model.HealthData
 import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.StepCount
 import com.hdil.saluschart.data.model.model.Weight
+import com.hdil.saluschart.data.provider.SampleDataProvider
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
@@ -73,124 +77,35 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-// 스택 바 차트용 세그먼트 레이블 (한 번만 정의)
-private val segmentLabels = listOf("단백질", "지방", "탄수화물")
-private val sampleData = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f)
-private val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
-private val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
-private val sampleData4 = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f, 5f, 15f, 60f, 45f, 35f, 25f, 10f, 8f, 22f, 10f, 40f, 18f, 32f, 12f)
-private val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
+// Note: Sample data moved to SampleDataProvider for better organization
 
-private val stepCountHealthData = listOf(
-    StepCount(Instant.parse("2025-05-04T08:00:00Z"), Instant.parse("2025-05-04T08:30:00Z"), 2431),
-    StepCount(Instant.parse("2025-05-04T09:00:00Z"), Instant.parse("2025-05-04T09:30:00Z"), 1359),
-    StepCount(Instant.parse("2025-05-04T10:00:00Z"), Instant.parse("2025-05-04T10:30:00Z"), 6149),
-    StepCount(Instant.parse("2025-05-04T11:00:00Z"), Instant.parse("2025-05-04T11:30:00Z"), 4246),
-    StepCount(Instant.parse("2025-05-04T12:00:00Z"), Instant.parse("2025-05-04T12:30:00Z"), 2855),
-    StepCount(Instant.parse("2025-05-04T13:00:00Z"), Instant.parse("2025-05-04T13:30:00Z"), 9831),
-    StepCount(Instant.parse("2025-05-04T14:00:00Z"), Instant.parse("2025-05-04T14:30:00Z"), 1498),
-    StepCount(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:30:00Z"), 8455),
-    StepCount(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:30:00Z"), 4662),
-    StepCount(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:30:00Z"), 1329),
-    StepCount(Instant.parse("2025-05-04T18:00:00Z"), Instant.parse("2025-05-04T18:30:00Z"), 2327),
-    StepCount(Instant.parse("2025-05-04T19:00:00Z"), Instant.parse("2025-05-04T19:30:00Z"), 7369),
-    StepCount(Instant.parse("2025-05-04T20:00:00Z"), Instant.parse("2025-05-04T20:30:00Z"), 1649),
-    StepCount(Instant.parse("2025-05-04T21:00:00Z"), Instant.parse("2025-05-04T21:30:00Z"), 8768),
-    StepCount(Instant.parse("2025-05-04T22:00:00Z"), Instant.parse("2025-05-04T22:30:00Z"), 5235),
-    StepCount(Instant.parse("2025-05-04T23:00:00Z"), Instant.parse("2025-05-04T23:30:00Z"), 8286),
-    StepCount(Instant.parse("2025-05-05T00:00:00Z"), Instant.parse("2025-05-05T00:30:00Z"), 9606),
-    StepCount(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:30:00Z"), 8043),
-    StepCount(Instant.parse("2025-05-05T02:00:00Z"), Instant.parse("2025-05-05T02:30:00Z"), 6046),
-    StepCount(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), 4874),
-    StepCount(Instant.parse("2025-05-05T04:00:00Z"), Instant.parse("2025-05-05T04:30:00Z"), 5893),
-    StepCount(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:30:00Z"), 5060),
-    StepCount(Instant.parse("2025-05-05T06:00:00Z"), Instant.parse("2025-05-05T06:30:00Z"), 4520),
-    StepCount(Instant.parse("2025-05-05T07:00:00Z"), Instant.parse("2025-05-05T07:30:00Z"), 6420),
-    StepCount(Instant.parse("2025-05-05T08:00:00Z"), Instant.parse("2025-05-05T08:30:00Z"), 1837),
-    StepCount(Instant.parse("2025-05-05T09:00:00Z"), Instant.parse("2025-05-05T09:30:00Z"), 5893),
-    StepCount(Instant.parse("2025-05-05T10:00:00Z"), Instant.parse("2025-05-05T10:30:00Z"), 4000),
-    StepCount(Instant.parse("2025-05-05T11:00:00Z"), Instant.parse("2025-05-05T11:30:00Z"), 5760),
-    StepCount(Instant.parse("2025-05-05T12:00:00Z"), Instant.parse("2025-05-05T12:30:00Z"), 3621),
-    StepCount(Instant.parse("2025-05-05T13:00:00Z"), Instant.parse("2025-05-05T13:30:00Z"), 7387)
-)
+// Sample data references - now organized in SampleDataProvider
+private val stepCountHealthData = SampleDataProvider.getStepCountData()
+private val weightHealthData = SampleDataProvider.getWeightData()
+private val bloodPressureHealthData = SampleDataProvider.getBloodPressureData()
+private val rangeData = SampleDataProvider.getHeartRateRangeData()
+private val stackedData = SampleDataProvider.getNutritionStackedData()
+private val segmentLabels = SampleDataProvider.segmentLabels
+private val chartPoints = SampleDataProvider.getBasicChartPoints()
+private val chartPoints4 = SampleDataProvider.getExtendedChartPoints()
 
-private val weightHealthData = listOf(
-    Weight(Instant.parse("2025-05-04T08:00:00Z"), Mass.kilograms(74.7)),
-    Weight(Instant.parse("2025-05-03T08:00:00Z"), Mass.kilograms(68.6)),
-    Weight(Instant.parse("2025-05-02T08:00:00Z"), Mass.kilograms(71.6)),
-    Weight(Instant.parse("2025-05-01T08:00:00Z"), Mass.kilograms(74.2)),
-    Weight(Instant.parse("2025-04-30T08:00:00Z"), Mass.kilograms(60.6)),
-    Weight(Instant.parse("2025-04-29T08:00:00Z"), Mass.kilograms(73.8)),
-    Weight(Instant.parse("2025-04-28T08:00:00Z"), Mass.kilograms(65.8)),
-    Weight(Instant.parse("2025-04-27T08:00:00Z"), Mass.kilograms(73.2)),
-    Weight(Instant.parse("2025-04-26T08:00:00Z"), Mass.kilograms(73.8)),
-    Weight(Instant.parse("2025-04-25T08:00:00Z"), Mass.kilograms(67.5)),
-    Weight(Instant.parse("2025-04-24T08:00:00Z"), Mass.kilograms(70.4)),
-    Weight(Instant.parse("2025-04-23T08:00:00Z"), Mass.kilograms(61.4)),
-    Weight(Instant.parse("2025-04-22T08:00:00Z"), Mass.kilograms(74.8)),
-    Weight(Instant.parse("2025-04-21T08:00:00Z"), Mass.kilograms(66.1)),
-    Weight(Instant.parse("2025-04-20T08:00:00Z"), Mass.kilograms(63.9)),
-    Weight(Instant.parse("2025-04-19T08:00:00Z"), Mass.kilograms(67.9)),
-    Weight(Instant.parse("2025-04-18T08:00:00Z"), Mass.kilograms(67.3)),
-    Weight(Instant.parse("2025-04-17T08:00:00Z"), Mass.kilograms(66.8)),
-    Weight(Instant.parse("2025-04-16T08:00:00Z"), Mass.kilograms(67.9)),
-    Weight(Instant.parse("2025-04-15T08:00:00Z"), Mass.kilograms(66.4)),
-    Weight(Instant.parse("2025-04-14T08:00:00Z"), Mass.kilograms(74.6)),
-    Weight(Instant.parse("2025-04-13T08:00:00Z"), Mass.kilograms(66.1)),
-    Weight(Instant.parse("2025-04-12T08:00:00Z"), Mass.kilograms(71.5)),
-    Weight(Instant.parse("2025-04-11T08:00:00Z"), Mass.kilograms(72.9)),
-    Weight(Instant.parse("2025-04-10T08:00:00Z"), Mass.kilograms(70.8)),
-    Weight(Instant.parse("2025-04-09T08:00:00Z"), Mass.kilograms(69.9)),
-    Weight(Instant.parse("2025-04-08T08:00:00Z"), Mass.kilograms(60.9)),
-    Weight(Instant.parse("2025-04-07T08:00:00Z"), Mass.kilograms(66.9)),
-    Weight(Instant.parse("2025-04-06T08:00:00Z"), Mass.kilograms(69.3)),
-    Weight(Instant.parse("2025-04-05T08:00:00Z"), Mass.kilograms(61.1))
-)
 
 private val yearMonth = YearMonth.now()
-private val startDate = LocalDate.of(yearMonth.year, yearMonth.monthValue, 1)
-private val endDate = LocalDate.of(yearMonth.year, yearMonth.monthValue, yearMonth.lengthOfMonth())
-private val random = java.util.Random(0)
-private val entries = generateSequence(startDate) { date ->
-    if (date.isBefore(endDate)) date.plusDays(1) else null
-}.map { date ->
-    val value = random.nextFloat() * 100
-    CalendarEntry(
-        date = date,
-        value = value,
-    )
-}.toList()
-
-// ChartPoint 리스트로 변환
-private val chartPoints = sampleData.mapIndexed { index, value ->
-    ChartPoint(
-        x = index.toFloat(),
-        y = value,
-        label = weekDays.getOrElse(index) { "" }
-    )
-}
-
-private val chartPoints4 = sampleData4.mapIndexed { index, value ->
-    ChartPoint(
-        x = index.toFloat(),
-        y = value,
-        label = weekDays[index % weekDays.size]
-    )
-}
+private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
         "BarChart 1",
-        "BarChart 2",
+        "Step Count Data Bar Chart",
         "BarChart 3",
         "DonutChart 1",
-        "LineChart 1",
+        "Weight Data Line Chart",
         "LineChart 2",
         "PieChart 1",
         "CalendarChart 1",
         "CalendarChart 2",
-        "ScatterPlot 1",
+        "Blood Pressure Data Scatter Plot",
         "Minimal Chart",
         "Stacked Bar Chart",
         "Range Bar Chart",
@@ -200,7 +115,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Stacked Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Step Count Data Bar Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -230,16 +145,16 @@ fun ExampleUI(modifier: Modifier = Modifier) {
 
             when (selectedChartType) {
                 "BarChart 1" -> BarChart_1()
-                "BarChart 2" -> BarChart_2()
+                "Step Count Data Bar Chart" -> BarChart_2()
                 "BarChart 3" -> BarChart_3()
                 "DonutChart 1" -> DonutChart_1()
-                "LineChart 1" -> LineChart_1()
+                "Weight Data Line Chart" -> LineChart_1()
                 "LineChart 2" -> LineChart_2()
                 "PieChart 1" -> PieChart_1()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
-                "ScatterPlot 1" -> ScatterPlot_1()
-                "Minimal Chart" -> Minimal_BarChart() // Placeholder for minimal bar chart
+                "Blood Pressure Data Scatter Plot" -> ScatterPlot_1()
+                "Minimal Chart" -> Minimal_BarChart()
                 "Stacked Bar Chart" -> StackedBarChart_1()
                 "Range Bar Chart" -> RangeBarChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
@@ -266,7 +181,7 @@ fun BarChart_1() {
         barWidthRatio = 0.8f,
         labelTextSize = 40f,
         tooltipTextSize = 5f,
-        interactionType = InteractionType.Bar.BAR,
+        interactionType = InteractionType.Bar.TOUCH_AREA,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.AVERAGE,
         referenceLineStyle = LineStyle.DASHED,
@@ -296,7 +211,8 @@ fun BarChart_2() {
         yAxisPosition = YAxisPosition.RIGHT,
         referenceLineType = ReferenceLineType.AVERAGE,
         referenceLineStyle = LineStyle.DASHED,
-        showReferenceLineLabel = true,  // Turn off default label
+        showReferenceLineLabel = false,
+        referenceLineInteractive = true,
         yAxisFixedWidth = 16.dp
     )
 }
@@ -418,16 +334,36 @@ fun CalendarChart_2() {
 
 @Composable
 fun ScatterPlot_1() {
+    // Get blood pressure data as a map, then flatten to a single list
+    val bloodPressureMap = bloodPressureHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    )
+    
+    // Flatten the map into a single list of ChartPoints
+    // This allows multiple points (systolic + diastolic) at the same x-axis
+    val allBloodPressurePoints = bloodPressureMap.flatMap { (property, chartPoints) ->
+        chartPoints.map { chartPoint ->
+            ChartPoint(
+                x = chartPoint.x,
+                y = chartPoint.y,
+                label = "${chartPoint.label}"
+            )
+        }
+    }
+    
     ScatterPlot(
         modifier = Modifier.fillMaxWidth().height(500.dp),
-        data = chartPoints,
+        data = allBloodPressurePoints,
         pointColor = Primary_Purple,
-        title = "요일별 활동량",
-        yLabel = "활동량",
-        xLabel = "요일",
+        title = "혈압 데이터 (수축기 + 이완기)",
+        yLabel = "혈압 (mmHg)",
+        xLabel = "일자",
         interactionType = InteractionType.Scatter.POINT,
-        pointType = PointType.Triangle,
-        yAxisPosition = YAxisPosition.LEFT
+        pointType = PointType.Circle,
+        pointSize = 4.dp,
+        yAxisPosition = YAxisPosition.LEFT,
+        windowSize = 14
     )
 }
 
@@ -671,29 +607,7 @@ fun RangeBarChart_1() {
 
 @Composable
 fun ProgressBarChart_1() {
-    val progressData = listOf(
-        ProgressChartPoint(
-            x = 0f,
-            current = 1200f,
-            max = 2000f,
-            label = "Move",
-            unit = "KJ"
-        ),
-        ProgressChartPoint(
-            x = 1f,
-            current = 20f,
-            max = 60f,
-            label = "Exercise",
-            unit = "min"
-        ),
-        ProgressChartPoint(
-            x = 2f,
-            current = 7f,
-            max = 10f,
-            label = "Stand",
-            unit = "h"
-        )
-    )
+    val progressData = SampleDataProvider.getActivityProgressData()
     ProgressChart(
         data = progressData,
         title = "일일 활동 진행률",
@@ -710,29 +624,7 @@ fun ProgressBarChart_1() {
 
 @Composable
 fun ProgressBarChart_2() {
-    val progressData = listOf(
-        ProgressChartPoint(
-            x = 0f,
-            current = 1200f,
-            max = 2000f,
-            label = "Move",
-            unit = "KJ"
-        ),
-        ProgressChartPoint(
-            x = 1f,
-            current = 20f,
-            max = 60f,
-            label = "Exercise",
-            unit = "min"
-        ),
-        ProgressChartPoint(
-            x = 2f,
-            current = 7f,
-            max = 10f,
-            label = "Stand",
-            unit = "h"
-        )
-    )
+    val progressData = SampleDataProvider.getActivityProgressData()
     ProgressChart(
         data = progressData,
         title = "일일 활동 진행률",
@@ -759,15 +651,7 @@ fun XAxisTickReductionDemo() {
         )
         
         // Create dense data with many labels (50 points)
-        val denseDataLabels = (1..50).map { "Day $it" }
-        val denseDataValues = (1..50).map { (20..80).random().toFloat() }
-        val denseChartPoints = denseDataLabels.mapIndexed { index, label ->
-            ChartPoint(
-                x = index.toFloat(),
-                y = denseDataValues[index],
-                label = label
-            )
-        }
+        val denseChartPoints = SampleDataProvider.getDenseChartPoints(50)
         
         Text(
             text = "Without Tick Reduction (50 labels)",
@@ -884,55 +768,3 @@ fun TimeStepBarChart() {
         )
     }
 }
-
-
-// 범위 차트용 샘플 데이터 (심박수 범위 예시)
-private val rangeData = listOf(
-    RangeChartPoint(x = 0f, yMin = 54f, yMax = 160f, label = "2일"),
-    RangeChartPoint(x = 1f, yMin = 65f, yMax = 145f, label = "3일"),
-    RangeChartPoint(x = 2f, yMin = 58f, yMax = 125f, label = "4일"),
-    RangeChartPoint(x = 3f, yMin = 75f, yMax = 110f, label = "6일"),
-    RangeChartPoint(x = 4f, yMin = 68f, yMax = 162f, label = "7일"),
-    RangeChartPoint(x = 5f, yMin = 72f, yMax = 168f, label = "8일"),
-    RangeChartPoint(x = 6f, yMin = 65f, yMax = 138f, label = "9일"),
-    RangeChartPoint(x = 7f, yMin = 85f, yMax = 105f, label = "10일")
-)
-
-// 스택 바 차트용 샘플 데이터 (일별 영양소 섭취량 예시)
-private val stackedData = listOf(
-    StackedChartPoint(
-        x = 0f,
-        values = listOf(80f, 45f, 120f), // 단백질, 지방, 탄수화물 (g)
-        label = "월"
-    ),
-    StackedChartPoint(
-        x = 1f,
-        values = listOf(75f, 38f, 110f),
-        label = "화"
-    ),
-    StackedChartPoint(
-        x = 2f,
-        values = listOf(90f, 52f, 140f),
-        label = "수"
-    ),
-    StackedChartPoint(
-        x = 3f,
-        values = listOf(85f, 41f, 135f),
-        label = "목"
-    ),
-    StackedChartPoint(
-        x = 4f,
-        values = listOf(95f, 58f, 150f),
-        label = "금"
-    ),
-    StackedChartPoint(
-        x = 5f,
-        values = listOf(70f, 35f, 100f),
-        label = "토"
-    ),
-    StackedChartPoint(
-        x = 6f,
-        values = listOf(88f, 48f, 125f),
-        label = "일"
-    )
-)

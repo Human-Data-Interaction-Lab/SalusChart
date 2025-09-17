@@ -42,6 +42,7 @@ fun LineChart(
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Line Chart Example",
+    unit: String = "",           // 데이터 단위 (툴팁에 표시)
     lineColor: Color = ChartColor.Default,
     strokeWidth: Float = 4f,
     minY: Float? = null,                    // 사용자 지정 최소 Y값
@@ -179,7 +180,8 @@ fun LineChart(
                             interactive = false,
                             chartType = chartType,
                             showValue = showValue,
-                            showTooltipForIndex = selectedPointIndex
+                            showTooltipForIndex = selectedPointIndex,
+                            unit = unit
                         )
                     }
 
@@ -202,7 +204,8 @@ fun LineChart(
                             interactive = true,
                             chartType = chartType,
                             showValue = showValue,
-                            showTooltipForIndex = selectedPointIndex
+                            showTooltipForIndex = selectedPointIndex,
+                            unit = unit
                         )
                     }
 
@@ -220,7 +223,8 @@ fun LineChart(
                             interactive = false,
                             showValue = showValue,
                             chartType = chartType,
-                            showTooltipForIndex = null
+                            showTooltipForIndex = null,
+                            unit = unit
                         )
                     }
                 }

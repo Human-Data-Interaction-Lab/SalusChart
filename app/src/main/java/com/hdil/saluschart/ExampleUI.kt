@@ -51,6 +51,7 @@ import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.data.model.model.HealthData
 import com.hdil.saluschart.data.model.model.Mass
+import com.hdil.saluschart.data.model.model.MassUnit
 import com.hdil.saluschart.data.model.model.StepCount
 import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.data.provider.SampleDataProvider
@@ -83,6 +84,7 @@ import java.time.ZoneId
 private val stepCountHealthData = SampleDataProvider.getStepCountData()
 private val weightHealthData = SampleDataProvider.getWeightData()
 private val bloodPressureHealthData = SampleDataProvider.getBloodPressureData()
+private val bodyFatHealthData = SampleDataProvider.getBodyFatData()
 private val rangeData = SampleDataProvider.getHeartRateRangeData()
 private val stackedData = SampleDataProvider.getNutritionStackedData()
 private val segmentLabels = SampleDataProvider.segmentLabels
@@ -101,13 +103,13 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "BarChart 3",
         "DonutChart 1",
         "Weight Data Line Chart",
-        "LineChart 2",
+        "Body Fat Data Line Chart",
         "PieChart 1",
         "CalendarChart 1",
         "CalendarChart 2",
         "Blood Pressure Data Scatter Plot",
         "Minimal Chart",
-        "Stacked Bar Chart",
+        "Diet Data Stacked Bar Chart",
         "Range Bar Chart",
         "Progress Bar Chart",
         "Progress Ring Chart",
@@ -149,13 +151,13 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "BarChart 3" -> BarChart_3()
                 "DonutChart 1" -> DonutChart_1()
                 "Weight Data Line Chart" -> LineChart_1()
-                "LineChart 2" -> LineChart_2()
+                "Body Fat Data Line Chart" -> LineChart_2()
                 "PieChart 1" -> PieChart_1()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
                 "Blood Pressure Data Scatter Plot" -> ScatterPlot_1()
                 "Minimal Chart" -> Minimal_BarChart()
-                "Stacked Bar Chart" -> StackedBarChart_1()
+                "Diet Data Stacked Bar Chart" -> StackedBarChart_1()
                 "Range Bar Chart" -> RangeBarChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
@@ -248,25 +250,106 @@ fun DonutChart_1() {
 
 @Composable
 fun LineChart_1() {
-    Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
-        LineChart(
-            modifier = Modifier.fillMaxWidth().height(250.dp),
-            data = weightHealthData.transform(
-                timeUnit = TimeUnitGroup.DAY,
-                aggregationType = AggregationType.SUM
-            ),
-            title = "일별 체중 변화",
-            yLabel = "체중 (kg)",
-            xLabel = "날짜",
-            lineColor = Primary_Purple,
-            strokeWidth = 12f,
-            minY = 50f,
-            showPoint = false,
-            showValue = false,
-            windowSize = 6,
-            interactionType = InteractionType.Line.TOUCH_AREA,
-            yAxisPosition = YAxisPosition.RIGHT
-        )
+    var selectedUnit by remember { mutableStateOf("kg") }
+    var expanded by remember { mutableStateOf(false) }
+    
+    val unitOptions = listOf("kg", "lb", "g")
+    
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Unit Selection Dropdown
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "체중 단위:",
+                modifier = Modifier.padding(end = 8.dp),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+            
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clickable { expanded = !expanded }
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedUnit,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Unit Dropdown",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    unitOptions.forEach { unit ->
+                        DropdownMenuItem(
+                            text = { 
+                                Text(
+                                    text = unit,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            onClick = {
+                                selectedUnit = unit
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Weight Chart
+        Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
+            LineChart(
+                modifier = Modifier.fillMaxWidth().height(250.dp),
+                data = weightHealthData.transform(
+                    massUnit = when (selectedUnit) {
+                        "kg" -> MassUnit.KILOGRAM
+                        "lb" -> MassUnit.POUND
+                        "g" -> MassUnit.GRAM
+                        else -> MassUnit.KILOGRAM
+                    },
+                    timeUnit = TimeUnitGroup.DAY,
+                    aggregationType = AggregationType.DAILY_AVERAGE
+                ),
+                title = "일별 체중 변화",
+                unit = selectedUnit,
+                yLabel = "체중 ($selectedUnit)",
+                xLabel = "날짜",
+                minY = when (selectedUnit) {
+                    "kg" -> 50f
+                    "lb" -> 110f
+                    "g" -> 50000f
+                    else -> 50f
+                },
+                lineColor = Primary_Purple,
+                strokeWidth = 12f,
+                showPoint = true,
+                pointRadius = Pair(6.dp, 3.dp),
+                showValue = false,
+                windowSize = 7,
+                interactionType = InteractionType.Line.POINT,
+                yAxisPosition = YAxisPosition.RIGHT
+            )
+        }
     }
 }
 
@@ -274,22 +357,24 @@ fun LineChart_1() {
 fun LineChart_2() {
     LineChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints,
+        data = bodyFatHealthData.transform(
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.SUM
+        ),
         title = "요일별 활동량",
         yLabel = "활동량",
         xLabel = "요일",
+        minY = 10f,
+        maxY = 30f,
         lineColor = Primary_Purple,
         showPoint = true,
         pointRadius = Pair(8.dp, 4.dp),
         strokeWidth = 4f,
-        minY = 5f,
-        maxY = 70f,
         interactionType = InteractionType.Line.POINT,
         yAxisPosition = YAxisPosition.LEFT,
         referenceLineType = ReferenceLineType.TREND,
         referenceLineStyle = LineStyle.DASHDOT,
-        showReferenceLineLabel = false,  // Turn off default label
-        referenceLineInteractive = true,  // Enable interactive mode
+        windowSize = 8
     )
 }
 

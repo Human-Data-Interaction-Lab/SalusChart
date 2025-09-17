@@ -19,3 +19,14 @@ data class Mass private constructor(
 
     override fun toString(): String = "${toKilograms()} kg"
 }
+
+/**
+ * Mass unit enumeration for API convenience
+ * Represents the unit type, not actual mass values
+ */
+enum class MassUnit(val displayName: String, val converter: (Mass) -> Double) {
+    KILOGRAM("kg", { it.toKilograms() }),
+    POUND("lb", { it.toPounds() }),
+    GRAM("g", { it.toGrams() }),
+    OUNCE("oz", { it.toOunces() })
+}

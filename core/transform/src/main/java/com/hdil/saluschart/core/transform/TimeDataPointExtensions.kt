@@ -553,15 +553,38 @@ fun List<SleepSession>.transform(
 
 /**
  * Weight 리스트를 직접 ChartPoint로 변환하는 편의 함수
+ * @param massUnit 질량 단위 지정 (MassUnit.KILOGRAM, MassUnit.POUND, MassUnit.GRAM 등)
+ * @param timeUnit 시간 단위
+ * @param aggregationType 집계 방법
  */
 @JvmName("weightTransform")
 fun List<Weight>.transform(
+    massUnit: MassUnit = MassUnit.KILOGRAM,
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
     aggregationType: AggregationType = AggregationType.DAILY_AVERAGE
 ): List<ChartPoint> {
-    return this.toTimeDataPoint()
+    // Transform to base ChartPoints first (no unit conversion yet)
+    val baseChartPoints = this.toTimeDataPoint()
         .transform(timeUnit, aggregationType)
         .toChartPoints()
+    
+    // Now convert the y values to the target unit (keep original labels)
+    return baseChartPoints.map { chartPoint ->
+        // chartPoint.y is in kilograms (from Mass.toKilograms() in toTimeDataPoint)
+        // Convert from kg to target unit
+        val convertedValue = when (massUnit) {
+            MassUnit.KILOGRAM -> chartPoint.y // Already in kg
+            MassUnit.POUND -> chartPoint.y * 2.20462 // kg to pounds
+            MassUnit.GRAM -> chartPoint.y * 1000.0 // kg to grams  
+            MassUnit.OUNCE -> chartPoint.y * 35.274 // kg to ounces
+        }.toFloat()
+        
+        ChartPoint(
+            x = chartPoint.x,
+            y = convertedValue,
+            label = chartPoint.label // Keep original time-based label
+        )
+    }
 }
 
 /**

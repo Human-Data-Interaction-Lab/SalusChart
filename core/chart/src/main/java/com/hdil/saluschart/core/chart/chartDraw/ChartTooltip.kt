@@ -22,6 +22,7 @@ import kotlin.math.roundToInt
  * 차트 툴팁을 표시하는 컴포저블
  *
  * @param chartPoint 표시할 데이터 포인트
+ * @param unit 데이터 단위 (예: "kg", "lb", "bpm" 등)
  * @param backgroundColor 툴팁 배경색
  * @param textColor 텍스트 색상
  * @param modifier 모디파이어
@@ -29,6 +30,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ChartTooltip(
     chartPoint: BaseChartPoint,
+    unit: String = "",
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
     modifier: Modifier = Modifier
@@ -103,7 +105,11 @@ fun ChartTooltip(
                                 )
                         )
                         Text(
-                            text = chartPoint.y.roundToInt().toString(),
+                            text = if (unit.isNotEmpty()) {
+                                "${chartPoint.y.roundToInt()}$unit"
+                            } else {
+                                chartPoint.y.roundToInt().toString()
+                            },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = textColor.copy(alpha = 0.9f),

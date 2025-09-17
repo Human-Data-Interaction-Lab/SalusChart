@@ -67,7 +67,8 @@ fun ScatterPlot(
     yAxisFixedWidth: Dp = 16.dp,
     autoFixYAxisOnScroll: Boolean = true,
     minY: Float? = null,
-    maxY: Float? = null
+    maxY: Float? = null,
+    unit: String = "", // 단위 (예: "kg", "bpm" 등)
 ) {
     if (data.isEmpty()) return
 
@@ -176,8 +177,8 @@ fun ScatterPlot(
                         chartType = chartType,
                         showTooltipForIndex = selectedPointIndex,
                         canvasSize = canvasSize,
+                        unit = unit,
                     )
-                }
 
                     // Conditional interaction based on interactionType parameter
                     when (interactionType) {
@@ -200,6 +201,7 @@ fun ScatterPlot(
                                 innerRadius = 0.dp,
                                 interactive = true,
                                 canvasSize = canvasSize,
+                                unit = unit,
                             )
                         }
 
@@ -218,6 +220,7 @@ fun ScatterPlot(
                                 innerRadius = 0.dp,
                                 interactive = false,
                                 canvasSize = canvasSize,
+                                unit = unit,
                             )
                         }
                     }
@@ -266,3 +269,4 @@ fun ScatterPlot(
 
         Spacer(modifier = Modifier.height(4.dp))
     }
+}

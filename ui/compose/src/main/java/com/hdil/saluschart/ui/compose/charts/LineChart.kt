@@ -97,7 +97,8 @@ fun LineChart(
     initialPage: Int? = null,
 
     renderTooltipExternally: Boolean = true,
-    ) {
+    unit: String = "", // Added unit parameter for tooltip
+) {
     if (data.isEmpty()) return
 
     if (pagingEnabled && pageSize > 0 && data.size > pageSize) {
@@ -372,6 +373,7 @@ fun LineChart(
 
                             ChartTooltip(
                                 chartPoint = data[i],
+                                unit = unit,
                                 modifier = Modifier
                                     .offset { IntOffset(xClamped.toInt(), yClamped.toInt()) }
                                     .onSizeChanged { tipSize = it }   // measure so clamping is exact

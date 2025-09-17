@@ -72,6 +72,7 @@ object ScatterPlotDraw {
         chartType: ChartType,
         showTooltipForIndex: Int? = null,
         canvasSize: Size,
+        unit : String = "",
     ) {
         val density = LocalDensity.current
         var shouldShowTooltip = false
@@ -204,8 +205,8 @@ object ScatterPlotDraw {
             val yDp = with(density) { tooltipOffset!!.y.toDp() }
             ChartTooltip(
                 chartPoint = tooltipData!!,
-                modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius)
-
+                modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius),
+                unit = unit,
             )
         }
     }

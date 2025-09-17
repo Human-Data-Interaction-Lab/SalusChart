@@ -31,33 +31,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
-import com.hdil.saluschart.core.chart.ProgressChartPoint
 import com.hdil.saluschart.core.chart.RangeChartPoint
-import com.hdil.saluschart.core.chart.StackedChartPoint
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
-import com.hdil.saluschart.core.transform.TimeDataPoint
-import com.hdil.saluschart.core.transform.toChartPoints
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
-import com.hdil.saluschart.data.model.model.HealthData
-import com.hdil.saluschart.data.model.model.Mass
-import com.hdil.saluschart.data.model.model.StepCount
-import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.data.provider.SampleDataProvider
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
-import com.hdil.saluschart.ui.compose.charts.CalendarEntry
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
 import com.hdil.saluschart.ui.compose.charts.MinimalGaugeChart
@@ -73,10 +61,7 @@ import com.hdil.saluschart.ui.theme.Orange
 import com.hdil.saluschart.ui.theme.Primary_Purple
 import com.hdil.saluschart.ui.theme.Teel
 import com.hdil.saluschart.ui.theme.Yellow
-import java.time.Instant
-import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 
 // Note: Sample data moved to SampleDataProvider for better organization
 
@@ -274,6 +259,7 @@ fun LineChart_1() {
             yAxisFixedWidth = 28.dp,
             yTickStep = 10f
         )
+    }
 }
 
 @Composable
@@ -363,7 +349,7 @@ fun CalendarChart_3() {
     val entriesByMonth = remember(entries) {
         entries.groupBy { YearMonth.from(it.date) }
     }
-    val initialYm = YearMonth.from(startDate)
+    val initialYm = YearMonth.now()
 
     PagedCalendarChart(
         modifier = Modifier

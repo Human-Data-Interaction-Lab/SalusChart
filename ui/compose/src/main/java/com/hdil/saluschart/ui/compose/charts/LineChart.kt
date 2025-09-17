@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.geometry.Size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,32 +26,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
+import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.ui.theme.ChartColor
 
 @Composable
@@ -195,30 +191,6 @@ fun LineChart(
                             )
                         }
                     }
-                ) {
-                    val metrics = ChartMath.computeMetrics(
-                        size = size,
-                        values = yValues, // 전체 데이터 기준으로 Y축 스케일 계산
-                        chartType = ChartType.BAR,
-                        minY = minY,
-                        maxY = maxY
-                    )
-
-                    val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
-
-                    // 포인트 위치와 차트 메트릭스를 상태 변수에 저장
-                    canvasPoints = points
-                    chartMetrics = metrics
-
-                    ChartDraw.drawGrid(this, size, metrics, yAxisPosition)
-                    ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
-                    ChartDraw.Line.drawXAxisLabels(
-                        ctx = drawContext,
-                        labels = xLabels,
-                        metrics = metrics,
-                        textSize = labelTextSize,
-                        maxXTicksLimit = maxXTicksLimit
-                    )
                 }
 
                 Box(
@@ -250,7 +222,7 @@ fun LineChart(
                         ChartDraw.drawGrid(this, size, metrics, yAxisPosition, drawLabels = !isFixedYAxis)
                         if (!isFixedYAxis) ChartDraw.drawYAxis(this, metrics, yAxisPosition)
 
-                        val points = ChartMath.mapToCanvasPoints(data, size, metrics)
+                        val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
                         canvasPoints = points
                         ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
                         ChartDraw.Line.drawXAxisLabels(
@@ -266,7 +238,7 @@ fun LineChart(
                             height = chartMetrics!!.chartHeight
                         )
 
-                        val anchorsPx = ChartMath.Line.computeLabelAnchors(
+                        ChartMath.Line.computeLabelAnchors(
                             points = points,
                             values = yValues,
                             canvas = canvasForLabels,
@@ -274,7 +246,7 @@ fun LineChart(
                             padPx  = with(drawContext.density) { 2.dp.toPx() },
                             minGapToLinePx = with(drawContext.density) { 6.dp.toPx() },
                             passes = 6,
-                            strokeWidthPx = strokeWidth, // your line thickness in px if you have it
+                            strokeWidthPx = strokeWidth,
                             edgeMarginPx  = with(drawContext.density) { 8.dp.toPx() }
                         )
                     }

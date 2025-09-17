@@ -1,12 +1,10 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
-import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
-import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
 /**
@@ -151,7 +149,7 @@ object ChartDraw {
         labelTextSizePx: Float = 28f
     ) {
         // Axis X anchored to the pane edge (1px in from the edge)
-        val axisX = if (yAxisPosition == YAxisPosition.RIGHT) paneWidthPx - 1f else 1f
+        val axisX = if (yAxisPosition == YAxisPosition.RIGHT) paneWidthPx - 0.5f else 0.5f
 
         // Axis line
         drawScope.drawLine(

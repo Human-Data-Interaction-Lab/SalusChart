@@ -31,24 +31,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
-import com.hdil.saluschart.core.chart.ProgressChartPoint
 import com.hdil.saluschart.core.chart.RangeChartPoint
-import com.hdil.saluschart.core.chart.StackedChartPoint
-import com.hdil.saluschart.core.transform.TimeDataPoint
-import com.hdil.saluschart.core.transform.toChartPoints
-import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
-import com.hdil.saluschart.core.util.TimeUnitGroup
+import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
+import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.HealthData
 import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.MassUnit
@@ -58,12 +51,12 @@ import com.hdil.saluschart.data.provider.SampleDataProvider
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
-import com.hdil.saluschart.ui.compose.charts.CalendarEntry
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
 import com.hdil.saluschart.ui.compose.charts.MinimalGaugeChart
 import com.hdil.saluschart.ui.compose.charts.MinimalLineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalRangeBarChart
+import com.hdil.saluschart.ui.compose.charts.PagedCalendarChart
 import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
@@ -73,10 +66,7 @@ import com.hdil.saluschart.ui.theme.Orange
 import com.hdil.saluschart.ui.theme.Primary_Purple
 import com.hdil.saluschart.ui.theme.Teel
 import com.hdil.saluschart.ui.theme.Yellow
-import java.time.Instant
-import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 
 // Note: Sample data moved to SampleDataProvider for better organization
 
@@ -104,9 +94,12 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "DonutChart 1",
         "Weight Data Line Chart",
         "Body Fat Data Line Chart",
+        "LineChart 2",
+        "LineChart 3",
         "PieChart 1",
         "CalendarChart 1",
         "CalendarChart 2",
+        "CalendarChart 3",
         "Blood Pressure Data Scatter Plot",
         "Minimal Chart",
         "Diet Data Stacked Bar Chart",
@@ -152,9 +145,12 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "DonutChart 1" -> DonutChart_1()
                 "Weight Data Line Chart" -> LineChart_1()
                 "Body Fat Data Line Chart" -> LineChart_2()
+                "LineChart 2" -> LineChart_2()
+                "LineChart 3" -> LineChart_3()
                 "PieChart 1" -> PieChart_1()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
+                "CalendarChart 3" -> CalendarChart_3()
                 "Blood Pressure Data Scatter Plot" -> ScatterPlot_1()
                 "Minimal Chart" -> Minimal_BarChart()
                 "Diet Data Stacked Bar Chart" -> StackedBarChart_1()
@@ -252,9 +248,9 @@ fun DonutChart_1() {
 fun LineChart_1() {
     var selectedUnit by remember { mutableStateOf("kg") }
     var expanded by remember { mutableStateOf(false) }
-    
+
     val unitOptions = listOf("kg", "lb", "g")
-    
+
     Column(modifier = Modifier.fillMaxWidth()) {
         // Unit Selection Dropdown
         Row(
@@ -269,7 +265,7 @@ fun LineChart_1() {
                 fontSize = 16.sp,
                 color = Color.Black
             )
-            
+
             Box {
                 Row(
                     modifier = Modifier
@@ -293,14 +289,14 @@ fun LineChart_1() {
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                
+
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
                     unitOptions.forEach { unit ->
                         DropdownMenuItem(
-                            text = { 
+                            text = {
                                 Text(
                                     text = unit,
                                     fontSize = 14.sp
@@ -315,7 +311,7 @@ fun LineChart_1() {
                 }
             }
         }
-        
+
         // Weight Chart
         Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
             LineChart(
@@ -379,6 +375,26 @@ fun LineChart_2() {
 }
 
 @Composable
+fun LineChart_3() {
+    LineChart(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        data = chartPoints4,
+        title = "요일별 활동량",
+        lineColor = Primary_Purple,
+        strokeWidth = 12f,
+        showPoint = false,
+        showValue = true,
+        yAxisPosition = YAxisPosition.RIGHT,
+        // paging:
+        pagingEnabled = true,
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yAxisFixedWidth = 28.dp,
+        yTickStep = 10f
+    )
+}
+
+@Composable
 fun PieChart_1() {
     PieChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
@@ -416,6 +432,26 @@ fun CalendarChart_2() {
         minBubbleSize = 6f
     )
 }
+
+@Composable
+fun CalendarChart_3() {
+    val entriesByMonth = remember(entries) {
+        entries.groupBy { YearMonth.from(it.date) }
+    }
+    val initialYm = YearMonth.now()
+
+    PagedCalendarChart(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(600.dp),
+        initialYearMonth = initialYm,
+        entriesForMonth = { ym -> entriesByMonth[ym].orEmpty() },
+        color = Primary_Purple,
+        maxBubbleSize = 10f,
+        minBubbleSize = 6f
+    )
+}
+
 
 @Composable
 fun ScatterPlot_1() {

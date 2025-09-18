@@ -157,7 +157,7 @@ private fun TimeDataPoint.generateTimeLabels(): List<String> {
                     7 -> "일"
                     else -> "?"
                 }
-                "${dateTime.monthValue}/${dateTime.dayOfMonth} $dayOfWeekKorean"
+                "${dateTime.monthValue}/${dateTime.dayOfMonth}$dayOfWeekKorean"
             }
         }
         TimeUnitGroup.WEEK -> {

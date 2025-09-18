@@ -62,7 +62,7 @@ fun LineChart(
     strokeWidth: Float = 4f,
     minY: Float? = null,                    // 사용자 지정 최소 Y값
     maxY: Float? = null,                    // 사용자 지정 최대 Y값
-    labelTextSize: Float = 28f,
+    xLabelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,  // Y축 위치
     interactionType: InteractionType.Line = InteractionType.Line.POINT,
@@ -97,7 +97,7 @@ fun LineChart(
     initialPage: Int? = null,
 
     renderTooltipExternally: Boolean = true,
-    unit: String = "", // Added unit parameter for tooltip
+    unit: String = "",
 ) {
     if (data.isEmpty()) return
 
@@ -112,7 +112,7 @@ fun LineChart(
             yLabel = yLabel,
             lineColor = lineColor,
             strokeWidth = strokeWidth,
-            labelTextSize = labelTextSize,
+            xLabelTextSize = xLabelTextSize,
             tooltipTextSize = tooltipTextSize,
             interactionType = interactionType,
             yAxisPosition = yAxisPosition,
@@ -145,13 +145,9 @@ fun LineChart(
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
 
-            val axisGutter = if (isFixedYAxis) 2.dp else 0.dp
-
-            // paddings for the chart area (axis side gets the small gutter)
-            val startPad =
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) axisGutter else marginHorizontal
-            val endPad =
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) axisGutter else marginHorizontal
+            // Use the same simple padding logic as BarChart (no axisGutter)
+            val startPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) 0.dp else marginHorizontal
+            val endPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) 0.dp else marginHorizontal
 
             // width taken by the fixed Y-axis pane (left or right)
             val fixedPaneWidth = if (isFixedYAxis) yAxisFixedWidth else 0.dp
@@ -228,9 +224,9 @@ fun LineChart(
                         ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
                         ChartDraw.Line.drawXAxisLabels(
                             ctx = drawContext,
-                            labels = data.map { it.x.toString() },
+                            labels = xLabels,
                             metrics = metrics,
-                            textSize = labelTextSize,
+                            textSize = xLabelTextSize,
                             maxXTicksLimit = maxXTicksLimit
                         )
 
@@ -417,7 +413,7 @@ private fun LineChartPagedInternal(
     yLabel: String,
     lineColor: Color,
     strokeWidth: Float,
-    labelTextSize: Float,
+    xLabelTextSize: Float,
     tooltipTextSize: Float,
     interactionType: InteractionType.Line,
     yAxisPosition: YAxisPosition,
@@ -430,7 +426,8 @@ private fun LineChartPagedInternal(
     yTickStep: Float?,
     initialPage: Int?,
     minY: Float?,
-    maxY: Float?
+    maxY: Float?,
+    unit : String = "",
 ) {
     // how many pages
     val pageCount = remember(data.size, pageSize) {
@@ -490,7 +487,7 @@ private fun LineChartPagedInternal(
                     strokeWidth = strokeWidth,
                     minY = 0f.takeIf { chartTypeForLineWantsZero() } ?: minY,
                     maxY = maxRounded,
-                    labelTextSize = labelTextSize,
+                    xLabelTextSize = xLabelTextSize,
                     tooltipTextSize = tooltipTextSize,
                     yAxisPosition = yAxisPosition,
                     interactionType = interactionType,
@@ -511,7 +508,8 @@ private fun LineChartPagedInternal(
                         bottom = 0.dp
                     ),
                     autoFixYAxisOnScroll = false,         // this page is not scrollable
-                    pagingEnabled = false                  // do not recurse into pager
+                    pagingEnabled = false,                  // do not recurse into pager
+                    unit = unit
                 )
             }
 

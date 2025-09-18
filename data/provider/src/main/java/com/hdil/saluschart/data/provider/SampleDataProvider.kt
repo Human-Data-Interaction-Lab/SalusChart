@@ -17,6 +17,10 @@ import com.hdil.saluschart.ui.compose.charts.CalendarEntry
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.*
+import kotlin.random.Random
+import kotlin.math.roundToInt
+
 
 /**
  * Provides sample data for demonstration and testing purposes.
@@ -39,37 +43,94 @@ object SampleDataProvider {
     /**
      * Sample step count health data spanning two days with 30-minute intervals
      */
-    fun getStepCountData(): List<StepCount> = listOf(
-        StepCount(Instant.parse("2025-05-04T08:00:00Z"), Instant.parse("2025-05-04T08:30:00Z"), 2431),
-        StepCount(Instant.parse("2025-05-04T09:00:00Z"), Instant.parse("2025-05-04T09:30:00Z"), 1359),
-        StepCount(Instant.parse("2025-05-04T10:00:00Z"), Instant.parse("2025-05-04T10:30:00Z"), 6149),
-        StepCount(Instant.parse("2025-05-04T11:00:00Z"), Instant.parse("2025-05-04T11:30:00Z"), 4246),
-        StepCount(Instant.parse("2025-05-04T12:00:00Z"), Instant.parse("2025-05-04T12:30:00Z"), 2855),
-        StepCount(Instant.parse("2025-05-04T13:00:00Z"), Instant.parse("2025-05-04T13:30:00Z"), 9831),
-        StepCount(Instant.parse("2025-05-04T14:00:00Z"), Instant.parse("2025-05-04T14:30:00Z"), 1498),
-        StepCount(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:30:00Z"), 8455),
-        StepCount(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:30:00Z"), 4662),
-        StepCount(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:30:00Z"), 1329),
-        StepCount(Instant.parse("2025-05-04T18:00:00Z"), Instant.parse("2025-05-04T18:30:00Z"), 2327),
-        StepCount(Instant.parse("2025-05-04T19:00:00Z"), Instant.parse("2025-05-04T19:30:00Z"), 7369),
-        StepCount(Instant.parse("2025-05-04T20:00:00Z"), Instant.parse("2025-05-04T20:30:00Z"), 1649),
-        StepCount(Instant.parse("2025-05-04T21:00:00Z"), Instant.parse("2025-05-04T21:30:00Z"), 8768),
-        StepCount(Instant.parse("2025-05-04T22:00:00Z"), Instant.parse("2025-05-04T22:30:00Z"), 5235),
-        StepCount(Instant.parse("2025-05-04T23:00:00Z"), Instant.parse("2025-05-04T23:30:00Z"), 8286),
-        StepCount(Instant.parse("2025-05-05T00:00:00Z"), Instant.parse("2025-05-05T00:30:00Z"), 9606),
-        StepCount(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:30:00Z"), 8043),
-        StepCount(Instant.parse("2025-05-05T02:00:00Z"), Instant.parse("2025-05-05T02:30:00Z"), 6046),
-        StepCount(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), 4874),
-        StepCount(Instant.parse("2025-05-05T04:00:00Z"), Instant.parse("2025-05-05T04:30:00Z"), 5893),
-        StepCount(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:30:00Z"), 5060),
-        StepCount(Instant.parse("2025-05-05T06:00:00Z"), Instant.parse("2025-05-05T06:30:00Z"), 4520),
-        StepCount(Instant.parse("2025-05-05T07:00:00Z"), Instant.parse("2025-05-05T07:30:00Z"), 6420),
-        StepCount(Instant.parse("2025-05-05T08:00:00Z"), Instant.parse("2025-05-05T08:30:00Z"), 1837),
-        StepCount(Instant.parse("2025-05-05T09:00:00Z"), Instant.parse("2025-05-05T09:30:00Z"), 5893),
-        StepCount(Instant.parse("2025-05-05T10:00:00Z"), Instant.parse("2025-05-05T10:30:00Z"), 4000),
-        StepCount(Instant.parse("2025-05-05T11:00:00Z"), Instant.parse("2025-05-05T11:30:00Z"), 5760),
-        StepCount(Instant.parse("2025-05-05T12:00:00Z"), Instant.parse("2025-05-05T12:30:00Z"), 3621),
-        StepCount(Instant.parse("2025-05-05T13:00:00Z"), Instant.parse("2025-05-05T13:30:00Z"), 7387)
+//    fun getStepCountData(): List<StepCount> = listOf(
+//        StepCount(Instant.parse("2025-05-04T08:00:00Z"), Instant.parse("2025-05-04T08:30:00Z"), 43),
+//        StepCount(Instant.parse("2025-05-04T09:00:00Z"), Instant.parse("2025-05-04T09:30:00Z"), 139),
+//        StepCount(Instant.parse("2025-05-04T10:00:00Z"), Instant.parse("2025-05-04T10:30:00Z"), 649),
+//        StepCount(Instant.parse("2025-05-04T11:00:00Z"), Instant.parse("2025-05-04T11:30:00Z"), 426),
+//        StepCount(Instant.parse("2025-05-04T12:00:00Z"), Instant.parse("2025-05-04T12:30:00Z"), 285),
+//        StepCount(Instant.parse("2025-05-04T13:00:00Z"), Instant.parse("2025-05-04T13:30:00Z"), 981),
+//        StepCount(Instant.parse("2025-05-04T14:00:00Z"), Instant.parse("2025-05-04T14:30:00Z"), 148),
+//        StepCount(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:30:00Z"), 845),
+//        StepCount(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:30:00Z"), 462),
+//        StepCount(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:30:00Z"), 139),
+//        StepCount(Instant.parse("2025-05-04T18:00:00Z"), Instant.parse("2025-05-04T18:30:00Z"), 237),
+//        StepCount(Instant.parse("2025-05-04T19:00:00Z"), Instant.parse("2025-05-04T19:30:00Z"), 739),
+//        StepCount(Instant.parse("2025-05-04T20:00:00Z"), Instant.parse("2025-05-04T20:30:00Z"), 169),
+//        StepCount(Instant.parse("2025-05-04T21:00:00Z"), Instant.parse("2025-05-04T21:30:00Z"), 878),
+//        StepCount(Instant.parse("2025-05-04T22:00:00Z"), Instant.parse("2025-05-04T22:30:00Z"), 525),
+//        StepCount(Instant.parse("2025-05-04T23:00:00Z"), Instant.parse("2025-05-04T23:30:00Z"), 826),
+//        StepCount(Instant.parse("2025-05-05T00:00:00Z"), Instant.parse("2025-05-05T00:30:00Z"), 96),
+//        StepCount(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:30:00Z"), 80),
+//        StepCount(Instant.parse("2025-05-05T02:00:00Z"), Instant.parse("2025-05-05T02:30:00Z"), 0),
+//        StepCount(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), 0),
+//        StepCount(Instant.parse("2025-05-05T04:00:00Z"), Instant.parse("2025-05-05T04:30:00Z"), 0),
+//        StepCount(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:30:00Z"), 0),
+//        StepCount(Instant.parse("2025-05-05T06:00:00Z"), Instant.parse("2025-05-05T06:30:00Z"), 0),
+//        StepCount(Instant.parse("2025-05-05T07:00:00Z"), Instant.parse("2025-05-05T07:30:00Z"), 0),
+//        StepCount(Instant.parse("2025-05-05T08:00:00Z"), Instant.parse("2025-05-05T08:30:00Z"), 18),
+//        StepCount(Instant.parse("2025-05-05T09:00:00Z"), Instant.parse("2025-05-05T09:30:00Z"), 289),
+//        StepCount(Instant.parse("2025-05-05T10:00:00Z"), Instant.parse("2025-05-05T10:30:00Z"), 400),
+//        StepCount(Instant.parse("2025-05-05T11:00:00Z"), Instant.parse("2025-05-05T11:30:00Z"), 576),
+//        StepCount(Instant.parse("2025-05-05T12:00:00Z"), Instant.parse("2025-05-05T12:30:00Z"), 362),
+//        StepCount(Instant.parse("2025-05-05T13:00:00Z"), Instant.parse("2025-05-05T13:30:00Z"), 738)
+//    )
+
+    /**
+     * Generates StepCount data with 0 steps from 02:00–08:00 local time.
+     * - intervalMinutes: typically 30
+     * - zoneId: used to decide sleep window in local time (default Asia/Seoul)
+     * - seed: pass a value for deterministic output; null = random
+     */
+    fun generateStepCounts(
+        startInclusive: Instant,
+        endExclusive: Instant,
+        intervalMinutes: Long = 30,
+        zoneId: ZoneId = ZoneId.of("Asia/Seoul"),
+        seed: Long? = null
+    ): List<StepCount> {
+        require(!endExclusive.isBefore(startInclusive)) { "endExclusive must be >= startInclusive" }
+        val rng = seed?.let { Random(it) } ?: Random(System.currentTimeMillis())
+
+        fun randomCountForLocalTime(zdt: ZonedDateTime): Int {
+            // Sleep window: 02:00–07:59 local time
+            if (zdt.hour in 2..7) return 0
+
+            val hour = zdt.hour
+            // Base ranges by time-of-day (tuned to look like your samples)
+            val (min, max) = when (hour) {
+                in 8..10 -> 40 to 450    // ramp up morning
+                in 11..13 -> 200 to 700  // mid-day move
+                in 14..17 -> 300 to 850  // afternoon
+                in 18..21 -> 350 to 950  // evening peak
+                else -> 50 to 400        // late night & very early morning outside sleep
+            }
+
+            // Smooth random with a slight burst chance
+            var v = rng.nextInt(min, max + 1)
+            if (rng.nextDouble() < 0.12) v = (v * 1.3).roundToInt()  // occasional burst
+            return v.coerceIn(0, 1200)
+        }
+
+        val out = ArrayList<StepCount>()
+        var cursor = startInclusive
+        val step = Duration.ofMinutes(intervalMinutes)
+
+        while (cursor.isBefore(endExclusive)) {
+            val zdt = cursor.atZone(zoneId)
+            val count = randomCountForLocalTime(zdt).toLong()
+            val next = cursor.plus(step)
+            out += StepCount(cursor, next, count)
+            cursor = next
+        }
+        return out
+    }
+
+    fun getStepCountData(): List<StepCount> = generateStepCounts(
+        startInclusive = Instant.parse("2025-05-04T15:00:00Z"),
+        endExclusive = Instant.parse("2025-05-11T14:00:00Z"),
+        intervalMinutes = 30,
+        zoneId = ZoneId.of("Asia/Seoul"),
     )
 
     /**
@@ -109,36 +170,36 @@ object SampleDataProvider {
     )
 
     fun getBodyFatData(): List<BodyFat> = listOf(
-        BodyFat(Instant.parse("2025-05-04T08:00:00Z"), 16.1),
+        BodyFat(Instant.parse("2025-05-04T08:00:00Z"), 22.1),
         BodyFat(Instant.parse("2025-05-03T08:00:00Z"), 24.2),
         BodyFat(Instant.parse("2025-05-02T08:00:00Z"), 20.7),
-        BodyFat(Instant.parse("2025-05-01T08:00:00Z"), 17.3),
+        BodyFat(Instant.parse("2025-05-01T08:00:00Z"), 18.3),
         BodyFat(Instant.parse("2025-04-30T08:00:00Z"), 20.9),
         BodyFat(Instant.parse("2025-04-29T08:00:00Z"), 15.3),
         BodyFat(Instant.parse("2025-04-28T08:00:00Z"), 18.0),
         BodyFat(Instant.parse("2025-04-27T08:00:00Z"), 19.4),
-        BodyFat(Instant.parse("2025-04-26T08:00:00Z"), 15.3),
+        BodyFat(Instant.parse("2025-04-26T08:00:00Z"), 18.3),
         BodyFat(Instant.parse("2025-04-25T08:00:00Z"), 19.8),
         BodyFat(Instant.parse("2025-04-24T08:00:00Z"), 21.7),
         BodyFat(Instant.parse("2025-04-23T08:00:00Z"), 22.1),
         BodyFat(Instant.parse("2025-04-22T08:00:00Z"), 22.4),
         BodyFat(Instant.parse("2025-04-21T08:00:00Z"), 21.6),
         BodyFat(Instant.parse("2025-04-20T08:00:00Z"), 19.2),
-        BodyFat(Instant.parse("2025-04-19T08:00:00Z"), 23.0),
-        BodyFat(Instant.parse("2025-04-18T08:00:00Z"), 24.9),
-        BodyFat(Instant.parse("2025-04-17T08:00:00Z"), 21.0),
+        BodyFat(Instant.parse("2025-04-19T08:00:00Z"), 20.0),
+        BodyFat(Instant.parse("2025-04-18T08:00:00Z"), 17.9),
+        BodyFat(Instant.parse("2025-04-17T08:00:00Z"), 16.0),
         BodyFat(Instant.parse("2025-04-16T08:00:00Z"), 15.7),
-        BodyFat(Instant.parse("2025-04-15T08:00:00Z"), 21.4),
+        BodyFat(Instant.parse("2025-04-15T08:00:00Z"), 14.4),
         BodyFat(Instant.parse("2025-04-14T08:00:00Z"), 18.0),
-        BodyFat(Instant.parse("2025-04-13T08:00:00Z"), 22.7),
+        BodyFat(Instant.parse("2025-04-13T08:00:00Z"), 16.7),
         BodyFat(Instant.parse("2025-04-12T08:00:00Z"), 17.5),
-        BodyFat(Instant.parse("2025-04-11T08:00:00Z"), 22.0),
-        BodyFat(Instant.parse("2025-04-10T08:00:00Z"), 15.7),
-        BodyFat(Instant.parse("2025-04-09T08:00:00Z"), 21.8),
-        BodyFat(Instant.parse("2025-04-08T08:00:00Z"), 19.7),
-        BodyFat(Instant.parse("2025-04-07T08:00:00Z"), 17.1),
-        BodyFat(Instant.parse("2025-04-06T08:00:00Z"), 19.2),
-        BodyFat(Instant.parse("2025-04-05T08:00:00Z"), 22.9)
+        BodyFat(Instant.parse("2025-04-11T08:00:00Z"), 12.0),
+        BodyFat(Instant.parse("2025-04-10T08:00:00Z"), 14.7),
+        BodyFat(Instant.parse("2025-04-09T08:00:00Z"), 11.8),
+        BodyFat(Instant.parse("2025-04-08T08:00:00Z"), 13.7),
+        BodyFat(Instant.parse("2025-04-07T08:00:00Z"), 13.1),
+        BodyFat(Instant.parse("2025-04-06T08:00:00Z"), 13.2),
+        BodyFat(Instant.parse("2025-04-05T08:00:00Z"), 12.9)
     )
 
     fun getBloodPressureData(): List<BloodPressure> = listOf(

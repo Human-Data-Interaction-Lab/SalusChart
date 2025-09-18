@@ -52,7 +52,7 @@ fun BarChart(
     minY: Float? = null,
     maxY: Float? = null,
     barWidthRatio: Float = 0.8f,
-    labelTextSize: Float = 28f,
+    xLabelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Bar = InteractionType.Bar.BAR,
@@ -85,7 +85,8 @@ fun BarChart(
     // NEW — paged mode
     pageSize: Int? = null,                      // if not null => paged mode
     unifyYAxisAcrossPages: Boolean = true,      // for paged mode
-    yTickStepDefaultForPaged: Float = 10f       // for paged mode (use 10s)
+    yTickStepDefaultForPaged: Float = 10f,       // for paged mode (use 10s)
+    unit: String = "",
 ) {
     if (data.isEmpty()) return
 
@@ -148,7 +149,7 @@ fun BarChart(
                         minY = null,                 // BAR => baseline 0
                         maxY = maxRounded,           // unified with axis
                         barWidthRatio = barWidthRatio,
-                        labelTextSize = labelTextSize,
+                        xLabelTextSize = xLabelTextSize,
                         tooltipTextSize = tooltipTextSize,
                         yAxisPosition = yAxisPosition,
                         interactionType = interactionType,
@@ -162,7 +163,8 @@ fun BarChart(
                         yAxisFixedWidth = 0.dp,
                         yTickStep = tickStep,
                         showTitle = false,
-                        contentPadding = PaddingValues(start = padStart, end = padEnd)
+                        contentPadding = PaddingValues(start = padStart, end = padEnd),
+                        unit = unit
                     )
                 }
 
@@ -270,7 +272,7 @@ fun BarChart(
                             ctx = drawContext,
                             labels = xLabels,
                             metrics = metrics,
-                            textSize = labelTextSize,
+                            textSize = xLabelTextSize,
                             maxXTicksLimit = maxXTicksLimit
                         )
                     }
@@ -288,7 +290,9 @@ fun BarChart(
                                     barWidthRatio = barWidthRatio,
                                     interactive = false,
                                     chartType = ChartType.BAR,
-                                    showTooltipForIndex = selectedBarIndex
+                                    showTooltipForIndex = selectedBarIndex,
+                                    showLabel = showLabel,
+                                    unit = unit
                                 )
                             }
                             chartMetrics?.let { metrics ->
@@ -302,7 +306,8 @@ fun BarChart(
                                         onBarClick?.invoke(index, tooltipText.toFloat())
                                     },
                                     chartType = chartType,
-                                    isTouchArea = true
+                                    isTouchArea = true,
+                                    showLabel = false
                                 )
                             }
                         }
@@ -320,7 +325,8 @@ fun BarChart(
                                         onBarClick?.invoke(index, tooltipText.toFloat())
                                     },
                                     chartType = chartType,
-                                    showLabel = showLabel
+                                    showLabel = showLabel,
+                                    unit = unit
                                 )
                             }
                         }
@@ -413,7 +419,7 @@ private fun BarChartPageContent(
     minY: Float?,
     maxY: Float?,
     barWidthRatio: Float,
-    labelTextSize: Float,
+    xLabelTextSize: Float,
     tooltipTextSize: Float,
     yAxisPosition: YAxisPosition,
     interactionType: InteractionType.Bar,
@@ -426,7 +432,8 @@ private fun BarChartPageContent(
     yAxisFixedWidth: Dp,
     yTickStep: Float,
     showTitle: Boolean,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
+    unit: String = "",
 ) {
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
@@ -438,7 +445,7 @@ private fun BarChartPageContent(
         minY = minY,
         maxY = maxY,
         barWidthRatio = barWidthRatio,
-        labelTextSize = labelTextSize,
+        xLabelTextSize = xLabelTextSize,
         tooltipTextSize = tooltipTextSize,
         yAxisPosition = yAxisPosition,
         interactionType = interactionType,
@@ -452,7 +459,7 @@ private fun BarChartPageContent(
         yAxisFixedWidth = yAxisFixedWidth,
         yTickStep = yTickStep,
         showTitle = showTitle,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
+        unit = unit
     )
 }
-

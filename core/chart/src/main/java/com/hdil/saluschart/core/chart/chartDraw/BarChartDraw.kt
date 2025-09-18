@@ -128,6 +128,7 @@ object BarChartDraw {
         customTooltipText: List<String>? = null,
         segmentIndex: Int? = null,
         showLabel: Boolean = false,
+        unit: String = "",
     ) {
         val density = LocalDensity.current
 
@@ -294,6 +295,7 @@ object BarChartDraw {
             val yDp = with(density) { tooltipOffset.y.toDp() }
             ChartTooltip(
                 chartPoint = tooltipData,
+                unit = unit,
                 modifier = Modifier.offset(x = xDp, y = yDp - 80.dp)
             )
         }

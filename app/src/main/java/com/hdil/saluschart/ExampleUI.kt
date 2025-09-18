@@ -88,29 +88,27 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
-        "BarChart 1",
-        "Step Count Data Bar Chart",
+        "Standard Bar Chart",
+        "Step Count - Bar Chart",
         "BarChart 3",
-        "DonutChart 1",
-        "Weight Data Line Chart",
-        "Body Fat Data Line Chart",
-        "LineChart 2",
+        "Weight - Line Chart",
+        "Body Fat - Line Chart",
         "LineChart 3",
-        "PieChart 1",
+        "Blood Pressure - Scatter Plot",
+        "Diet - Stacked Bar Chart",
+        "Heart Rate - Range Bar Chart",
+        "Minimal Charts",
         "CalendarChart 1",
         "CalendarChart 2",
         "CalendarChart 3",
-        "Blood Pressure Data Scatter Plot",
-        "Minimal Chart",
-        "Diet Data Stacked Bar Chart",
-        "Range Bar Chart",
+        "PieChart 1",
+        "DonutChart 1",
         "Progress Bar Chart",
         "Progress Ring Chart",
-        "BarChart Timestep Transformation",
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Step Count Data Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Step Count - Bar Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -139,25 +137,23 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             }
 
             when (selectedChartType) {
-                "BarChart 1" -> BarChart_1()
-                "Step Count Data Bar Chart" -> BarChart_2()
+                "Standard Bar Chart" -> BarChart_1()
+                "Step Count - Bar Chart" -> BarChart_2()
                 "BarChart 3" -> BarChart_3()
-                "DonutChart 1" -> DonutChart_1()
-                "Weight Data Line Chart" -> LineChart_1()
-                "Body Fat Data Line Chart" -> LineChart_2()
-                "LineChart 2" -> LineChart_2()
+                "Weight - Line Chart" -> LineChart_1()
+                "Body Fat - Line Chart" -> LineChart_2()
                 "LineChart 3" -> LineChart_3()
-                "PieChart 1" -> PieChart_1()
+                "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
+                "Diet - Stacked Bar Chart" -> StackedBarChart_1()
+                "Heart Rate - Range Bar Chart" -> RangeBarChart_1()
+                "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
                 "CalendarChart 3" -> CalendarChart_3()
-                "Blood Pressure Data Scatter Plot" -> ScatterPlot_1()
-                "Minimal Chart" -> Minimal_BarChart()
-                "Diet Data Stacked Bar Chart" -> StackedBarChart_1()
-                "Range Bar Chart" -> RangeBarChart_1()
+                "PieChart 1" -> PieChart_1()
+                "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
-                "BarChart Timestep Transformation" -> TimeStepBarChart()
                 "X-Axis Tick Reduction Demo" -> XAxisTickReductionDemo()
                 else -> Text("Unknown Chart Type")
             }
@@ -173,46 +169,147 @@ fun BarChart_1() {
         data = chartPoints,
         xLabel = "Week",
         yLabel = "Value",
-        title = "Weekly Data",
+        title = "요일별 데이터",
         barColor = Primary_Purple,
         maxY = 70f,
         barWidthRatio = 0.8f,
-        labelTextSize = 40f,
+        xLabelTextSize = 40f,
         tooltipTextSize = 5f,
-        interactionType = InteractionType.Bar.TOUCH_AREA,
+        interactionType = InteractionType.Bar.BAR,
         yAxisPosition = YAxisPosition.LEFT,
+        showLabel = true,
         referenceLineType = ReferenceLineType.AVERAGE,
         referenceLineStyle = LineStyle.DASHED,
-        showReferenceLineLabel = false,  // Turn off default label
-        referenceLineInteractive = true,  // Enable interactive mode
+        showReferenceLineLabel = false,
+        referenceLineInteractive = true,
     )
 }
 
 @Composable
 fun BarChart_2() {
-    BarChart(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = stepCountHealthData.transform(
-            timeUnit = TimeUnitGroup.HOUR,
-            aggregationType = AggregationType.SUM
-        ),
-        xLabel = "Week",
-        yLabel = "Value",
-        title = "Weekly Data",
-        barColor = Primary_Purple,
-        barWidthRatio = 0.8f,
-        labelTextSize = 28f,
-        tooltipTextSize = 32f,
-        interactionType = InteractionType.Bar.BAR,
-        windowSize = 6,
-        showLabel = true,
-        yAxisPosition = YAxisPosition.RIGHT,
-        referenceLineType = ReferenceLineType.AVERAGE,
-        referenceLineStyle = LineStyle.DASHED,
-        showReferenceLineLabel = false,
-        referenceLineInteractive = true,
-        yAxisFixedWidth = 16.dp
-    )
+    var selectedTimeUnit by remember { mutableStateOf("Hour") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val timeUnitOptions = listOf("Hour", "Day", "Week")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Time Unit Selection Dropdown
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "시간 단위:",
+                modifier = Modifier.padding(end = 8.dp),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clickable { expanded = !expanded }
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedTimeUnit,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Time Unit Dropdown",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    timeUnitOptions.forEach { timeUnit ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = timeUnit,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            onClick = {
+                                selectedTimeUnit = timeUnit
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Step Count Bar Chart
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = stepCountHealthData.transform(
+                timeUnit = when (selectedTimeUnit) {
+                    "Hour" -> TimeUnitGroup.HOUR
+                    "Day" -> TimeUnitGroup.DAY
+                    "Week" -> TimeUnitGroup.WEEK
+                    else -> TimeUnitGroup.HOUR
+                },
+                aggregationType = when (selectedTimeUnit) {
+                    "Hour" -> AggregationType.SUM
+                    "Day" -> AggregationType.DAILY_AVERAGE
+                    "Week" -> AggregationType.SUM
+                    else -> AggregationType.SUM
+                }
+            ),
+            unit = "걸음",
+            xLabel = when (selectedTimeUnit) {
+                "Hour" -> "시간"
+                "Day" -> "날짜"
+                else -> "시간"
+            },
+            yLabel = "걸음수",
+            title = "걸음수 데이터 ($selectedTimeUnit 단위)",
+            barColor = Primary_Purple,
+            barWidthRatio = 0.8f,
+            xLabelTextSize = 15f,
+            tooltipTextSize = 32f,
+            interactionType = InteractionType.Bar.TOUCH_AREA,
+            pageSize  = when (selectedTimeUnit) {
+                "Hour" -> 24
+                "Day" -> null
+                "Week" -> null
+                else -> 12
+            },
+            unifyYAxisAcrossPages = true,
+            yTickStepDefaultForPaged = when (selectedTimeUnit) {
+                "Hour" -> 400f
+                "Day" -> 4000f
+                "Week" -> 10000f
+                else -> 1000f
+            },
+            maxY = when (selectedTimeUnit) {
+                "Hour" -> null
+                "Day" -> 24000f
+                "Week" -> null
+                else -> null
+            }, // 임시 (tooltip 잘 보이기 위해)
+            showLabel = false,
+            yAxisPosition = YAxisPosition.RIGHT,
+            referenceLineType = ReferenceLineType.AVERAGE,
+            referenceLineStyle = LineStyle.DASHED,
+            showReferenceLineLabel = false,
+            yAxisFixedWidth = 16.dp
+        )
+    }
 }
 
 @Composable
@@ -357,7 +454,8 @@ fun LineChart_2() {
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.SUM
         ),
-        title = "요일별 활동량",
+        title = "일별 체지방률 변화",
+        unit = "%",
         yLabel = "활동량",
         xLabel = "요일",
         minY = 10f,
@@ -366,11 +464,12 @@ fun LineChart_2() {
         showPoint = true,
         pointRadius = Pair(8.dp, 4.dp),
         strokeWidth = 4f,
-        interactionType = InteractionType.Line.POINT,
-        yAxisPosition = YAxisPosition.LEFT,
+        interactionType = InteractionType.Line.TOUCH_AREA,
+        yAxisPosition = YAxisPosition.RIGHT,
         referenceLineType = ReferenceLineType.TREND,
         referenceLineStyle = LineStyle.DASHDOT,
-        windowSize = 8
+        windowSize = 8,
+        autoFixYAxisOnScroll = true
     )
 }
 
@@ -478,6 +577,7 @@ fun ScatterPlot_1() {
         data = allBloodPressurePoints,
         pointColor = Primary_Purple,
         title = "혈압 데이터 (수축기 + 이완기)",
+        unit = "mmHg",
         yLabel = "혈압 (mmHg)",
         xLabel = "일자",
         interactionType = InteractionType.Scatter.POINT,
@@ -489,7 +589,7 @@ fun ScatterPlot_1() {
 }
 
 @Composable
-fun Minimal_BarChart() {
+fun Minimal_Chart() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -533,7 +633,7 @@ fun Minimal_BarChart() {
                 MinimalBarChart(
                     data = chartPoints,
                     color = Primary_Purple,
-
+                    referenceLineType = ReferenceLineType.AVERAGE
                 )
             }
         }
@@ -581,6 +681,7 @@ fun Minimal_BarChart() {
                 MinimalLineChart(
                     data = chartPoints,
                     color = Primary_Purple,
+                    referenceLineType = ReferenceLineType.TREND
                 )
             }
         }
@@ -700,8 +801,8 @@ fun StackedBarChart_1() {
         yLabel = "영양소 (g)",
         xLabel = "요일",
         showLegend = true,
+        barWidthRatio = 0.8f,
         legendPosition = LegendPosition.BOTTOM,
-        windowSize = 3,
         yAxisPosition = YAxisPosition.RIGHT,
         interactionType = InteractionType.StackedBar.BAR,
         colors = listOf(
@@ -720,7 +821,7 @@ fun RangeBarChart_1() {
         title = "일별 심박수 범위",
         yLabel = "심박수 (bpm)",
         xLabel = "날짜",
-        windowSize = 4,
+        barWidthRatio = 0.8f,
         barColor = Color(0xFFFF9800),
         interactionType = InteractionType.RangeBar.TOUCH_AREA
     )
@@ -785,7 +886,7 @@ fun XAxisTickReductionDemo() {
             title = "Dense Data - All Labels (Overlapping)",
             barColor = Color.Red,
             barWidthRatio = 0.8f,
-            labelTextSize = 20f, // Normal size to show overlap
+            xLabelTextSize = 20f, // Normal size to show overlap
             maxXTicksLimit = null // Show all labels
         )
         
@@ -802,7 +903,7 @@ fun XAxisTickReductionDemo() {
             title = "Dense Data - Reduced Labels (Clean)",
             barColor = Primary_Purple,
             barWidthRatio = 0.8f,
-            labelTextSize = 20f,
+            xLabelTextSize = 20f,
             maxXTicksLimit = 10 // Limit to 10 labels
         )
     }
@@ -879,7 +980,7 @@ fun TimeStepBarChart() {
             title = "걸음 수 (${selectedOption}) - ${if (selectedOption == "30분대별") "Raw Data" else "Aggregated"}",
             barColor = Primary_Purple,
             barWidthRatio = 0.5f,
-            labelTextSize = 20f,
+            xLabelTextSize = 20f,
             // 30분대별과 시간대별일 때는 windowSize로 스크롤링 활성화
             windowSize = when (selectedOption) {
                 "30분대별" -> 10

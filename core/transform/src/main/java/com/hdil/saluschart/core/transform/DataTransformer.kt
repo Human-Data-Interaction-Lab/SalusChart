@@ -181,7 +181,7 @@ class DataTransformer {
      * 
      * 알고리즘:
      * 1. 일별로 데이터를 집계 (normalization to daily bins)
-     * 2. targetTimeUnit 윈도우별로 그룹핑 
+     * 2. targetTimeUnit 윈도우별로 그룹핑
      * 3. 각 윈도우 내에서 실제 데이터가 있는 일수로만 나누어 평균 계산
      */
     private fun calculateIntervalAverages(
@@ -196,6 +196,11 @@ class DataTransformer {
         }.sortedBy { it.first }
 
         if (dailyAggregatedData.isEmpty()) return emptyList()
+
+        // targetTimeUnit이 DAY인 경우, 이미 일별 데이터이므로 그대로 반환
+        if (targetTimeUnit == TimeUnitGroup.DAY) {
+            return dailyAggregatedData
+        }
 
         // Step 2: targetTimeUnit 윈도우 생성
         val minTime = dailyAggregatedData.first().first

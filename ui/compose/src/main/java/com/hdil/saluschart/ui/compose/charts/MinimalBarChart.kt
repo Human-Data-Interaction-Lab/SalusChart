@@ -40,7 +40,7 @@ fun MinimalBarChart(
     data: List<ChartPoint>,
     color: Color = Color.Blue,
     padding: Float = 4f,
-    chartType: ChartType = ChartType.MINIMAL_BAR, // 차트 타입 (툴팁 위치 결정용
+    chartType: ChartType = ChartType.MINIMAL_BAR, // 차트 타입 (툴팁 위치 결정용)
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 1.dp,

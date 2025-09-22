@@ -83,7 +83,7 @@ object ReferenceLine {
                 if (stackedData.isEmpty()) {
                     data.map { it.y }.average().roundToInt().toFloat()
                 } else {
-                    stackedData.map { it.total }.average().roundToInt().toFloat()
+                    stackedData.map { it.y }.average().roundToInt().toFloat() // StackedChartPoint의 y값은 각 세그먼트의 총합
                 }
             }
             else -> {

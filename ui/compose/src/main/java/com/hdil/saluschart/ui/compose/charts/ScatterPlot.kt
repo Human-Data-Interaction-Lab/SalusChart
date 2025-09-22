@@ -191,7 +191,6 @@ fun ScatterPlot(
                                 color = pointColor,
                                 selectedPointIndex = selectedPointIndex,
                                 onPointClick = { index ->
-                                    // Handle point click - toggle selection
                                     selectedPointIndex = if (selectedPointIndex == index) null else index
                                 },
                                 pointType = pointType,
@@ -211,7 +210,7 @@ fun ScatterPlot(
                                 data = data,
                                 points = canvasPoints,
                                 values = yValues,
-                                selectedPointIndex = null, // No selection in non-interactive mode
+                                selectedPointIndex = null,
                                 onPointClick = null,
                                 pointType = pointType,
                                 chartType = chartType,

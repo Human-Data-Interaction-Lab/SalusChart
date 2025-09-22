@@ -68,8 +68,30 @@ fun ChartTooltip(
                 )
             }
             when(chartPoint) {
+                is com.hdil.saluschart.core.chart.RangeChartPoint -> {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                    shape = CircleShape
+                                )
+                        )
+                        Text(
+                            text = "${chartPoint.minPoint.y.roundToInt()}$unit ~ ${chartPoint.maxPoint.y.roundToInt()}$unit",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = textColor.copy(alpha = 0.9f),
+                            lineHeight = 14.sp
+                        )
+                    }
+                }
                 is com.hdil.saluschart.core.chart.StackedChartPoint -> {
-                    chartPoint.values.asReversed().forEachIndexed { index, value ->
+                    chartPoint.segments.asReversed().forEachIndexed { index, segment ->
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -83,7 +105,7 @@ fun ChartTooltip(
                                     )
                             )
                             Text(
-                                text = value.roundToInt().toString(),
+                                text = segment.y.roundToInt().toString(),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = textColor.copy(alpha = 0.9f),

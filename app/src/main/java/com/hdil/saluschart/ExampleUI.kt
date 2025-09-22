@@ -90,10 +90,10 @@ fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
         "Standard Bar Chart",
         "Step Count - Bar Chart",
-        "BarChart 3",
+//        "BarChart 3",
+        "Standard Line Chart",
         "Weight - Line Chart",
         "Body Fat - Line Chart",
-        "LineChart 3",
         "Blood Pressure - Scatter Plot",
         "Diet - Stacked Bar Chart",
         "Heart Rate - Range Bar Chart",
@@ -108,7 +108,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Step Count - Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Standard Bar Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -139,10 +139,10 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "Standard Bar Chart" -> BarChart_1()
                 "Step Count - Bar Chart" -> BarChart_2()
-                "BarChart 3" -> BarChart_3()
+//                "BarChart 3" -> BarChart_3()
+                "Standard Line Chart" -> LineChart_3()
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
-                "LineChart 3" -> LineChart_3()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
                 "Diet - Stacked Bar Chart" -> StackedBarChart_1()
                 "Heart Rate - Range Bar Chart" -> RangeBarChart_1()
@@ -312,21 +312,21 @@ fun BarChart_2() {
     }
 }
 
-@Composable
-fun BarChart_3() {
-    BarChart(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints4,
-        title = "Weekly Data",
-        barColor = Primary_Purple,
-        yAxisPosition = YAxisPosition.RIGHT,
-        showLabel = true,
-        // paged mode:
-        pageSize = 7,
-        unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10f
-    )
-}
+//@Composable
+//fun BarChart_3() {
+//    BarChart(
+//        modifier = Modifier.fillMaxWidth().height(250.dp),
+//        data = chartPoints4,
+//        title = "Weekly Data",
+//        barColor = Primary_Purple,
+//        yAxisPosition = YAxisPosition.RIGHT,
+//        showLabel = true,
+//        // paged mode:
+//        pageSize = 7,
+//        unifyYAxisAcrossPages = true,
+//        yTickStepDefaultForPaged = 10f
+//    )
+//}
 
 @Composable
 fun DonutChart_1() {
@@ -346,7 +346,7 @@ fun LineChart_1() {
     var selectedUnit by remember { mutableStateOf("kg") }
     var expanded by remember { mutableStateOf(false) }
 
-    val unitOptions = listOf("kg", "lb", "g")
+    val unitOptions = listOf("kg", "lb")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Unit Selection Dropdown
@@ -417,7 +417,6 @@ fun LineChart_1() {
                     massUnit = when (selectedUnit) {
                         "kg" -> MassUnit.KILOGRAM
                         "lb" -> MassUnit.POUND
-                        "g" -> MassUnit.GRAM
                         else -> MassUnit.KILOGRAM
                     },
                     timeUnit = TimeUnitGroup.DAY,
@@ -430,7 +429,6 @@ fun LineChart_1() {
                 minY = when (selectedUnit) {
                     "kg" -> 50f
                     "lb" -> 110f
-                    "g" -> 50000f
                     else -> 50f
                 },
                 lineColor = Primary_Purple,
@@ -775,8 +773,8 @@ fun Minimal_Chart() {
             ) {
                 val singleRangeData = RangeChartPoint(
                     x = 0f,
-                    yMin = 78f,
-                    yMax = 104f,
+                    minPoint = ChartPoint(x = 0f, y = 78f),
+                    maxPoint = ChartPoint(x = 0f, y = 104f),
                     label = "Heart Rate"
                 )
                 MinimalGaugeChart(
@@ -802,9 +800,10 @@ fun StackedBarChart_1() {
         xLabel = "요일",
         showLegend = true,
         barWidthRatio = 0.8f,
+        windowSize = 3,
         legendPosition = LegendPosition.BOTTOM,
         yAxisPosition = YAxisPosition.RIGHT,
-        interactionType = InteractionType.StackedBar.BAR,
+        interactionType = InteractionType.StackedBar.TOUCH_AREA,
         colors = listOf(
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)

@@ -244,57 +244,53 @@ fun SampleCharts(modifier: Modifier = Modifier) {
 
         // 범위 차트용 샘플 데이터 (심박수 범위 예시)
         val rangeData = listOf(
-            RangeChartPoint(x = 0f, yMin = 54f, yMax = 160f, label = "2일"),
-            RangeChartPoint(x = 1f, yMin = 65f, yMax = 145f, label = "3일"),
-            RangeChartPoint(x = 2f, yMin = 58f, yMax = 125f, label = "4일"),
-            RangeChartPoint(x = 3f, yMin = 75f, yMax = 110f, label = "6일"),
-            RangeChartPoint(x = 4f, yMin = 68f, yMax = 162f, label = "7일"),
-            RangeChartPoint(x = 5f, yMin = 72f, yMax = 168f, label = "8일"),
-            RangeChartPoint(x = 6f, yMin = 65f, yMax = 138f, label = "9일"),
-            RangeChartPoint(x = 7f, yMin = 85f, yMax = 105f, label = "10일")
+            RangeChartPoint(x = 0f, minPoint = ChartPoint(x = 0f, y = 54f), maxPoint = ChartPoint(x = 0f, y = 160f), label = "2일"),
+            RangeChartPoint(x = 1f, minPoint = ChartPoint(x = 1f, y = 65f), maxPoint = ChartPoint(x = 1f, y = 145f), label = "3일"),
+            RangeChartPoint(x = 2f, minPoint = ChartPoint(x = 2f, y = 58f), maxPoint = ChartPoint(x = 2f, y = 125f), label = "4일"),
+            RangeChartPoint(x = 3f, minPoint = ChartPoint(x = 3f, y = 75f), maxPoint = ChartPoint(x = 3f, y = 110f), label = "6일"),
+            RangeChartPoint(x = 4f, minPoint = ChartPoint(x = 4f, y = 68f), maxPoint = ChartPoint(x = 4f, y = 162f), label = "7일"),
+            RangeChartPoint(x = 5f, minPoint = ChartPoint(x = 5f, y = 72f), maxPoint = ChartPoint(x = 5f, y = 168f), label = "8일"),
+            RangeChartPoint(x = 6f, minPoint = ChartPoint(x = 6f, y = 65f), maxPoint = ChartPoint(x = 6f, y = 138f), label = "9일"),
+            RangeChartPoint(x = 7f, minPoint = ChartPoint(x = 7f, y = 85f), maxPoint = ChartPoint(x = 7f, y = 105f), label = "10일")
         )
 
         // 스택 바 차트용 샘플 데이터 (일별 영양소 섭취량 예시)
         val stackedData = listOf(
-            StackedChartPoint(
-                x = 0f,
-                values = listOf(80f, 45f, 120f), // 단백질, 지방, 탄수화물 (g)
-                label = "월"
-            ),
-            StackedChartPoint(
-                x = 1f,
-                values = listOf(75f, 38f, 110f),
-                label = "화"
-            ),
-            StackedChartPoint(
-                x = 2f,
-                values = listOf(90f, 52f, 140f),
-                label = "수"
-            ),
-            StackedChartPoint(
-                x = 3f,
-                values = listOf(85f, 41f, 135f),
-                label = "목"
-            ),
-            StackedChartPoint(
-                x = 4f,
-                values = listOf(95f, 58f, 150f),
-                label = "금"
-            ),
-            StackedChartPoint(
-                x = 5f,
-                values = listOf(70f, 35f, 100f),
-                label = "토"
-            ),
-            StackedChartPoint(
-                x = 6f,
-                values = listOf(88f, 48f, 125f),
-                label = "일"
-            )
-        )
+            // Monday (x = 0)
+            ChartPoint(x = 0f, y = 80f, label = "월"),
+            ChartPoint(x = 0f, y = 45f, label = "월"),
+            ChartPoint(x = 0f, y = 120f, label = "월"),
 
-        // 스택 바 차트용 세그먼트 레이블 (한 번만 정의)
-        val segmentLabels = listOf("단백질", "지방", "탄수화물")
+            // Tuesday (x = 1)
+            ChartPoint(x = 1f, y = 75f, label = "화"),
+            ChartPoint(x = 1f, y = 38f, label = "화"),
+            ChartPoint(x = 1f, y = 110f, label = "화"),
+
+            // Wednesday (x = 2)
+            ChartPoint(x = 2f, y = 90f, label = "수"),
+            ChartPoint(x = 2f, y = 52f, label = "수"),
+            ChartPoint(x = 2f, y = 140f, label = "수"),
+
+            // Thursday (x = 3)
+            ChartPoint(x = 3f, y = 85f, label = "목"),
+            ChartPoint(x = 3f, y = 41f, label = "목"),
+            ChartPoint(x = 3f, y = 135f, label = "목"),
+
+            // Friday (x = 4)
+            ChartPoint(x = 4f, y = 95f, label = "금"),
+            ChartPoint(x = 4f, y = 58f, label = "금"),
+            ChartPoint(x = 4f, y = 150f, label = "금"),
+
+            // Saturday (x = 5)
+            ChartPoint(x = 5f, y = 70f, label = "토"),
+            ChartPoint(x = 5f, y = 35f, label = "토"),
+            ChartPoint(x = 5f, y = 100f, label = "토"),
+
+            // Sunday (x = 6)
+            ChartPoint(x = 6f, y = 88f, label = "일"),
+            ChartPoint(x = 6f, y = 48f, label = "일"),
+            ChartPoint(x = 6f, y = 125f, label = "일")
+        )
 
         // 선택된 차트 타입에 따라 다른 차트 표시
         when (selectedChartType) {
@@ -327,32 +323,32 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                     interactionType = InteractionType.Bar.TOUCH_AREA
                 )
             }
-            "Stacked" -> {
-                StackedBarChart(
-                    data = stackedData,
-                    segmentLabels = segmentLabels,
-                    title = "요일별 영양소 섭취량",
-                    yLabel = "영양소 (g)",
-                    xLabel = "요일",
-                    showLegend = true,
-                    colors = listOf(
-                        Color(0xFF2196F3), // 파랑 (단백질)
-                        Color(0xFFFF9800), // 주황 (지방) 
-                        Color(0xFF4CAF50)  // 초록 (탄수화물)
-                    ),
-                    interactionType = InteractionType.StackedBar.BAR
-                )
-            }
-            "Range" -> {
-                RangeBarChart(
-                    data = rangeData,
-                    title = "일별 심박수 범위",
-                    yLabel = "심박수 (bpm)",
-                    xLabel = "날짜",
-                    barColor = Color(0xFFFF9800),
-                    interactionType = InteractionType.RangeBar.TOUCH_AREA
-                )
-            }
+//            "Stacked" -> {
+//                StackedBarChart(
+//                    data = stackedData,
+//                    segmentLabels = segmentLabels,
+//                    title = "요일별 영양소 섭취량",
+//                    yLabel = "영양소 (g)",
+//                    xLabel = "요일",
+//                    showLegend = true,
+//                    colors = listOf(
+//                        Color(0xFF2196F3), // 파랑 (단백질)
+//                        Color(0xFFFF9800), // 주황 (지방)
+//                        Color(0xFF4CAF50)  // 초록 (탄수화물)
+//                    ),
+//                    interactionType = InteractionType.StackedBar.BAR
+//                )
+//            }
+//            "Range" -> {
+//                RangeBarChart(
+//                    data = rangeData,
+//                    title = "일별 심박수 범위",
+//                    yLabel = "심박수 (bpm)",
+//                    xLabel = "날짜",
+//                    barColor = Color(0xFFFF9800),
+//                    interactionType = InteractionType.RangeBar.TOUCH_AREA
+//                )
+//            }
             "Pie" -> {
                 PieChart(
                     data = chartPoints,
@@ -406,6 +402,7 @@ fun SampleCharts(modifier: Modifier = Modifier) {
             }
             "MinBar" -> {
                  MinimalBarChart(
+
                      data = chartPoints,
                      color = Color.Blue,
                  )
@@ -417,28 +414,28 @@ fun SampleCharts(modifier: Modifier = Modifier) {
                      showPoints = true
                  )
              }
-            "MinRange" -> {
-                 MinimalRangeBarChart(
-                     data = rangeData,
-                     color = Color.Blue,
-                 )
-             }
-             "MinGauge" -> {
-                 // 단일 범위 데이터 생성 (심박수 범위 예시: 76-104 bpm)
-                 val singleRangeData = RangeChartPoint(
-                     x = 0f,
-                     yMin = 76f,
-                     yMax = 104f,
-                     label = "Heart Rate"
-                 )
-                 MinimalGaugeChart(
-                     data = singleRangeData,
-                     containerMin = 60f,  // 정상 심박수 범위 시작
-                     containerMax = 120f, // 정상 심박수 범위 끝
-                     containerColor = Color.LightGray,
-                     rangeColor = Color(0xFFFF9500),
-                 )
-             }
+//            "MinRange" -> {
+//                 MinimalRangeBarChart(
+//                     data = rangeData,
+//                     color = Color.Blue,
+//                 )
+//             }
+//             "MinGauge" -> {
+//                 // 단일 범위 데이터 생성 (심박수 범위 예시: 76-104 bpm)
+//                 val singleRangeData = RangeChartPoint(
+//                     x = 0f,
+//                     minPoint = ChartPoint(x = 0f, y = 76f),
+//                     maxPoint = ChartPoint(x = 0f, y = 104f),
+//                     label = "Heart Rate"
+//                 )
+//                 MinimalGaugeChart(
+//                     data = singleRangeData,
+//                     containerMin = 60f,  // 정상 심박수 범위 시작
+//                     containerMax = 120f, // 정상 심박수 범위 끝
+//                     containerColor = Color.LightGray,
+//                     rangeColor = Color(0xFFFF9500),
+//                 )
+//             }
 
         }
     }

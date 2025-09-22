@@ -20,20 +20,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import com.hdil.saluschart.core.transform.toRangeChartPoints
 import com.hdil.saluschart.ui.theme.ChartColor
 
 @Composable
 fun RangeBarChart(
     modifier: Modifier = Modifier,
-    data: List<RangeChartPoint>,
+    data: List<ChartPoint>,
     xLabel: String = "Time",
     yLabel: String = "Value", 
     title: String = "Range Bar Chart",
@@ -44,11 +45,18 @@ fun RangeBarChart(
     onBarClick: ((Int, RangeChartPoint) -> Unit)? = null,
     chartType: ChartType = ChartType.RANGE_BAR,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
-    maxXTicksLimit: Int? = null             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    unit: String = "" // 단위 (예: "kg", "bpm" 등)
 ) {
     if (data.isEmpty()) return
+    
+    // Transform ChartPoints to RangeChartPoints automatically
+    val rangeData = data.toRangeChartPoints(
+        minValueSelector = { group: List<ChartPoint> -> group.minByOrNull { it.y } ?: group.first() },
+        maxValueSelector = { group: List<ChartPoint> -> group.maxByOrNull { it.y } ?: group.first() }
+    )
 
-    val useScrolling = windowSize != null && windowSize < data.size
+    val useScrolling = windowSize != null && windowSize < rangeData.size
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier.padding(16.dp)) {
@@ -62,19 +70,17 @@ fun RangeBarChart(
             val canvasWidth = if(useScrolling) {
                 // 스크롤 모드: 좌우 마진을 고려한 실제 차트 너비 계산
                 val chartWidth = availableWidth - (marginHorizontal * 2) // 좌우 마진 제외
-                val sectionsCount = (data.size.toFloat() / windowSize!!.toFloat()).toInt()
+                val sectionsCount = (rangeData.size.toFloat() / windowSize!!.toFloat()).toInt()
                 val totalWidth = chartWidth * sectionsCount
                 totalWidth
             } else {
                 // 일반 모드: 전체 데이터를 화면에 맞춤
                 null
-
             }
 
-            val labels = data.map { it.label ?: it.x.toString() }
+            val labels = rangeData.map { rangePoint -> rangePoint.label ?: rangePoint.x.toString() }
             var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
             var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
-
 
             Box(
                 modifier = if (useScrolling) {
@@ -97,7 +103,7 @@ fun RangeBarChart(
                         Modifier.fillMaxSize()
                     }
                 ) {
-                    val metrics = ChartMath.RangeBar.computeRangeMetrics(size, data)
+                    val metrics = ChartMath.RangeBar.computeRangeMetrics(size, rangeData)
                     chartMetrics = metrics
 
                     ChartDraw.drawGrid(this, size, metrics, yAxisPosition)
@@ -111,19 +117,20 @@ fun RangeBarChart(
                         // Interactive range bars
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
-                                data = data,
-                                minValues = data.map { it.yMin },
-                                maxValues = data.map { it.yMax },
+                                data = rangeData,
+                                minValues = rangeData.map { rangePoint -> rangePoint.minPoint.y },
+                                maxValues = rangeData.map { rangePoint -> rangePoint.maxPoint.y },
                                 metrics = metrics,
                                 color = barColor,
                                 barWidthRatio = barWidthRatio,
                                 interactive = true,
-                                onBarClick = { index, tooltipText ->
+                                onBarClick = { index: Int, _: String ->
                                     selectedBarIndex = if (selectedBarIndex == index) null else index
-                                    onBarClick?.invoke(index, data[index])
+                                    onBarClick?.invoke(index, rangeData[index])
                                 },
                                 chartType = chartType,
-                                showTooltipForIndex = selectedBarIndex
+                                showTooltipForIndex = selectedBarIndex,
+                                unit = unit
                             )
                         }
                     }
@@ -131,31 +138,32 @@ fun RangeBarChart(
                         // Non-interactive range bars
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
-                                data = data,
-                                minValues = data.map { it.yMin },
-                                maxValues = data.map { it.yMax },
+                                data = rangeData,
+                                minValues = rangeData.map { rangePoint -> rangePoint.minPoint.y },
+                                maxValues = rangeData.map { rangePoint -> rangePoint.maxPoint.y },
                                 metrics = metrics,
                                 color = barColor,
                                 barWidthRatio = barWidthRatio,
                                 interactive = false,
                                 chartType = chartType,
-                                showTooltipForIndex = selectedBarIndex
+                                showTooltipForIndex = selectedBarIndex,
+                                unit = unit
                             )
                         }
 
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
-                                data = data,
-                                minValues = List(data.size) { metrics.minY },
-                                maxValues = data.map { it.yMax },
+                                data = rangeData,
+                                minValues = List(rangeData.size) { metrics.minY },
+                                maxValues = rangeData.map { rangePoint -> rangePoint.maxPoint.y },
                                 metrics = metrics,
-                                onBarClick = { index, _ ->
+                                onBarClick = { index: Int, _: String ->
                                     selectedBarIndex = if (selectedBarIndex == index) null else index
-                                    onBarClick?.invoke(index, data[index])
+                                    onBarClick?.invoke(index, rangeData[index])
                                 },
                                 chartType = chartType,
-                                showTooltipForIndex = selectedBarIndex,
-                                isTouchArea = true
+                                isTouchArea = true,
+                                unit = unit
                             )
                         }
                     }
@@ -163,15 +171,16 @@ fun RangeBarChart(
                         // Default case - no interaction
                         chartMetrics?.let { metrics ->
                             ChartDraw.Bar.BarMarker(
-                                data = data,
-                                minValues = data.map { it.yMin },
-                                maxValues = data.map { it.yMax },
+                                data = rangeData,
+                                minValues = rangeData.map { it.minPoint.y },
+                                maxValues = rangeData.map { it.maxPoint.y },
                                 metrics = metrics,
                                 color = barColor,
                                 barWidthRatio = barWidthRatio,
                                 interactive = false,
                                 chartType = chartType,
-                                showTooltipForIndex = null
+                                showTooltipForIndex = null,
+                                unit = unit
                             )
                         }
                     }

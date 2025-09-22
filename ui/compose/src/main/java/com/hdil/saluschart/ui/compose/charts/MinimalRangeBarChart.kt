@@ -21,11 +21,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.transform.toRangeChartPoints
 import com.hdil.saluschart.ui.theme.ChartColor
 
 /**
@@ -33,7 +35,7 @@ import com.hdil.saluschart.ui.theme.ChartColor
  * 범위 데이터를 컨테이너 범위 내에서 표시하며, 상단에 범위 텍스트 표시
  * 
  * @param modifier 모디파이어
- * @param data 범위 차트 데이터 (yMin, yMax 포함)
+ * @param data 차트 포인트 데이터 (같은 x값을 가진 포인트들이 min/max로 변환됨)
  * @param containerMin 컨테이너의 최소값 (전체 범위 시작)
  * @param containerMax 컨테이너의 최대값 (전체 범위 끝)
  * @param containerColor 컨테이너(배경) 바 색상
@@ -48,11 +50,17 @@ import com.hdil.saluschart.ui.theme.ChartColor
 @Composable
 fun MinimalRangeBarChart(
     modifier: Modifier = Modifier,
-    data: List<RangeChartPoint>,
+    data: List<ChartPoint>,
     color: Color = Color.Blue,
     chartType: ChartType = ChartType.MINIMAL_RANGE_BAR
 ) {
     if (data.isEmpty()) return
+
+    // Transform ChartPoints to RangeChartPoints automatically
+    val rangeData = data.toRangeChartPoints(
+        minValueSelector = { group -> group.minByOrNull { it.y } ?: group.first() },
+        maxValueSelector = { group -> group.maxByOrNull { it.y } ?: group.first() }
+    )
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 
@@ -60,14 +68,14 @@ fun MinimalRangeBarChart(
         Modifier
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val metrics = ChartMath.RangeBar.computeRangeMetrics(size, data)
+            val metrics = ChartMath.RangeBar.computeRangeMetrics(size, rangeData)
             chartMetrics = metrics
         }
         chartMetrics?.let { metrics ->
             ChartDraw.Bar.BarMarker(
-                data = data,
-                minValues = data.map { it.yMin },
-                maxValues = data.map { it.yMax },
+                data = rangeData,
+                minValues = rangeData.map { it.minPoint.y },
+                maxValues = rangeData.map { it.maxPoint.y },
                 metrics = metrics,
                 color = color,
                 barWidthRatio = 0.8f,

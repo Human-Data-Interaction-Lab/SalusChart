@@ -21,7 +21,7 @@ object RangeBarChartMath {
         val chartWidth = size.width - paddingX * 2
         val chartHeight = size.height - paddingY
 
-        val allYValues = data.flatMap { listOf(it.yMin, it.yMax) }
+        val allYValues = data.flatMap { listOf(it.minPoint.y, it.maxPoint.y) }
         val dataMax = allYValues.maxOrNull() ?: 1f
         val dataMin = allYValues.minOrNull() ?: 0f
 

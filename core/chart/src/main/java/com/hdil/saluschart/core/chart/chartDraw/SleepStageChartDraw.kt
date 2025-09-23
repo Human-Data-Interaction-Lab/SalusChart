@@ -92,13 +92,14 @@ object SleepStageChartDraw {
             // 바 너비와 위치 계산 (수평이므로 X축 방향으로 계산)
             val (barWidth, barX) = if (isTouchArea) {
                 // 전체 차트 너비 사용 (터치 영역용)
-                Pair(metrics.chartWidth, 0f)
+                Pair(metrics.chartWidth, metrics.paddingX)
             } else {
                 // minValue에서 maxValue까지의 바 계산 (X축 방향)
                 val xMinScreen = ((minValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth
                 val xMaxScreen = ((maxValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth
                 val width = xMaxScreen - xMinScreen
-                Pair(width, xMinScreen)
+                // Add paddingX to position bars correctly within the chart area
+                Pair(width, metrics.paddingX + xMinScreen)
             }
 
             // 바 Y 위치 계산 (수평이므로 Y축은 sleep stage ordinal 기반)

@@ -85,7 +85,7 @@ fun LineChart(
 
     // fixed external Y-axis support
     fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 56.dp,
+    yAxisFixedWidth: Dp = 16.dp,
     yTickStep: Float? = null,                    // e.g., 10f for even ticks
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,

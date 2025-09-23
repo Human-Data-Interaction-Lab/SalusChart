@@ -82,40 +82,40 @@ object SleepStageChartMath {
         )
     }
 
-    /**
-     * 수면 단계 차트의 Y축 레이블을 그립니다.
-     * 수면 단계는 고정된 순서로 표시됩니다: AWAKE, REM, LIGHT, DEEP
-     *
-     * @param ctx 그리기 컨텍스트
-     * @param metrics 차트 메트릭 정보
-     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
-     */
-    fun drawSleepStageLabels(
-        ctx: androidx.compose.ui.graphics.drawscope.DrawContext,
-        metrics: ChartMetrics,
-        textSize: Float = 28f
-    ) {
-        // 수면 단계는 고정된 순서 (위에서 아래로)
-        val sleepStages = listOf("Awake", "REM", "Light", "Deep")
-        val totalStages = sleepStages.size
-        val stageHeight = metrics.chartHeight / totalStages
-        
-        sleepStages.forEachIndexed { index, stage ->
-            // 각 수면 단계의 중앙 Y 위치 계산
-            val y = metrics.paddingY + (index + 0.5f) * stageHeight
-            
-            ctx.canvas.nativeCanvas.drawText(
-                stage,
-                20f, // Y축 레이블은 왼쪽에 고정
-                y,
-                android.graphics.Paint().apply {
-                    color = android.graphics.Color.DKGRAY
-                    this.textSize = textSize
-                    textAlign = android.graphics.Paint.Align.CENTER
-                }
-            )
-        }
-    }
+//    /**
+//     * 수면 단계 차트의 Y축 레이블을 그립니다.
+//     * 수면 단계는 고정된 순서로 표시됩니다: AWAKE, REM, LIGHT, DEEP
+//     *
+//     * @param ctx 그리기 컨텍스트
+//     * @param metrics 차트 메트릭 정보
+//     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
+//     */
+//    fun drawSleepStageLabels(
+//        ctx: androidx.compose.ui.graphics.drawscope.DrawContext,
+//        metrics: ChartMetrics,
+//        textSize: Float = 28f
+//    ) {
+//        // 수면 단계는 고정된 순서 (위에서 아래로)
+//        val sleepStages = listOf("Awake", "REM", "Light", "Deep")
+//        val totalStages = sleepStages.size
+//        val stageHeight = metrics.chartHeight / totalStages
+//
+//        sleepStages.forEachIndexed { index, stage ->
+//            // 각 수면 단계의 중앙 Y 위치 계산
+//            val y = metrics.paddingY + (index + 0.5f) * stageHeight
+//
+//            ctx.canvas.nativeCanvas.drawText(
+//                stage,
+//                20f, // Y축 레이블은 왼쪽에 고정
+//                y,
+//                android.graphics.Paint().apply {
+//                    color = android.graphics.Color.DKGRAY
+//                    this.textSize = textSize
+//                    textAlign = android.graphics.Paint.Align.CENTER
+//                }
+//            )
+//        }
+//    }
 
     /**
      * 수면 단계 차트의 그리드 라인을 그립니다.
@@ -150,6 +150,50 @@ object SleepStageChartMath {
                     isAntiAlias = true
                 }
             )
+        }
+    }
+
+    /**
+     * 수면 단계 차트의 독립적인 Y축을 그립니다.
+     * 고정된 Y축 패널에서 사용됩니다.
+     *
+     * @param drawScope 그리기 영역
+     * @param metrics 차트 메트릭 정보
+     * @param yAxisPosition Y축 위치
+     * @param paneWidthPx Y축 패널의 너비 (픽셀)
+     * @param labelTextSizePx 레이블 텍스트 크기 (기본값: 28f)
+     */
+    fun drawSleepStageYAxisStandalone(
+        drawScope: androidx.compose.ui.graphics.drawscope.DrawScope,
+        metrics: ChartMetrics,
+        yAxisPosition: com.hdil.saluschart.core.chart.chartDraw.YAxisPosition,
+        paneWidthPx: Float,
+        labelTextSizePx: Float = 28f
+    ) {
+        val totalStages = 4 // AWAKE, REM, LIGHT, DEEP
+        val stageHeight = metrics.chartHeight / totalStages
+        
+        // Y축 라인 위치 결정
+        val axisX = if (yAxisPosition == com.hdil.saluschart.core.chart.chartDraw.YAxisPosition.RIGHT) paneWidthPx - 0.5f else 0.5f
+        
+        // 수면 단계 레이블 그리기
+        val sleepStages = listOf("Awake", "REM", "Light", "Deep")
+        
+        sleepStages.forEachIndexed { index, stage ->
+            val y = metrics.paddingY + (index + 0.5f) * stageHeight
+            
+            // 레이블 텍스트 그리기
+            val paint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                color = android.graphics.Color.DKGRAY
+                textSize = labelTextSizePx
+                textAlign = if (yAxisPosition == com.hdil.saluschart.core.chart.chartDraw.YAxisPosition.RIGHT)
+                    android.graphics.Paint.Align.LEFT else android.graphics.Paint.Align.RIGHT
+            }
+            val labelX = if (yAxisPosition == com.hdil.saluschart.core.chart.chartDraw.YAxisPosition.RIGHT)
+                axisX + 10f else axisX - 10f
+            
+            drawScope.drawContext.canvas.nativeCanvas.drawText(stage, labelX, y + 10f, paint)
         }
     }
 

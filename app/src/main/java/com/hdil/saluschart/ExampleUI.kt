@@ -42,11 +42,7 @@ import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
-import com.hdil.saluschart.data.model.model.HealthData
-import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.MassUnit
-import com.hdil.saluschart.data.model.model.StepCount
-import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.data.provider.SampleDataProvider
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
@@ -93,13 +89,16 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "CalendarChart with Paging",
         "Standard Bar Chart",
         "Step Count - Bar Chart",
-//        "BarChart 3",
+        "BarChart 3",
         "Standard Line Chart",
         "Weight - Line Chart",
         "Body Fat - Line Chart",
         "Blood Pressure - Scatter Plot",
         "Diet - Stacked Bar Chart",
-        "Heart Rate - Range Bar Chart",
+        "Heart Rate - Range Bar Basic Chart",
+        "Heart Rate - Range Bar FreeScroll Fixed Axis",
+        "Heart Rate - Range Bar Paged (Left Fixed)",
+        "Heart Rate - Range Bar Paged (Right Fixed)",
         "Minimal Charts",
         "CalendarChart 1",
         "CalendarChart 2",
@@ -140,13 +139,17 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "Standard Bar Chart" -> BarChart_1()
                 "Step Count - Bar Chart" -> BarChart_2()
-//                "BarChart 3" -> BarChart_3()
+                "BarChart with Paging" -> BarChart_3()
+                "LineChart with Paging" -> LineChart_3()
                 "Standard Line Chart" -> LineChart_3()
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
                 "Diet - Stacked Bar Chart" -> StackedBarChart_1()
-                "Heart Rate - Range Bar Chart" -> RangeBarChart_1()
+                "Heart Rate - Range Bar Basic Chart" -> RangeBarChart_1()
+                "Heart Rate - Range Bar FreeScroll Fixed Axis" -> RangeBarChart_FreeScroll_FixedAxis()
+                "Heart Rate - Range Bar Paged (Left Fixed)", -> RangeBarChart_Paged_LeftAxis()
+                "Heart Rate - Range Bar Paged (Right Fixed)", -> RangeBarChart_Paged_RightAxis()
                 "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
@@ -313,21 +316,21 @@ fun BarChart_2() {
     }
 }
 
-//@Composable
-//fun BarChart_3() {
-//    BarChart(
-//        modifier = Modifier.fillMaxWidth().height(250.dp),
-//        data = chartPoints4,
-//        title = "Weekly Data",
-//        barColor = Primary_Purple,
-//        yAxisPosition = YAxisPosition.RIGHT,
-//        showLabel = true,
-//        // paged mode:
-//        pageSize = 7,
-//        unifyYAxisAcrossPages = true,
-//        yTickStepDefaultForPaged = 10f
-//    )
-//}
+@Composable
+fun BarChart_3() {
+    BarChart(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        data = chartPoints4,
+        title = "Weekly Data",
+        barColor = Primary_Purple,
+        yAxisPosition = YAxisPosition.RIGHT,
+        showLabel = true,
+        // paged mode:
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f
+    )
+}
 
 @Composable
 fun DonutChart_1() {
@@ -824,6 +827,55 @@ fun RangeBarChart_1() {
         barWidthRatio = 0.8f,
         barColor = Color(0xFFFF9800),
         interactionType = InteractionType.RangeBar.TOUCH_AREA
+    )
+}
+
+@Composable
+fun RangeBarChart_FreeScroll_FixedAxis() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeData,
+        title = "Free-scroll + Fixed Y-Axis",
+        windowSize = 7,
+        fixedYAxis = true,
+        yAxisFixedWidth = 24.dp,
+        yTickStep = 10f,
+        barWidthRatio = 0.7f,
+        interactionType = InteractionType.RangeBar.BAR, // bars themselves are tappable
+        unit = "bpm"
+    )
+}
+
+@Composable
+fun RangeBarChart_Paged_LeftAxis() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeData,
+        title = "Paged + Fixed Left Y-Axis",
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f,
+        yAxisFixedWidth = 24.dp,
+        barWidthRatio = 0.75f,
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "bpm"
+    )
+}
+
+@Composable
+fun RangeBarChart_Paged_RightAxis() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeData,
+        title = "Paged + Fixed Right Y-Axis",
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f,
+        yAxisPosition = YAxisPosition.RIGHT,
+        yAxisFixedWidth = 24.dp,
+        barWidthRatio = 0.75f,
+        interactionType = InteractionType.RangeBar.BAR,
+        unit = "bpm"
     )
 }
 

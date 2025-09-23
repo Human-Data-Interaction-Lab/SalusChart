@@ -33,6 +33,7 @@ fun ChartTooltip(
     unit: String = "",
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
+    color: Color = Color.Black,
     modifier: Modifier = Modifier
 ) {
 
@@ -78,7 +79,7 @@ fun ChartTooltip(
                                 modifier = Modifier
                                     .size(6.dp)
                                     .background(
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        color = color,
                                         shape = CircleShape
                                     )
                             )
@@ -100,7 +101,7 @@ fun ChartTooltip(
                             modifier = Modifier
                                 .size(6.dp)
                                 .background(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                    color = color,
                                     shape = CircleShape
                                 )
                         )

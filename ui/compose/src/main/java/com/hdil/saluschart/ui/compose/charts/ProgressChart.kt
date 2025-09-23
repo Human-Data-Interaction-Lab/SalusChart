@@ -166,18 +166,18 @@ fun ProgressChart(
                             // Use the same start angle you use to draw arcs
                             val startAt = -90f
 
-// Current point & raw progress (allow >100%)
+                            // Current point & raw progress (allow >100%)
                             val pt = data[hitIndex]
                             val raw = if (pt.max > 0f) pt.current / pt.max else pt.progress
 
-// If no progress at all, dismiss
+                            // If no progress at all, dismiss
                             if (raw <= 0f) {
                                 tappedIndex = null
                                 tapOffset = null
                                 return@detectTapGestures
                             }
 
-// Decompose into full laps + residual (exactly how you draw)
+                            // Decompose into full laps + residual (exactly how you draw)
                             val laps = kotlin.math.floor(raw).toInt().coerceAtLeast(0)
                             val residualDeg = ((raw - laps).coerceIn(0f, 1f)) * 360f
 
@@ -192,10 +192,10 @@ fun ProgressChart(
                                 }
                             }
 
-// Accept the tap if it falls on ANY of the drawn progress sweeps
+                            // Accept the tap if it falls on ANY of the drawn progress sweeps
                             var inside = false
 
-// 1) Any completed laps (you draw a ~360° arc for them)
+                            // 1) Any completed laps (you draw a ~360° arc for them)
                             if (laps >= 1) {
                                 // Use the same sweep you use for the lap (e.g., 359.6f) so the seam is hidden
                                 inside = inside || containsAngle(startAt, 359.6f, angleDeg)
@@ -203,7 +203,7 @@ fun ProgressChart(
                                 // starts at the same startAt, one check is sufficient visually.
                             }
 
-// 2) Residual (remaining) sweep on top
+                            // 2) Residual (remaining) sweep on top
                             if (residualDeg > 0f) {
                                 inside = inside || containsAngle(startAt, residualDeg, angleDeg)
                             }
@@ -278,7 +278,6 @@ fun ProgressChart(
                 tapOffset?.let { pos ->
                     val density = LocalDensity.current
 
-                    // --- estimate tooltip size and margins (tweak if needed) ---
                     val tipWidthDp = 180.dp     // expected tooltip width
                     val tipHeightDp = 72.dp     // expected tooltip height
                     val marginDp = 12.dp
@@ -322,7 +321,8 @@ fun ProgressChart(
                     ChartTooltip(
                         chartPoint = tooltipPoint,
                         unit = unitSuffix,
-                        modifier = Modifier.offset(x = xDp, y = yDp)
+                        modifier = Modifier.offset(x = xDp, y = yDp),
+                        color = colors[i]
                     )
                 }
             }

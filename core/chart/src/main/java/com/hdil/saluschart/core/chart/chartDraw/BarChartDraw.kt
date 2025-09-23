@@ -304,32 +304,4 @@ object BarChartDraw {
             )
         }
     }
-
-    @Composable
-    fun HorizontalBarMarker(
-        progress: Float,              // 0f..1f
-        trackColor: Color,
-        fillColor: Color,
-        height: Dp = 20.dp,
-        cornerRadius: Dp = height / 2,
-        modifier: Modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
-    ) {
-        val p = progress.coerceIn(0f, 1f)
-        val animated = animateFloatAsState(targetValue = p, label = "progress_anim")
-
-        Box(
-            modifier
-                .background(trackColor, shape = RoundedCornerShape(cornerRadius))
-        ) {
-            Box(
-                Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(animated.value)
-                    .background(fillColor, shape = RoundedCornerShape(cornerRadius))
-            )
-        }
-    }
-
 }

@@ -288,7 +288,7 @@ object LineChartMath {
         val spacing = metrics.chartWidth / (data.size - 1)
         return data.mapIndexed { i, point ->
             val x = metrics.paddingX + i * spacing
-            val y = metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+            val y = metrics.paddingY + metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
             Offset(x, y)
         }
     }

@@ -21,12 +21,9 @@ data class SleepStage(
 )
 
 enum class SleepStageType {
-    UNKNOWN,
     AWAKE,
-    AWAKE_IN_BED,
-    OUT_OF_BED,
+    REM,
     LIGHT,
     DEEP,
-    REM,
-    SLEEPING
+    UNKNOWN
 }

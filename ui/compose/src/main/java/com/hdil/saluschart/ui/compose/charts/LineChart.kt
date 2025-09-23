@@ -222,7 +222,7 @@ fun LineChart(
                         val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
                         canvasPoints = points
                         ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
-                        ChartDraw.Line.drawXAxisLabels(
+                        ChartDraw.Line.drawLineXAxisLabels(
                             ctx = drawContext,
                             labels = xLabels,
                             metrics = metrics,

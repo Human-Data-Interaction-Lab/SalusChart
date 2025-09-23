@@ -45,8 +45,8 @@ fun RangeBarChart(
     onBarClick: ((Int, RangeChartPoint) -> Unit)? = null,
     chartType: ChartType = ChartType.RANGE_BAR,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
-    maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
-    unit: String = "" // 단위 (예: "kg", "bpm" 등)
+    maxXTicksLimit: Int? = null, // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    unit: String = ""
 ) {
     if (data.isEmpty()) return
     

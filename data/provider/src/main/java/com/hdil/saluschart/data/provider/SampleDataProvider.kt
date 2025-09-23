@@ -11,6 +11,9 @@ import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.data.model.model.BloodPressure
 import com.hdil.saluschart.data.model.model.BodyFat
 import com.hdil.saluschart.data.model.model.Mass
+import com.hdil.saluschart.data.model.model.SleepSession
+import com.hdil.saluschart.data.model.model.SleepStage
+import com.hdil.saluschart.data.model.model.SleepStageType
 import com.hdil.saluschart.data.model.model.StepCount
 import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.ui.compose.charts.CalendarEntry
@@ -131,6 +134,363 @@ object SampleDataProvider {
         endExclusive = Instant.parse("2025-05-11T14:00:00Z"),
         intervalMinutes = 30,
         zoneId = ZoneId.of("Asia/Seoul"),
+    )
+
+    fun getSingleSleepSessionData(): SleepSession = SleepSession(
+        startTime = Instant.parse("2025-05-04T22:29:00Z"),
+        endTime   = Instant.parse("2025-05-05T06:09:00Z"),
+        stages = listOf(
+            // ~10:29 PM - settling in
+            SleepStage(Instant.parse("2025-05-04T22:29:00Z"), Instant.parse("2025-05-04T22:45:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T22:45:00Z"), Instant.parse("2025-05-04T23:30:00Z"), SleepStageType.DEEP),
+
+            // pre-midnight oscillations
+            SleepStage(Instant.parse("2025-05-04T23:30:00Z"), Instant.parse("2025-05-05T00:10:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-05T00:10:00Z"), Instant.parse("2025-05-05T00:20:00Z"), SleepStageType.AWAKE),
+
+            // first solid REM patch
+            SleepStage(Instant.parse("2025-05-05T00:20:00Z"), Instant.parse("2025-05-05T01:00:00Z"), SleepStageType.REM),
+
+            // light → deep again
+            SleepStage(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:40:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-05T01:40:00Z"), Instant.parse("2025-05-05T02:10:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-05T02:10:00Z"), Instant.parse("2025-05-05T02:20:00Z"), SleepStageType.AWAKE),
+
+            // mid-night light, brief REM
+            SleepStage(Instant.parse("2025-05-05T02:20:00Z"), Instant.parse("2025-05-05T03:00:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-05T03:30:00Z"), Instant.parse("2025-05-05T04:20:00Z"), SleepStageType.LIGHT),
+
+            // another deep valley before dawn
+            SleepStage(Instant.parse("2025-05-05T04:20:00Z"), Instant.parse("2025-05-05T04:50:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-05T04:50:00Z"), Instant.parse("2025-05-05T05:00:00Z"), SleepStageType.AWAKE),
+
+            // long REM run near morning
+            SleepStage(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:40:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-05T05:40:00Z"), Instant.parse("2025-05-05T06:05:00Z"), SleepStageType.LIGHT),
+
+            // final wake just before the alarm
+            SleepStage(Instant.parse("2025-05-05T06:05:00Z"), Instant.parse("2025-05-05T06:09:00Z"), SleepStageType.AWAKE)
+        )
+    )
+
+    fun getMultipleSleepSessionData(): List<SleepSession> = listOf(
+        SleepSession(
+            startTime = Instant.parse("2025-05-04T00:00:00Z"),
+            endTime = Instant.parse("2025-05-04T08:00:00Z"),
+            stages = listOf(
+                SleepStage(
+                    Instant.parse("2025-05-04T00:00:00Z"),
+                    Instant.parse("2025-05-04T02:00:00Z"),
+                    SleepStageType.REM
+                ),
+                SleepStage(
+                    Instant.parse("2025-05-04T02:00:00Z"),
+                    Instant.parse("2025-05-04T04:00:00Z"),
+                    SleepStageType.REM
+                ),
+                SleepStage(
+                    Instant.parse("2025-05-04T04:00:00Z"),
+                    Instant.parse("2025-05-04T06:00:00Z"),
+                    SleepStageType.LIGHT
+                ),
+                SleepStage(
+                    Instant.parse("2025-05-04T06:00:00Z"),
+                    Instant.parse("2025-05-04T08:00:00Z"),
+                    SleepStageType.AWAKE
+                )
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-03T16:00:00Z"),
+            endTime = Instant.parse("2025-05-04T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-03T16:00:00Z"), Instant.parse("2025-05-03T18:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-03T18:00:00Z"), Instant.parse("2025-05-03T20:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-03T20:00:00Z"), Instant.parse("2025-05-03T22:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-03T22:00:00Z"), Instant.parse("2025-05-04T00:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-03T08:00:00Z"),
+            endTime = Instant.parse("2025-05-03T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-03T08:00:00Z"), Instant.parse("2025-05-03T10:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-03T10:00:00Z"), Instant.parse("2025-05-03T12:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-03T12:00:00Z"), Instant.parse("2025-05-03T14:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-03T14:00:00Z"), Instant.parse("2025-05-03T16:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-03T00:00:00Z"),
+            endTime = Instant.parse("2025-05-03T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-03T00:00:00Z"), Instant.parse("2025-05-03T02:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-03T02:00:00Z"), Instant.parse("2025-05-03T04:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-03T04:00:00Z"), Instant.parse("2025-05-03T06:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-03T06:00:00Z"), Instant.parse("2025-05-03T08:00:00Z"), SleepStageType.AWAKE)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-02T16:00:00Z"),
+            endTime = Instant.parse("2025-05-03T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-02T16:00:00Z"), Instant.parse("2025-05-02T18:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-02T18:00:00Z"), Instant.parse("2025-05-02T20:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-05-02T20:00:00Z"), Instant.parse("2025-05-02T22:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-02T22:00:00Z"), Instant.parse("2025-05-03T00:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-02T08:00:00Z"),
+            endTime = Instant.parse("2025-05-02T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-02T08:00:00Z"), Instant.parse("2025-05-02T10:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-02T10:00:00Z"), Instant.parse("2025-05-02T12:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-02T12:00:00Z"), Instant.parse("2025-05-02T14:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-02T14:00:00Z"), Instant.parse("2025-05-02T16:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-02T00:00:00Z"),
+            endTime = Instant.parse("2025-05-02T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-02T00:00:00Z"), Instant.parse("2025-05-02T02:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-02T02:00:00Z"), Instant.parse("2025-05-02T04:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-05-02T04:00:00Z"), Instant.parse("2025-05-02T06:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-02T06:00:00Z"), Instant.parse("2025-05-02T08:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-01T16:00:00Z"),
+            endTime = Instant.parse("2025-05-02T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-01T16:00:00Z"), Instant.parse("2025-05-01T18:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-05-01T18:00:00Z"), Instant.parse("2025-05-01T20:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-01T20:00:00Z"), Instant.parse("2025-05-01T22:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-01T22:00:00Z"), Instant.parse("2025-05-02T00:00:00Z"), SleepStageType.DEEP)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-01T08:00:00Z"),
+            endTime = Instant.parse("2025-05-01T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-01T08:00:00Z"), Instant.parse("2025-05-01T10:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-01T10:00:00Z"), Instant.parse("2025-05-01T12:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-05-01T12:00:00Z"), Instant.parse("2025-05-01T14:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-01T14:00:00Z"), Instant.parse("2025-05-01T16:00:00Z"), SleepStageType.AWAKE)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-05-01T00:00:00Z"),
+            endTime = Instant.parse("2025-05-01T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-05-01T00:00:00Z"), Instant.parse("2025-05-01T02:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-05-01T02:00:00Z"), Instant.parse("2025-05-01T04:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-05-01T04:00:00Z"), Instant.parse("2025-05-01T06:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-05-01T06:00:00Z"), Instant.parse("2025-05-01T08:00:00Z"), SleepStageType.DEEP)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-30T16:00:00Z"),
+            endTime = Instant.parse("2025-05-01T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-30T16:00:00Z"), Instant.parse("2025-04-30T18:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-30T18:00:00Z"), Instant.parse("2025-04-30T20:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-30T20:00:00Z"), Instant.parse("2025-04-30T22:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-30T22:00:00Z"), Instant.parse("2025-05-01T00:00:00Z"), SleepStageType.DEEP)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-30T08:00:00Z"),
+            endTime = Instant.parse("2025-04-30T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-30T08:00:00Z"), Instant.parse("2025-04-30T10:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-30T10:00:00Z"), Instant.parse("2025-04-30T12:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-30T12:00:00Z"), Instant.parse("2025-04-30T14:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-30T14:00:00Z"), Instant.parse("2025-04-30T16:00:00Z"), SleepStageType.AWAKE)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-30T00:00:00Z"),
+            endTime = Instant.parse("2025-04-30T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-30T00:00:00Z"), Instant.parse("2025-04-30T02:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-30T02:00:00Z"), Instant.parse("2025-04-30T04:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-30T04:00:00Z"), Instant.parse("2025-04-30T06:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-30T06:00:00Z"), Instant.parse("2025-04-30T08:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-29T16:00:00Z"),
+            endTime = Instant.parse("2025-04-30T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-29T16:00:00Z"), Instant.parse("2025-04-29T18:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-29T18:00:00Z"), Instant.parse("2025-04-29T20:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-29T20:00:00Z"), Instant.parse("2025-04-29T22:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-29T22:00:00Z"), Instant.parse("2025-04-30T00:00:00Z"), SleepStageType.AWAKE)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-29T08:00:00Z"),
+            endTime = Instant.parse("2025-04-29T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-29T08:00:00Z"), Instant.parse("2025-04-29T10:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-29T10:00:00Z"), Instant.parse("2025-04-29T12:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-29T12:00:00Z"), Instant.parse("2025-04-29T14:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-29T14:00:00Z"), Instant.parse("2025-04-29T16:00:00Z"), SleepStageType.AWAKE)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-29T00:00:00Z"),
+            endTime = Instant.parse("2025-04-29T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-29T00:00:00Z"), Instant.parse("2025-04-29T02:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-29T02:00:00Z"), Instant.parse("2025-04-29T04:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-29T04:00:00Z"), Instant.parse("2025-04-29T06:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-29T06:00:00Z"), Instant.parse("2025-04-29T08:00:00Z"), SleepStageType.AWAKE)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-28T16:00:00Z"),
+            endTime = Instant.parse("2025-04-29T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-28T16:00:00Z"), Instant.parse("2025-04-28T18:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-28T18:00:00Z"), Instant.parse("2025-04-28T20:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-28T20:00:00Z"), Instant.parse("2025-04-28T22:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-28T22:00:00Z"), Instant.parse("2025-04-29T00:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-28T08:00:00Z"),
+            endTime = Instant.parse("2025-04-28T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-28T08:00:00Z"), Instant.parse("2025-04-28T10:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-28T10:00:00Z"), Instant.parse("2025-04-28T12:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-28T12:00:00Z"), Instant.parse("2025-04-28T14:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-28T14:00:00Z"), Instant.parse("2025-04-28T16:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-28T00:00:00Z"),
+            endTime = Instant.parse("2025-04-28T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-28T00:00:00Z"), Instant.parse("2025-04-28T02:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-28T02:00:00Z"), Instant.parse("2025-04-28T04:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-28T04:00:00Z"), Instant.parse("2025-04-28T06:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-28T06:00:00Z"), Instant.parse("2025-04-28T08:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-27T16:00:00Z"),
+            endTime = Instant.parse("2025-04-28T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-27T16:00:00Z"), Instant.parse("2025-04-27T18:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-27T18:00:00Z"), Instant.parse("2025-04-27T20:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-27T20:00:00Z"), Instant.parse("2025-04-27T22:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-27T22:00:00Z"), Instant.parse("2025-04-28T00:00:00Z"), SleepStageType.DEEP)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-27T08:00:00Z"),
+            endTime = Instant.parse("2025-04-27T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-27T08:00:00Z"), Instant.parse("2025-04-27T10:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-27T10:00:00Z"), Instant.parse("2025-04-27T12:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-27T12:00:00Z"), Instant.parse("2025-04-27T14:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-27T14:00:00Z"), Instant.parse("2025-04-27T16:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-27T00:00:00Z"),
+            endTime = Instant.parse("2025-04-27T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-27T00:00:00Z"), Instant.parse("2025-04-27T02:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-27T02:00:00Z"), Instant.parse("2025-04-27T04:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-27T04:00:00Z"), Instant.parse("2025-04-27T06:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-27T06:00:00Z"), Instant.parse("2025-04-27T08:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-26T16:00:00Z"),
+            endTime = Instant.parse("2025-04-27T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-26T16:00:00Z"), Instant.parse("2025-04-26T18:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-26T18:00:00Z"), Instant.parse("2025-04-26T20:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-26T20:00:00Z"), Instant.parse("2025-04-26T22:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-26T22:00:00Z"), Instant.parse("2025-04-27T00:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-26T08:00:00Z"),
+            endTime = Instant.parse("2025-04-26T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-26T08:00:00Z"), Instant.parse("2025-04-26T10:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-26T10:00:00Z"), Instant.parse("2025-04-26T12:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-26T12:00:00Z"), Instant.parse("2025-04-26T14:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-26T14:00:00Z"), Instant.parse("2025-04-26T16:00:00Z"), SleepStageType.DEEP)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-26T00:00:00Z"),
+            endTime = Instant.parse("2025-04-26T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-26T00:00:00Z"), Instant.parse("2025-04-26T02:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-26T02:00:00Z"), Instant.parse("2025-04-26T04:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-26T04:00:00Z"), Instant.parse("2025-04-26T06:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-26T06:00:00Z"), Instant.parse("2025-04-26T08:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-25T16:00:00Z"),
+            endTime = Instant.parse("2025-04-26T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-25T16:00:00Z"), Instant.parse("2025-04-25T18:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-25T18:00:00Z"), Instant.parse("2025-04-25T20:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-25T20:00:00Z"), Instant.parse("2025-04-25T22:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-25T22:00:00Z"), Instant.parse("2025-04-26T00:00:00Z"), SleepStageType.DEEP)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-25T08:00:00Z"),
+            endTime = Instant.parse("2025-04-25T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-25T08:00:00Z"), Instant.parse("2025-04-25T10:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-25T10:00:00Z"), Instant.parse("2025-04-25T12:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-25T12:00:00Z"), Instant.parse("2025-04-25T14:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-25T14:00:00Z"), Instant.parse("2025-04-25T16:00:00Z"), SleepStageType.LIGHT)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-25T00:00:00Z"),
+            endTime = Instant.parse("2025-04-25T08:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-25T00:00:00Z"), Instant.parse("2025-04-25T02:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-25T02:00:00Z"), Instant.parse("2025-04-25T04:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-25T04:00:00Z"), Instant.parse("2025-04-25T06:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-25T06:00:00Z"), Instant.parse("2025-04-25T08:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-24T16:00:00Z"),
+            endTime = Instant.parse("2025-04-25T00:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-24T16:00:00Z"), Instant.parse("2025-04-24T18:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-24T18:00:00Z"), Instant.parse("2025-04-24T20:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-24T20:00:00Z"), Instant.parse("2025-04-24T22:00:00Z"), SleepStageType.DEEP),
+                SleepStage(Instant.parse("2025-04-24T22:00:00Z"), Instant.parse("2025-04-25T00:00:00Z"), SleepStageType.REM)
+            )
+        ),
+        SleepSession(
+            startTime = Instant.parse("2025-04-24T08:00:00Z"),
+            endTime = Instant.parse("2025-04-24T16:00:00Z"),
+            stages = listOf(
+                SleepStage(Instant.parse("2025-04-24T08:00:00Z"), Instant.parse("2025-04-24T10:00:00Z"), SleepStageType.AWAKE),
+                SleepStage(Instant.parse("2025-04-24T10:00:00Z"), Instant.parse("2025-04-24T12:00:00Z"), SleepStageType.REM),
+                SleepStage(Instant.parse("2025-04-24T12:00:00Z"), Instant.parse("2025-04-24T14:00:00Z"), SleepStageType.LIGHT),
+                SleepStage(Instant.parse("2025-04-24T14:00:00Z"), Instant.parse("2025-04-24T16:00:00Z"), SleepStageType.DEEP)
+            )
+        )
     )
 
     /**

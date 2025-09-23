@@ -61,6 +61,7 @@ import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
 import com.hdil.saluschart.ui.compose.charts.ScatterPlot
+import com.hdil.saluschart.ui.compose.charts.SleepStageChart
 import com.hdil.saluschart.ui.compose.charts.StackedBarChart
 import com.hdil.saluschart.ui.theme.Orange
 import com.hdil.saluschart.ui.theme.Primary_Purple
@@ -72,6 +73,7 @@ import java.time.YearMonth
 
 // Sample data references - now organized in SampleDataProvider
 private val stepCountHealthData = SampleDataProvider.getStepCountData()
+private val singleSleepSessionData = SampleDataProvider.getSingleSleepSessionData()
 private val weightHealthData = SampleDataProvider.getWeightData()
 private val bloodPressureHealthData = SampleDataProvider.getBloodPressureData()
 private val bodyFatHealthData = SampleDataProvider.getBodyFatData()
@@ -105,10 +107,11 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "DonutChart 1",
         "Progress Bar Chart",
         "Progress Ring Chart",
+        "Sleep Stage Chart",
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Standard Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -154,6 +157,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
+                "Sleep Stage Chart" -> SleepStageChart_1()
                 "X-Axis Tick Reduction Demo" -> XAxisTickReductionDemo()
                 else -> Text("Unknown Chart Type")
             }
@@ -988,4 +992,17 @@ fun TimeStepBarChart() {
             }
         )
     }
+}
+
+@Composable
+fun SleepStageChart_1() {
+    SleepStageChart(
+        modifier = Modifier.fillMaxWidth().height(300.dp),
+        sleepSession = singleSleepSessionData,
+        title = "Sleep Stage Analysis",
+        showLabels = true,
+        onStageClick = { index, tooltipText ->
+            // Handle stage click if needed
+        }
+    )
 }

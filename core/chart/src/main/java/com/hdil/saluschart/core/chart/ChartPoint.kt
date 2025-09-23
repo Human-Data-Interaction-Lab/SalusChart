@@ -23,40 +23,27 @@ data class ChartPoint(
  */
 data class RangeChartPoint(
     override val x: Float,
-    val yMin: Float,
-    val yMax: Float,
-    override val label: String? = null,
-    val color: Int? = null,
-    val isSelected: Boolean = false
+    val minPoint: ChartPoint,
+    val maxPoint: ChartPoint,
+    override val label: String? = null
 ) : BaseChartPoint {
-    override val y: Float get() = yMax - yMin
+    override val y: Float get() = maxPoint.y - minPoint.y
     override fun toString(): String {
-        return "RangeChartPoint(x=$x, yMin=$yMin, yMax=$yMax, label=$label, color=$color, isSelected=$isSelected)"
+        return "RangeChartPoint(x=$x, minPoint=$minPoint, maxPoint=$maxPoint, label=$label)"
     }
 }
 
 /**
  * 스택 바 차트를 위한 데이터 포인트 클래스
- * 
- * @param x X축 위치 또는 시간 인덱스
- * @param values 각 세그먼트의 값들 (예: [단백질, 지방, 탄수화물])
- * @param label X축에 표시할 레이블 (예: 날짜, 요일 등)
- * @param segmentColors 각 세그먼트의 색상 (null인 경우 기본 색상 팔레트 사용)
- * @param isSelected 선택 상태 여부
  */
 data class StackedChartPoint(
     override val x: Float,
-    val values: List<Float>,
-    override val label: String? = null,
-    val segmentColors: List<Int>? = null,
-    val isSelected: Boolean = false
+    val segments: List<ChartPoint>,
+    override val label: String? = null
 ) : BaseChartPoint {
-    val total: Float = values.sum()
-
-    override val y: Float get() = total // TODO : y값을 어떻게 정의할지 논의 필요 (현재는 그냥 총합으로 설정)
-    
+    override val y: Float get() = segments.sumOf { it.y.toDouble() }.toFloat()
     override fun toString(): String {
-        return "StackedChartPoint(x=$x, values=$values, total=$total, label=$label, isSelected=$isSelected)"
+        return "StackedChartPoint(x=$x, segments=$segments, label=$label)"
     }
 }
 

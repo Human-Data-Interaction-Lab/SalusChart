@@ -39,6 +39,7 @@ android {
 dependencies {
     implementation(project(":core:chart"))
     implementation(project(":core:dsl"))
+    implementation(project(":core:transform"))
     implementation(project(":ui:theme"))
 
     implementation(libs.androidx.ui)

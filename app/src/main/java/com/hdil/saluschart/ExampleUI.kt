@@ -84,27 +84,28 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
-        "BarChart with Paging",
-        "LineChart with Paging",
-        "CalendarChart with Paging",
-        "Standard Bar Chart",
-        "Step Count - Bar Chart",
-        "BarChart 3",
-        "Standard Line Chart",
-        "Weight - Line Chart",
-        "Body Fat - Line Chart",
-        "Blood Pressure - Scatter Plot",
-        "Diet - Stacked Bar Chart",
+        "Progress Bar Chart",
+        "Progress Ring Chart",
+        "Diet - Stacked Bar Chart FreeScroll",
+        "Diet - Stacked Bar Chart Paged",
         "Heart Rate - Range Bar Basic Chart",
         "Heart Rate - Range Bar FreeScroll Fixed Axis",
         "Heart Rate - Range Bar Paged (Left Fixed)",
-        "Heart Rate - Range Bar Paged (Right Fixed)",
+        //"Standard Bar Chart",
+        //"BarChart with Paging",
+        //"BarChart 3",
+        //"Standard Line Chart",
+        //"LineChart with Paging",
+        //"CalendarChart 1",
+        //"CalendarChart 2",
+        //"Heart Rate - Range Bar Paged (Right Fixed)",
+        "Step Count - Bar Chart",
+        "Weight - Line Chart",
+        "Body Fat - Line Chart",
+        "Blood Pressure - Scatter Plot",
+        "CalendarChart with Paging",
         "Minimal Charts",
-        "CalendarChart 1",
-        "CalendarChart 2",
         "PieChart 1",
-        "Progress Bar Chart",
-        "Progress Ring Chart",
         "X-Axis Tick Reduction Demo"
     )
 
@@ -145,7 +146,8 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
-                "Diet - Stacked Bar Chart" -> StackedBarChart_1()
+                "Diet - Stacked Bar Chart FreeScroll" -> StackedBarChart_1()
+                "Diet - Stacked Bar Chart Paged" -> StackedBarChart_Paged_LeftAxis()
                 "Heart Rate - Range Bar Basic Chart" -> RangeBarChart_1()
                 "Heart Rate - Range Bar FreeScroll Fixed Axis" -> RangeBarChart_FreeScroll_FixedAxis()
                 "Heart Rate - Range Bar Paged (Left Fixed)", -> RangeBarChart_Paged_LeftAxis()
@@ -812,6 +814,30 @@ fun StackedBarChart_1() {
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
             Color(0xFF4CAF50)  // 초록 (탄수화물)
+        )
+    )
+}
+
+@Composable
+fun StackedBarChart_Paged_LeftAxis() {
+    StackedBarChart(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = stackedData,
+        segmentLabels = segmentLabels,
+        title = "요일별 영양소 (Paged + Fixed Left Axis)",
+        yLabel = "영양소 (g)",
+        xLabel = "요일",
+        showLegend = true,
+        legendPosition = LegendPosition.BOTTOM,
+        barWidthRatio = 0.8f,
+        pageSize = 4,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 20f,
+        yAxisPosition = YAxisPosition.LEFT,
+        yAxisFixedWidth = 24.dp,
+        interactionType = InteractionType.StackedBar.TOUCH_AREA,
+        colors = listOf(
+            Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF4CAF50)
         )
     )
 }

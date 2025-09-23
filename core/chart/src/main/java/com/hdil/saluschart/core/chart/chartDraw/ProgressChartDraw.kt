@@ -1,13 +1,20 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
+import android.graphics.BlurMaskFilter
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import com.hdil.saluschart.core.chart.ProgressChartPoint
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.sin
 
 object ProgressChartDraw {
     
@@ -32,79 +39,100 @@ object ProgressChartDraw {
         isDonut: Boolean,
         strokeWidth: Float = 40f,
         barHeight: Float = 30f,
-        backgroundAlpha: Float = 0.1f
+        backgroundAlpha: Float = 0.1f,
+        barSpacing: Float = 16f,
+        topPadding: Float = 8f,
+        cornerRadius: Float = barHeight / 2f
     ) {
         if (isDonut) {
-            // 도넛 차트 그리기
-            val (center, maxRadius, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
-                size = size,
-                data = data,
-                strokeWidth = strokeWidth
+            val (center, _, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
+                size = size, data = data, strokeWidth = strokeWidth
             )
-            
-            data.forEachIndexed { index, point ->
-                if (index < ringRadii.size) {
-                    val radius = ringRadii[index]
-                    val color = colors.getOrElse(index) { colors.first() }
-                    val angles = ChartMath.Progress.computeProgressAngles(listOf(point))
-                    val (startAngle, sweepAngle) = angles.first()
-                    
-                    // 배경 링 그리기 (전체 원)
-                    drawScope.drawArc(
-                        color = color.copy(alpha = backgroundAlpha),
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius, center.y - radius),
-                        size = Size(radius * 2, radius * 2),
-                        style = Stroke(width = strokeWidth)
-                    )
-                    
-                    // 프로그레스 호 그리기
-                    drawScope.drawArc(
-                        color = color,
-                        startAngle = startAngle,
-                        sweepAngle = sweepAngle,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius, center.y - radius),
-                        size = Size(radius * 2, radius * 2),
-                        style = Stroke(width = strokeWidth)
-                    )
-                }
+
+            // --- helpers
+            fun lighten(c: Color, f: Float) = Color(
+                (c.red + (1f - c.red) * f).coerceIn(0f, 1f),
+                (c.green + (1f - c.green) * f).coerceIn(0f, 1f),
+                (c.blue + (1f - c.blue) * f).coerceIn(0f, 1f),
+                c.alpha
+            )
+            fun darken(c: Color, f: Float) = Color(
+                (c.red * (1f - f)).coerceIn(0f, 1f),
+                (c.green * (1f - f)).coerceIn(0f, 1f),
+                (c.blue * (1f - f)).coerceIn(0f, 1f),
+                c.alpha
+            )
+
+            data.forEachIndexed { idx, pt ->
+                if (idx >= ringRadii.size) return@forEachIndexed
+                val radius = ringRadii[idx]
+                val base   = colors.getOrElse(idx) { colors.first() }
+
+                // Track
+                drawScope.drawArc(
+                    color = base.copy(alpha = backgroundAlpha),
+                    startAngle = 0f,
+                    sweepAngle = 359.9f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = Size(radius * 2, radius * 2),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                )
+
+                // Total sweep (allow >100%)
+                val raw = if (pt.max > 0f) pt.current / pt.max else pt.progress
+                val sweepDeg = (raw * 360f).coerceAtLeast(0.5f)  // ensure tiny head shows
+
+                // Full-ring gradient (light→dark around circle)
+                val brush = Brush.sweepGradient(
+                    0f to lighten(base, 0.4f),
+                    0.25f to base,
+                    0.75f to darken(base, 0.2f),
+                    1f to lighten(base, 0.4f),  // wrap smoothly
+                    center = center
+                )
+
+                // Draw ONE arc — rounded caps handle both start + head
+                drawScope.drawArc(
+                    brush = brush,
+                    startAngle = -90f,                // 12 o’clock
+                    sweepAngle = sweepDeg,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = Size(radius * 2, radius * 2),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
             }
+
         } else {
-            // 바 차트 그리기
-            val (barWidth, barYPositions) = ChartMath.Progress.computeProgressBarMetrics(
-                size = size,
-                data = data,
-                barHeight = barHeight
-            )
-            val padding = 40f
-            
+            // Bars (unchanged)
+            val leftPadding = 90f
+            val rightPadding = 100f
+            val trackWidth = (size.width - leftPadding - rightPadding).coerceAtLeast(0f)
+
             data.forEachIndexed { index, point ->
-                if (index < barYPositions.size) {
-                    val y = barYPositions[index]
-                    val color = colors.getOrElse(index) { colors.first() }
-                    val progressWidth = barWidth * point.progress
-                    
-                    // 배경 바 그리기 (전체 바)
-                    drawScope.drawRect(
-                        color = color.copy(alpha = backgroundAlpha),
-                        topLeft = Offset(padding, y),
-                        size = Size(barWidth, barHeight)
-                    )
-                    
-                    // 프로그레스 바 그리기
-                    drawScope.drawRect(
+                val y = topPadding + index * (barHeight + barSpacing)
+                val color = colors.getOrElse(index) { colors.first() }
+                val progressWidth = trackWidth * point.progress.coerceIn(0f, 1f)
+
+                drawScope.drawRoundRect(
+                    color = color.copy(alpha = backgroundAlpha),
+                    topLeft = Offset(leftPadding, y),
+                    size = Size(trackWidth, barHeight),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius, cornerRadius)
+                )
+                if (progressWidth > 0f) {
+                    drawScope.drawRoundRect(
                         color = color,
-                        topLeft = Offset(padding, y),
-                        size = Size(progressWidth, barHeight)
+                        topLeft = Offset(leftPadding, y),
+                        size = Size(progressWidth, barHeight),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius, cornerRadius)
                     )
                 }
             }
         }
     }
-    
+
     /**
      * 프로그레스 라벨을 그립니다.
      * 
@@ -123,7 +151,9 @@ object ProgressChartDraw {
         isDonut: Boolean,
         strokeWidth: Float = 40f,
         barHeight: Float = 30f,
-        textSize: Float = 32f
+        textSize: Float = 32f,
+        barSpacing: Float = 16f,
+        topPadding: Float = 8f
     ) {
         if (isDonut) {
             val (center, maxRadius, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
@@ -157,29 +187,15 @@ object ProgressChartDraw {
                 }
             }
         } else {
-            val (barWidth, barYPositions) = ChartMath.Progress.computeProgressBarMetrics(
-                size = size,
-                data = data,
-                barHeight = barHeight
-            )
-            val center = Offset(size.width / 2f, size.height / 2f)
+            val leftX = 64f
             
             data.forEachIndexed { index, point ->
-                val barY = barYPositions.getOrElse(index) { 0f }
-                val labelPosition = ChartMath.Progress.computeLabelPosition(
-                    center = center,
-                    isDonut = false,
-                    point = point,
-                    barY = barY,
-                    barWidth = barWidth
-                )
-                
-                // 라벨 텍스트 그리기
+                val centerY = topPadding + index * (barHeight + barSpacing) + barHeight / 2f
                 point.label?.let { label ->
                     drawScope.drawContext.canvas.nativeCanvas.drawText(
                         label,
-                        labelPosition.x,
-                        labelPosition.y,
+                        leftX,
+                        centerY + textSize * 0.35f,
                         android.graphics.Paint().apply {
                             color = android.graphics.Color.DKGRAY
                             this.textSize = textSize
@@ -211,7 +227,9 @@ object ProgressChartDraw {
         strokeWidth: Float = 40f,
         barHeight: Float = 30f,
         textSize: Float = 28f,
-        isPercentage: Boolean
+        isPercentage: Boolean,
+        barSpacing: Float = 16f,
+        topPadding: Float = 8f
     ) {
         if (isDonut) {
             val (center, maxRadius, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
@@ -254,44 +272,28 @@ object ProgressChartDraw {
                 )
             }
         } else {
-            val (barWidth, barYPositions) = ChartMath.Progress.computeProgressBarMetrics(
-                size = size,
-                data = data,
-                barHeight = barHeight
-            )
-            val center = Offset(size.width / 2f, size.height / 2f)
+            val rightX = size.width - 24f
             
             data.forEachIndexed { index, point ->
-                val barY = barYPositions.getOrElse(index) { 0f }
-                val valuePosition = ChartMath.Progress.computeValuePosition(
-                    center = center,
-                    isDonut = false,
-                    point = point,
-                    barY = barY,
-                    barWidth = barWidth
-                )
-
-                // 값 텍스트 생성
+                val centerY = topPadding + index * (barHeight + barSpacing) + barHeight / 2f
                 val valueText = if (isPercentage) {
-                    "${(point.percentage).toInt()}%"
+                    "${point.percentage.toInt()}%"
                 } else {
                     buildString {
-                        append("${point.current.toInt()}")
+                        append(point.current.toInt())
                         point.unit?.let { append(" $it") }
                         append(" / ${point.max.toInt()}")
                         point.unit?.let { append(" $it") }
                     }
                 }
-                
-                // 값 텍스트 그리기
                 drawScope.drawContext.canvas.nativeCanvas.drawText(
                     valueText,
-                    valuePosition.x,
-                    valuePosition.y,
+                    rightX,
+                    centerY + textSize * 0.35f,
                     android.graphics.Paint().apply {
                         color = android.graphics.Color.GRAY
                         this.textSize = textSize
-                        textAlign = android.graphics.Paint.Align.LEFT
+                        textAlign = android.graphics.Paint.Align.RIGHT
                     }
                 )
             }

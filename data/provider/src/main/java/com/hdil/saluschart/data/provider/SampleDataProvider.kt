@@ -266,7 +266,7 @@ object SampleDataProvider {
      * Sample progress data for Apple Watch-style activity rings
      */
     fun getActivityProgressData(): List<ProgressChartPoint> = listOf(
-        ProgressChartPoint(x = 0f, current = 1200f, max = 2000f, label = "Move", unit = "KJ"),
+        ProgressChartPoint(x = 0f, current = 2500f, max = 2000f, label = "Move", unit = "KJ"),
         ProgressChartPoint(x = 1f, current = 20f, max = 60f, label = "Exercise", unit = "min"),
         ProgressChartPoint(x = 2f, current = 7f, max = 10f, label = "Stand", unit = "h")
     )

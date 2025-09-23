@@ -2,11 +2,15 @@ package com.hdil.saluschart.core.chart.chartDraw
 
 import android.graphics.fonts.FontStyle
 import android.util.Log
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -300,4 +304,32 @@ object BarChartDraw {
             )
         }
     }
+
+    @Composable
+    fun HorizontalBarMarker(
+        progress: Float,              // 0f..1f
+        trackColor: Color,
+        fillColor: Color,
+        height: Dp = 20.dp,
+        cornerRadius: Dp = height / 2,
+        modifier: Modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+    ) {
+        val p = progress.coerceIn(0f, 1f)
+        val animated = animateFloatAsState(targetValue = p, label = "progress_anim")
+
+        Box(
+            modifier
+                .background(trackColor, shape = RoundedCornerShape(cornerRadius))
+        ) {
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(animated.value)
+                    .background(fillColor, shape = RoundedCornerShape(cornerRadius))
+            )
+        }
+    }
+
 }

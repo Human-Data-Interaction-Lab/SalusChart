@@ -88,27 +88,26 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
+        "BarChart with Paging",
+        "LineChart with Paging",
+        "CalendarChart with Paging",
         "Standard Bar Chart",
         "Step Count - Bar Chart",
-        "BarChart 3",
-        "Weight - Line Chart",
         "Body Fat - Line Chart",
-        "LineChart 3",
+        "Weight - Line Chart",
         "Blood Pressure - Scatter Plot",
         "Diet - Stacked Bar Chart",
         "Heart Rate - Range Bar Chart",
         "Minimal Charts",
         "CalendarChart 1",
         "CalendarChart 2",
-        "CalendarChart 3",
         "PieChart 1",
-        "DonutChart 1",
         "Progress Bar Chart",
         "Progress Ring Chart",
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Step Count - Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("BarChart with Paging") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -139,17 +138,17 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "Standard Bar Chart" -> BarChart_1()
                 "Step Count - Bar Chart" -> BarChart_2()
-                "BarChart 3" -> BarChart_3()
+                "BarChart with Paging" -> BarChart_3()
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
-                "LineChart 3" -> LineChart_3()
+                "LineChart with Paging" -> LineChart_3()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
                 "Diet - Stacked Bar Chart" -> StackedBarChart_1()
                 "Heart Rate - Range Bar Chart" -> RangeBarChart_1()
                 "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
-                "CalendarChart 3" -> CalendarChart_3()
+                "CalendarChart with Paging" -> CalendarChart_3()
                 "PieChart 1" -> PieChart_1()
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
@@ -840,7 +839,7 @@ fun ProgressBarChart_1() {
             Color(0xFFFF6B35), // 주황색 (Exercise)
             Color(0xFF3A86FF)  // 파란색 (Stand)
         ),
-        strokeWidth = 80f
+        strokeWidth = 80f,
     )
 }
 
@@ -858,7 +857,9 @@ fun ProgressBarChart_2() {
             Color(0xFF4CAF50), // 초록
             Color(0xFF9C27B0), // 보라
         ),
-        strokeWidth = 60f
+        strokeWidth = 60f,
+        showLegend = true,
+        showValues = false
     )
 }
 

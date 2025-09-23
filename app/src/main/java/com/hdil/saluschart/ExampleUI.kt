@@ -42,11 +42,7 @@ import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
-import com.hdil.saluschart.data.model.model.HealthData
-import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.MassUnit
-import com.hdil.saluschart.data.model.model.StepCount
-import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.data.provider.SampleDataProvider
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
@@ -90,19 +86,27 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
-        "Standard Bar Chart",
+        "Progress Bar Chart",
+        "Progress Ring Chart",
+        "Diet - Stacked Bar Chart FreeScroll",
+        "Diet - Stacked Bar Chart Paged",
+        "Heart Rate - Range Bar Basic Chart",
+        "Heart Rate - Range Bar FreeScroll Fixed Axis",
+        "Heart Rate - Range Bar Paged (Left Fixed)",
+        //"Standard Bar Chart",
+        //"BarChart with Paging",
+        //"BarChart 3",
+        //"Standard Line Chart",
+        //"LineChart with Paging",
+        //"CalendarChart 1",
+        //"CalendarChart 2",
+        //"Heart Rate - Range Bar Paged (Right Fixed)",
         "Step Count - Bar Chart",
-//        "BarChart 3",
-        "Standard Line Chart",
         "Weight - Line Chart",
         "Body Fat - Line Chart",
         "Blood Pressure - Scatter Plot",
-        "Diet - Stacked Bar Chart",
-        "Heart Rate - Range Bar Chart",
+        "CalendarChart with Paging",
         "Minimal Charts",
-        "CalendarChart 1",
-        "CalendarChart 2",
-        "CalendarChart 3",
         "PieChart 1",
         "DonutChart 1",
         "Progress Bar Chart",
@@ -142,17 +146,22 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "Standard Bar Chart" -> BarChart_1()
                 "Step Count - Bar Chart" -> BarChart_2()
-//                "BarChart 3" -> BarChart_3()
+                "BarChart with Paging" -> BarChart_3()
+                "LineChart with Paging" -> LineChart_3()
                 "Standard Line Chart" -> LineChart_3()
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
-                "Diet - Stacked Bar Chart" -> StackedBarChart_1()
-                "Heart Rate - Range Bar Chart" -> RangeBarChart_1()
+                "Diet - Stacked Bar Chart FreeScroll" -> StackedBarChart_1()
+                "Diet - Stacked Bar Chart Paged" -> StackedBarChart_Paged_LeftAxis()
+                "Heart Rate - Range Bar Basic Chart" -> RangeBarChart_1()
+                "Heart Rate - Range Bar FreeScroll Fixed Axis" -> RangeBarChart_FreeScroll_FixedAxis()
+                "Heart Rate - Range Bar Paged (Left Fixed)", -> RangeBarChart_Paged_LeftAxis()
+                "Heart Rate - Range Bar Paged (Right Fixed)", -> RangeBarChart_Paged_RightAxis()
                 "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
-                "CalendarChart 3" -> CalendarChart_3()
+                "CalendarChart with Paging" -> CalendarChart_3()
                 "PieChart 1" -> PieChart_1()
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
@@ -316,21 +325,21 @@ fun BarChart_2() {
     }
 }
 
-//@Composable
-//fun BarChart_3() {
-//    BarChart(
-//        modifier = Modifier.fillMaxWidth().height(250.dp),
-//        data = chartPoints4,
-//        title = "Weekly Data",
-//        barColor = Primary_Purple,
-//        yAxisPosition = YAxisPosition.RIGHT,
-//        showLabel = true,
-//        // paged mode:
-//        pageSize = 7,
-//        unifyYAxisAcrossPages = true,
-//        yTickStepDefaultForPaged = 10f
-//    )
-//}
+@Composable
+fun BarChart_3() {
+    BarChart(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        data = chartPoints4,
+        title = "Weekly Data",
+        barColor = Primary_Purple,
+        yAxisPosition = YAxisPosition.RIGHT,
+        showLabel = true,
+        // paged mode:
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f
+    )
+}
 
 @Composable
 fun DonutChart_1() {
@@ -817,6 +826,30 @@ fun StackedBarChart_1() {
 }
 
 @Composable
+fun StackedBarChart_Paged_LeftAxis() {
+    StackedBarChart(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = stackedData,
+        segmentLabels = segmentLabels,
+        title = "요일별 영양소 (Paged + Fixed Left Axis)",
+        yLabel = "영양소 (g)",
+        xLabel = "요일",
+        showLegend = true,
+        legendPosition = LegendPosition.BOTTOM,
+        barWidthRatio = 0.8f,
+        pageSize = 4,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 20f,
+        yAxisPosition = YAxisPosition.LEFT,
+        yAxisFixedWidth = 24.dp,
+        interactionType = InteractionType.StackedBar.TOUCH_AREA,
+        colors = listOf(
+            Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF4CAF50)
+        )
+    )
+}
+
+@Composable
 fun RangeBarChart_1() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
@@ -827,6 +860,55 @@ fun RangeBarChart_1() {
         barWidthRatio = 0.8f,
         barColor = Color(0xFFFF9800),
         interactionType = InteractionType.RangeBar.TOUCH_AREA
+    )
+}
+
+@Composable
+fun RangeBarChart_FreeScroll_FixedAxis() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeData,
+        title = "Free-scroll + Fixed Y-Axis",
+        windowSize = 7,
+        fixedYAxis = true,
+        yAxisFixedWidth = 24.dp,
+        yTickStep = 10f,
+        barWidthRatio = 0.7f,
+        interactionType = InteractionType.RangeBar.BAR, // bars themselves are tappable
+        unit = "bpm"
+    )
+}
+
+@Composable
+fun RangeBarChart_Paged_LeftAxis() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeData,
+        title = "Paged + Fixed Left Y-Axis",
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f,
+        yAxisFixedWidth = 24.dp,
+        barWidthRatio = 0.75f,
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "bpm"
+    )
+}
+
+@Composable
+fun RangeBarChart_Paged_RightAxis() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeData,
+        title = "Paged + Fixed Right Y-Axis",
+        pageSize = 7,
+        unifyYAxisAcrossPages = true,
+        yTickStepDefaultForPaged = 10f,
+        yAxisPosition = YAxisPosition.RIGHT,
+        yAxisFixedWidth = 24.dp,
+        barWidthRatio = 0.75f,
+        interactionType = InteractionType.RangeBar.BAR,
+        unit = "bpm"
     )
 }
 
@@ -843,7 +925,7 @@ fun ProgressBarChart_1() {
             Color(0xFFFF6B35), // 주황색 (Exercise)
             Color(0xFF3A86FF)  // 파란색 (Stand)
         ),
-        strokeWidth = 80f
+        strokeWidth = 80f,
     )
 }
 
@@ -861,7 +943,9 @@ fun ProgressBarChart_2() {
             Color(0xFF4CAF50), // 초록
             Color(0xFF9C27B0), // 보라
         ),
-        strokeWidth = 60f
+        strokeWidth = 60f,
+        showLegend = true,
+        showValues = false
     )
 }
 

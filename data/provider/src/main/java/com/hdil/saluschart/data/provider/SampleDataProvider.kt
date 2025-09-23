@@ -1,13 +1,10 @@
 package com.hdil.saluschart.data.provider
 
-import com.hdil.saluschart.core.chart.BaseChartPoint
 import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ProgressChartPoint
-import com.hdil.saluschart.core.chart.RangeChartPoint
-import com.hdil.saluschart.core.chart.StackedChartPoint
 import com.hdil.saluschart.core.transform.transform
-import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.core.util.AggregationType
+import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.BloodPressure
 import com.hdil.saluschart.data.model.model.BodyFat
 import com.hdil.saluschart.data.model.model.Mass
@@ -17,12 +14,14 @@ import com.hdil.saluschart.data.model.model.SleepStageType
 import com.hdil.saluschart.data.model.model.StepCount
 import com.hdil.saluschart.data.model.model.Weight
 import com.hdil.saluschart.ui.compose.charts.CalendarEntry
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.*
-import kotlin.random.Random
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 
 /**
@@ -600,37 +599,85 @@ object SampleDataProvider {
      * Returns List<ChartPoint> where multiple points with same x-value represent min and max values
      */
     fun getHeartRateRangeData(): List<ChartPoint> = listOf(
-        // Day 2 (x = 0)
-        ChartPoint(x = 0f, y = 54f, label = "2일"), // min
-        ChartPoint(x = 0f, y = 160f, label = "2일"), // max
+        // Day 1
+        ChartPoint(x = 0f, y = 55f, label = "1일"),
+        ChartPoint(x = 0f, y = 150f, label = "1일"),
 
-        // Day 3 (x = 1)
-        ChartPoint(x = 1f, y = 65f, label = "3일"), // min
-        ChartPoint(x = 1f, y = 145f, label = "3일"), // max
+        // Day 2
+        ChartPoint(x = 1f, y = 54f, label = "2일"),
+        ChartPoint(x = 1f, y = 160f, label = "2일"),
 
-        // Day 4 (x = 2)
-        ChartPoint(x = 2f, y = 58f, label = "4일"), // min
-        ChartPoint(x = 2f, y = 125f, label = "4일"), // max
+        // Day 3
+        ChartPoint(x = 2f, y = 65f, label = "3일"),
+        ChartPoint(x = 2f, y = 145f, label = "3일"),
 
-        // Day 6 (x = 3)
-        ChartPoint(x = 3f, y = 75f, label = "6일"), // min
-        ChartPoint(x = 3f, y = 110f, label = "6일"), // max
+        // Day 4
+        ChartPoint(x = 3f, y = 58f, label = "4일"),
+        ChartPoint(x = 3f, y = 125f, label = "4일"),
 
-        // Day 7 (x = 4)
-        ChartPoint(x = 4f, y = 68f, label = "7일"), // min
-        ChartPoint(x = 4f, y = 162f, label = "7일"), // max
+        // Day 5
+        ChartPoint(x = 4f, y = 70f, label = "5일"),
+        ChartPoint(x = 4f, y = 140f, label = "5일"),
 
-        // Day 8 (x = 5)
-        ChartPoint(x = 5f, y = 72f, label = "8일"), // min
-        ChartPoint(x = 5f, y = 168f, label = "8일"), // max
+        // Day 6
+        ChartPoint(x = 5f, y = 75f, label = "6일"),
+        ChartPoint(x = 5f, y = 110f, label = "6일"),
 
-        // Day 9 (x = 6)
-        ChartPoint(x = 6f, y = 65f, label = "9일"), // min
-        ChartPoint(x = 6f, y = 138f, label = "9일"), // max
+        // Day 7
+        ChartPoint(x = 6f, y = 68f, label = "7일"),
+        ChartPoint(x = 6f, y = 162f, label = "7일"),
 
-        // Day 10 (x = 7)
-        ChartPoint(x = 7f, y = 85f, label = "10일"), // min
-        ChartPoint(x = 7f, y = 105f, label = "10일") // max
+        // Day 8
+        ChartPoint(x = 7f, y = 72f, label = "8일"),
+        ChartPoint(x = 7f, y = 168f, label = "8일"),
+
+        // Day 9
+        ChartPoint(x = 8f, y = 65f, label = "9일"),
+        ChartPoint(x = 8f, y = 138f, label = "9일"),
+
+        // Day 10
+        ChartPoint(x = 9f, y = 85f, label = "10일"),
+        ChartPoint(x = 9f, y = 105f, label = "10일"),
+
+        // Day 11
+        ChartPoint(x = 10f, y = 62f, label = "11일"),
+        ChartPoint(x = 10f, y = 140f, label = "11일"),
+
+        // Day 12
+        ChartPoint(x = 11f, y = 70f, label = "12일"),
+        ChartPoint(x = 11f, y = 155f, label = "12일"),
+
+        // Day 13
+        ChartPoint(x = 12f, y = 60f, label = "13일"),
+        ChartPoint(x = 12f, y = 130f, label = "13일"),
+
+        // Day 14
+        ChartPoint(x = 13f, y = 75f, label = "14일"),
+        ChartPoint(x = 13f, y = 150f, label = "14일"),
+
+        // Day 15
+        ChartPoint(x = 14f, y = 66f, label = "15일"),
+        ChartPoint(x = 14f, y = 142f, label = "15일"),
+
+        // Day 16
+        ChartPoint(x = 15f, y = 78f, label = "16일"),
+        ChartPoint(x = 15f, y = 160f, label = "16일"),
+
+        // Day 17
+        ChartPoint(x = 16f, y = 64f, label = "17일"),
+        ChartPoint(x = 16f, y = 135f, label = "17일"),
+
+        // Day 18
+        ChartPoint(x = 17f, y = 72f, label = "18일"),
+        ChartPoint(x = 17f, y = 150f, label = "18일"),
+
+        // Day 19
+        ChartPoint(x = 18f, y = 70f, label = "19일"),
+        ChartPoint(x = 18f, y = 145f, label = "19일"),
+
+        // Day 20
+        ChartPoint(x = 19f, y = 68f, label = "20일"),
+        ChartPoint(x = 19f, y = 155f, label = "20일"),
     )
 
     /**
@@ -678,7 +725,7 @@ object SampleDataProvider {
      * Sample progress data for Apple Watch-style activity rings
      */
     fun getActivityProgressData(): List<ProgressChartPoint> = listOf(
-        ProgressChartPoint(x = 0f, current = 1200f, max = 2000f, label = "Move", unit = "KJ"),
+        ProgressChartPoint(x = 0f, current = 2500f, max = 2000f, label = "Move", unit = "KJ"),
         ProgressChartPoint(x = 1f, current = 20f, max = 60f, label = "Exercise", unit = "min"),
         ProgressChartPoint(x = 2f, current = 7f, max = 10f, label = "Stand", unit = "h")
     )

@@ -88,6 +88,9 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
+        "BarChart with Paging",
+        "LineChart with Paging",
+        "CalendarChart with Paging",
         "Standard Bar Chart",
         "Step Count - Bar Chart",
 //        "BarChart 3",
@@ -100,9 +103,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Minimal Charts",
         "CalendarChart 1",
         "CalendarChart 2",
-        "CalendarChart 3",
         "PieChart 1",
-        "DonutChart 1",
         "Progress Bar Chart",
         "Progress Ring Chart",
         "X-Axis Tick Reduction Demo"
@@ -149,7 +150,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
-                "CalendarChart 3" -> CalendarChart_3()
+                "CalendarChart with Paging" -> CalendarChart_3()
                 "PieChart 1" -> PieChart_1()
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
@@ -839,7 +840,7 @@ fun ProgressBarChart_1() {
             Color(0xFFFF6B35), // 주황색 (Exercise)
             Color(0xFF3A86FF)  // 파란색 (Stand)
         ),
-        strokeWidth = 80f
+        strokeWidth = 80f,
     )
 }
 
@@ -857,7 +858,9 @@ fun ProgressBarChart_2() {
             Color(0xFF4CAF50), // 초록
             Color(0xFF9C27B0), // 보라
         ),
-        strokeWidth = 60f
+        strokeWidth = 60f,
+        showLegend = true,
+        showValues = false
     )
 }
 

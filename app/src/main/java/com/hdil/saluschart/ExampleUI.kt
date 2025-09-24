@@ -89,13 +89,15 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
-        "Progress Bar Chart",
-        "Progress Ring Chart",
-        "Diet - Stacked Bar Chart FreeScroll",
-        "Diet - Stacked Bar Chart Paged",
+        "Sleep Stage Chart",
+        "Sleep Stage Chart - FreeScroll Fixed Axis",
         "Heart Rate - Range Bar Basic Chart",
         "Heart Rate - Range Bar FreeScroll Fixed Axis",
         "Heart Rate - Range Bar Paged (Left Fixed)",
+        "Diet - Stacked Bar Chart FreeScroll",
+        "Diet - Stacked Bar Chart Paged",
+        "Progress Bar Chart",
+        "Progress Ring Chart",
         //"Standard Bar Chart",
         //"BarChart with Paging",
         //"BarChart 3",
@@ -112,8 +114,6 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         //"Minimal Charts",
         //"PieChart 1",
         //"DonutChart 1",
-        "Sleep Stage Chart",
-        "Sleep Stage Chart - FreeScroll Fixed Axis",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }

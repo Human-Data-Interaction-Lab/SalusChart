@@ -104,18 +104,16 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         //"CalendarChart 1",
         //"CalendarChart 2",
         //"Heart Rate - Range Bar Paged (Right Fixed)",
-        "Step Count - Bar Chart",
-        "Weight - Line Chart",
-        "Body Fat - Line Chart",
-        "Blood Pressure - Scatter Plot",
-        "CalendarChart with Paging",
-        "Minimal Charts",
-        "PieChart 1",
-        "DonutChart 1",
-        "Progress Bar Chart",
-        "Progress Ring Chart",
+        //"Step Count - Bar Chart",
+        //"Weight - Line Chart",
+        //"Body Fat - Line Chart",
+        //"Blood Pressure - Scatter Plot",
+        //"CalendarChart with Paging",
+        //"Minimal Charts",
+        //"PieChart 1",
+        //"DonutChart 1",
         "Sleep Stage Chart",
-        "X-Axis Tick Reduction Demo"
+        "Sleep Stage Chart - FreeScroll Fixed Axis",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }
@@ -176,7 +174,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
                 "Sleep Stage Chart" -> SleepStageChart_1()
-                "X-Axis Tick Reduction Demo" -> XAxisTickReductionDemo()
+                "Sleep Stage Chart - FreeScroll Fixed Axis" -> SleepStageChart_2()
                 else -> Text("Unknown Chart Type")
             }
         }
@@ -193,7 +191,7 @@ fun BarChart_1() {
         yLabel = "Value",
         title = "요일별 데이터",
         barColor = Primary_Purple,
-        maxY = 70f,
+        maxY = 70.0,
         barWidthRatio = 0.8f,
         xLabelTextSize = 40f,
         tooltipTextSize = 5f,
@@ -313,14 +311,14 @@ fun BarChart_2() {
             },
             unifyYAxisAcrossPages = true,
             yTickStepDefaultForPaged = when (selectedTimeUnit) {
-                "Hour" -> 400f
-                "Day" -> 4000f
-                "Week" -> 10000f
-                else -> 1000f
+                "Hour" -> 400.0
+                "Day" -> 4000.0
+                "Week" -> 10000.0
+                else -> 1000.0
             },
             maxY = when (selectedTimeUnit) {
                 "Hour" -> null
-                "Day" -> 24000f
+                "Day" -> 24000.0
                 "Week" -> null
                 else -> null
             }, // 임시 (tooltip 잘 보이기 위해)
@@ -346,7 +344,7 @@ fun BarChart_3() {
         // paged mode:
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10f
+        yTickStepDefaultForPaged = 10.0
     )
 }
 
@@ -449,9 +447,9 @@ fun LineChart_1() {
                 yLabel = "체중 ($selectedUnit)",
                 xLabel = "날짜",
                 minY = when (selectedUnit) {
-                    "kg" -> 50f
-                    "lb" -> 110f
-                    else -> 50f
+                    "kg" -> 50.0
+                    "lb" -> 110.0
+                    else -> 50.0
                 },
                 lineColor = Primary_Purple,
                 strokeWidth = 12f,
@@ -478,8 +476,8 @@ fun LineChart_2() {
         unit = "%",
         yLabel = "활동량",
         xLabel = "요일",
-        minY = 10f,
-        maxY = 30f,
+        minY = 10.0,
+        maxY = 30.0,
         lineColor = Primary_Purple,
         showPoint = true,
         pointRadius = Pair(8.dp, 4.dp),
@@ -508,7 +506,7 @@ fun LineChart_3() {
         pagingEnabled = true,
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStep = 10f
+        yTickStep = 10.0
     )
 }
 
@@ -793,15 +791,15 @@ fun Minimal_Chart() {
                     .align(androidx.compose.ui.Alignment.CenterVertically)
             ) {
                 val singleRangeData = RangeChartPoint(
-                    x = 0f,
-                    minPoint = ChartPoint(x = 0f, y = 78f),
-                    maxPoint = ChartPoint(x = 0f, y = 104f),
+                    x = 0.0,
+                    minPoint = ChartPoint(x = 0.0, y = 78.0),
+                    maxPoint = ChartPoint(x = 0.0, y = 104.0),
                     label = "Heart Rate"
                 )
                 MinimalGaugeChart(
                     data = singleRangeData,
-                    containerMin = 60f,  // 정상 심박수 범위 시작
-                    containerMax = 120f, // 정상 심박수 범위 끝
+                    containerMin = 60.0,  // 정상 심박수 범위 시작
+                    containerMax = 120.0, // 정상 심박수 범위 끝
                     containerColor = Color.LightGray,
                     rangeColor = Orange,
                 )
@@ -829,7 +827,8 @@ fun StackedBarChart_1() {
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
             Color(0xFF4CAF50)  // 초록 (탄수화물)
-        )
+        ),
+        unit = "g"
     )
 }
 
@@ -847,10 +846,10 @@ fun StackedBarChart_Paged_LeftAxis() {
         barWidthRatio = 0.8f,
         pageSize = 4,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 20f,
+        yTickStepDefaultForPaged = 20.0,
         yAxisPosition = YAxisPosition.LEFT,
         yAxisFixedWidth = 24.dp,
-        interactionType = InteractionType.StackedBar.TOUCH_AREA,
+        interactionType = InteractionType.StackedBar.BAR,
         colors = listOf(
             Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF4CAF50)
         )
@@ -867,7 +866,8 @@ fun RangeBarChart_1() {
         xLabel = "날짜",
         barWidthRatio = 0.8f,
         barColor = Color(0xFFFF9800),
-        interactionType = InteractionType.RangeBar.TOUCH_AREA
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "bpm"
     )
 }
 
@@ -880,7 +880,7 @@ fun RangeBarChart_FreeScroll_FixedAxis() {
         windowSize = 7,
         fixedYAxis = true,
         yAxisFixedWidth = 24.dp,
-        yTickStep = 10f,
+        yTickStep = 10.0,
         barWidthRatio = 0.7f,
         interactionType = InteractionType.RangeBar.BAR, // bars themselves are tappable
         unit = "bpm"
@@ -895,7 +895,7 @@ fun RangeBarChart_Paged_LeftAxis() {
         title = "Paged + Fixed Left Y-Axis",
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10f,
+        yTickStepDefaultForPaged = 10.0,
         yAxisFixedWidth = 24.dp,
         barWidthRatio = 0.75f,
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
@@ -911,7 +911,7 @@ fun RangeBarChart_Paged_RightAxis() {
         title = "Paged + Fixed Right Y-Axis",
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10f,
+        yTickStepDefaultForPaged = 10.0,
         yAxisPosition = YAxisPosition.RIGHT,
         yAxisFixedWidth = 24.dp,
         barWidthRatio = 0.75f,
@@ -1096,9 +1096,26 @@ fun SleepStageChart_1() {
         onStageClick = { index, tooltipText ->
             // Handle stage click if needed
         },
+        barHeightRatio = 0.6f,
+        fixedYAxis = true,
+        yAxisPosition = YAxisPosition.LEFT
+    )
+}
+
+@Composable
+fun SleepStageChart_2() {
+    SleepStageChart(
+        modifier = Modifier.fillMaxWidth().height(300.dp),
+        sleepSession = singleSleepSessionData,
+        title = "Sleep Stage Analysis",
+        showLabels = true,
+        onStageClick = { index, tooltipText ->
+            // Handle stage click if needed
+        },
+        barHeightRatio = 0.8f,
         fixedYAxis = true,
         yAxisPosition = YAxisPosition.LEFT,
-//        windowSize = 1,
-//        autoFixYAxisOnScroll = true
+        windowSize = 8,
+        autoFixYAxisOnScroll = true
     )
 }

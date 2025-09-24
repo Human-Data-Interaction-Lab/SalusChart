@@ -66,8 +66,8 @@ fun ScatterPlot(
     fixedYAxis: Boolean = false,
     yAxisFixedWidth: Dp = 16.dp,
     autoFixYAxisOnScroll: Boolean = true,
-    minY: Float? = null,
-    maxY: Float? = null,
+    minY: Double? = null,
+    maxY: Double? = null,
     unit: String = "", // 단위 (예: "kg", "bpm" 등)
 ) {
     if (data.isEmpty()) return

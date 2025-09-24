@@ -42,8 +42,8 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 fun MinimalGaugeChart(
     modifier: Modifier = Modifier,
     data: RangeChartPoint,
-    containerMin: Float,
-    containerMax: Float,
+    containerMin: Double,
+    containerMax: Double,
     containerColor: Color = Color.LightGray,
     rangeColor: Color = Color(0xFFFF9500),
     textColor: Color = Color.Black,
@@ -61,18 +61,18 @@ fun MinimalGaugeChart(
         // 범위 텍스트 표시
         if (showRangeText) {
             ChartDraw.Gauge.RangeText(
-                dataMin = clampedDataMin,
-                dataMax = clampedDataMax,
+                dataMin = clampedDataMin.toFloat(),
+                dataMax = clampedDataMax.toFloat(),
                 textColor = textColor
             )
         }
 
         // 게이지 바 컴포저블
         ChartDraw.Gauge.GaugeBar(
-            dataMin = clampedDataMin,
-            dataMax = clampedDataMax,
-            containerMin = containerMin,
-            containerMax = containerMax,
+            dataMin = clampedDataMin.toFloat(),
+            dataMax = clampedDataMax.toFloat(),
+            containerMin = containerMin.toFloat(),
+            containerMax = containerMax.toFloat(),
             containerColor = containerColor,
             rangeColor = rangeColor
         )

@@ -73,7 +73,7 @@ class DataTransformer {
             )
         } else {
             // 다중 값 처리
-            val aggregatedMultipleData = mutableMapOf<String, List<Pair<LocalDateTime, Float>>>()
+            val aggregatedMultipleData = mutableMapOf<String, List<Pair<LocalDateTime, Double>>>()
             
             // 각 속성별로 집계 수행
             data.yMultiple!!.forEach { (property, values) ->
@@ -104,10 +104,10 @@ class DataTransformer {
      * 시간-값 쌍에 대한 집계 처리 (공통 로직)
      */
     private fun processAggregation(
-        timeValuePairs: List<Pair<LocalDateTime, Float>>,
+        timeValuePairs: List<Pair<LocalDateTime, Double>>,
         targetTimeUnit: TimeUnitGroup,
         aggregationType: AggregationType
-    ): List<Pair<LocalDateTime, Float>> {
+    ): List<Pair<LocalDateTime, Double>> {
         return when (aggregationType) {
             AggregationType.SUM -> {
                 val groupedData = when (targetTimeUnit) {
@@ -132,7 +132,7 @@ class DataTransformer {
     /**
      * 시간별 그룹핑
      */
-    private fun groupByHour(timeValuePairs: List<Pair<LocalDateTime, Float>>): Map<LocalDateTime, List<Float>> {
+    private fun groupByHour(timeValuePairs: List<Pair<LocalDateTime, Double>>): Map<LocalDateTime, List<Double>> {
         return timeValuePairs.groupBy { (time, _) ->
             time.truncatedTo(ChronoUnit.HOURS)
         }.mapValues { (_, pairs) -> pairs.map { it.second } }
@@ -141,7 +141,7 @@ class DataTransformer {
     /**
      * 일별 그룹핑
      */
-    private fun groupByDay(timeValuePairs: List<Pair<LocalDateTime, Float>>): Map<LocalDateTime, List<Float>> {
+    private fun groupByDay(timeValuePairs: List<Pair<LocalDateTime, Double>>): Map<LocalDateTime, List<Double>> {
         return timeValuePairs.groupBy { (time, _) ->
             time.truncatedTo(ChronoUnit.DAYS)
         }.mapValues { (_, pairs) -> pairs.map { it.second } }
@@ -150,7 +150,7 @@ class DataTransformer {
     /**
      * 주별 그룹핑 (일요일 기준)
      */
-    private fun groupByWeek(timeValuePairs: List<Pair<LocalDateTime, Float>>): Map<LocalDateTime, List<Float>> {
+    private fun groupByWeek(timeValuePairs: List<Pair<LocalDateTime, Double>>): Map<LocalDateTime, List<Double>> {
         return timeValuePairs.groupBy { (time, _) ->
             // 일요일을 기준으로 해당 주의 시작 날짜 계산
             val sunday = time.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
@@ -161,7 +161,7 @@ class DataTransformer {
     /**
      * 월별 그룹핑
      */
-    private fun groupByMonth(timeValuePairs: List<Pair<LocalDateTime, Float>>): Map<LocalDateTime, List<Float>> {
+    private fun groupByMonth(timeValuePairs: List<Pair<LocalDateTime, Double>>): Map<LocalDateTime, List<Double>> {
         return timeValuePairs.groupBy { (time, _) ->
             LocalDateTime.of(time.year, time.month, 1, 0, 0)
         }.mapValues { (_, pairs) -> pairs.map { it.second } }
@@ -170,7 +170,7 @@ class DataTransformer {
     /**
      * 연별 그룹핑
      */
-    private fun groupByYear(timeValuePairs: List<Pair<LocalDateTime, Float>>): Map<LocalDateTime, List<Float>> {
+    private fun groupByYear(timeValuePairs: List<Pair<LocalDateTime, Double>>): Map<LocalDateTime, List<Double>> {
         return timeValuePairs.groupBy { (time, _) ->
             LocalDateTime.of(time.year, 1, 1, 0, 0)
         }.mapValues { (_, pairs) -> pairs.map { it.second } }
@@ -185,9 +185,9 @@ class DataTransformer {
      * 3. 각 윈도우 내에서 실제 데이터가 있는 일수로만 나누어 평균 계산
      */
     private fun calculateIntervalAverages(
-        timeValuePairs: List<Pair<LocalDateTime, Float>>,
+        timeValuePairs: List<Pair<LocalDateTime, Double>>,
         targetTimeUnit: TimeUnitGroup
-    ): List<Pair<LocalDateTime, Float>> {
+    ): List<Pair<LocalDateTime, Double>> {
         if (timeValuePairs.isEmpty()) return emptyList()
 
         // Step 1: 일별로 데이터 집계 (normalize to daily bins)
@@ -218,11 +218,11 @@ class DataTransformer {
             
             // 실제 데이터가 있는 일수로만 나누어 평균 계산
             val dailyAverage = if (dailyDataInWindow.isNotEmpty()) {
-                val totalSum = dailyDataInWindow.sumOf { it.second.toDouble() }
+                val totalSum = dailyDataInWindow.sumOf { it.second }
                 val actualDaysWithData = dailyDataInWindow.size
-                (totalSum / actualDaysWithData).toFloat()
+                totalSum / actualDaysWithData
             } else {
-                0f // 데이터가 없는 윈도우는 0
+                0.0 // 데이터가 없는 윈도우는 0
             }
             
             intervalStart to dailyAverage

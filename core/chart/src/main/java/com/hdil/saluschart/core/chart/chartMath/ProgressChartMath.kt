@@ -89,7 +89,7 @@ object ProgressChartMath {
     fun computeProgressAngles(data: List<ProgressChartPoint>): List<Pair<Float, Float>> {
         return data.map { point ->
             val startAngle = -90f // 12시 방향에서 시작
-            val sweepAngle = point.progress * 360f
+            val sweepAngle = (point.progress * 360.0).toFloat()
             Pair(startAngle, sweepAngle)
         }
     }

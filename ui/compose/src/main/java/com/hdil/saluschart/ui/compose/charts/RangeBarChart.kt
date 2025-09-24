@@ -73,7 +73,7 @@ fun RangeBarChart(
     // Fixed Y-axis (free-scroll mode)
     fixedYAxis: Boolean = false,
     yAxisFixedWidth: Dp = 16.dp,
-    yTickStep: Float? = null,
+    yTickStep: Double? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
     autoFixYAxisOnScroll: Boolean = true,
@@ -81,7 +81,7 @@ fun RangeBarChart(
     // Paged mode
     pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
-    yTickStepDefaultForPaged: Float = 10f,
+    yTickStepDefaultForPaged: Double = 10.0,
 
     // spacing / layout (paged mode)
     axisOuterPadding: Dp = 12.dp,      // gap between screen edge and fixed Y axis
@@ -113,7 +113,7 @@ fun RangeBarChart(
         val globalMax = rangeData.maxOf { it.maxPoint.y }
         val tickStep = yTickStep ?: yTickStepDefaultForPaged
         val minRounded = (kotlin.math.floor(globalMin / tickStep) * tickStep).toFloat()
-        val maxRounded = globalMax.roundUpToStep(tickStep)
+        val maxRounded = globalMax.toFloat().roundUpToStep(tickStep.toFloat())
 
         Column(modifier) {
             if (showTitle) {
@@ -130,10 +130,10 @@ fun RangeBarChart(
                         .width(yAxisFixedWidth)
                     ) {
                         FixedPagerYAxisRange(
-                            minY = if (unifyYAxisAcrossPages) minRounded else globalMin,
-                            maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                            minY = if (unifyYAxisAcrossPages) minRounded.toDouble() else globalMin,
+                            maxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else globalMax,
                             yAxisPosition = YAxisPosition.LEFT,
-                            step = tickStep,
+                            step = tickStep.toFloat(),
                             width = yAxisFixedWidth
                         )
                     }
@@ -165,12 +165,12 @@ fun RangeBarChart(
                         chartType = chartType,
                         maxXTicksLimit = pageSize,
                         fixedYAxis = true,
-                        yTickStep = tickStep,
+                        yTickStep = tickStep.toDouble(),
                         showTitle = false,
                         contentPadding = PaddingValues(start = padStart, end = padEnd),
                         unit = unit,
-                        fixedMinY = if (unifyYAxisAcrossPages) minRounded else null,
-                        fixedMaxY = if (unifyYAxisAcrossPages) maxRounded else null,
+                        fixedMinY = if (unifyYAxisAcrossPages) minRounded.toDouble() else null,
+                        fixedMaxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else null,
                     )
                 }
 
@@ -182,10 +182,10 @@ fun RangeBarChart(
                         .width(yAxisFixedWidth)
                     ) {
                         FixedPagerYAxisRange(
-                            minY = if (unifyYAxisAcrossPages) minRounded else globalMin,
-                            maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                            minY = if (unifyYAxisAcrossPages) minRounded.toDouble() else globalMin,
+                            maxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else globalMax,
                             yAxisPosition = YAxisPosition.RIGHT,
-                            step = tickStep,
+                            step = tickStep.toFloat(),
                             width = yAxisFixedWidth
                         )
                     }
@@ -376,8 +376,8 @@ fun RangeBarChart(
 
 @Composable
 private fun FixedPagerYAxisRange(
-    minY: Float,
-    maxY: Float,
+    minY: Double,
+    maxY: Double,
     yAxisPosition: YAxisPosition,
     step: Float,
     width: Dp
@@ -389,12 +389,12 @@ private fun FixedPagerYAxisRange(
     ) {
         val m = ChartMath.computeMetrics(
             size = size,
-            values = listOf(minY, maxY),
+            values = listOf(minY.toDouble(), maxY.toDouble()),
             chartType = ChartType.RANGE_BAR,
-            minY = minY,
-            maxY = maxY,
+            minY = minY.toDouble(),
+            maxY = maxY.toDouble(),
             includeYAxisPadding = false,
-            fixedTickStep = step
+            fixedTickStep = step.toDouble()
         )
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
@@ -417,12 +417,12 @@ private fun RangeBarChartPageContent(
     chartType: ChartType,
     maxXTicksLimit: Int?,
     fixedYAxis: Boolean,
-    yTickStep: Float,
+    yTickStep: Double,
     showTitle: Boolean,
     contentPadding: PaddingValues,
     unit: String,
-    fixedMinY: Float?,
-    fixedMaxY: Float?
+    fixedMinY: Double?,
+    fixedMaxY: Double?
 ) {
     if (rangeData.isEmpty()) return
 

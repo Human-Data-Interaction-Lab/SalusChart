@@ -132,7 +132,11 @@ fun ChartTooltip(
                                         )
                                 )
                                 Text(
-                                    text = segment.y.roundToInt().toString(),
+                                    text = if (unit.isNotEmpty()) {
+                                        "${segment.y.roundToInt()}$unit"
+                                    } else {
+                                        segment.y.roundToInt().toString()
+                                           },
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = textColor.copy(alpha = 0.9f),

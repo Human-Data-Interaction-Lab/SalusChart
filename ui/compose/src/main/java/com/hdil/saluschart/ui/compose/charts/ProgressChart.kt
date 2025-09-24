@@ -179,7 +179,7 @@ fun ProgressChart(
 
                             // Decompose into full laps + residual (exactly how you draw)
                             val laps = kotlin.math.floor(raw).toInt().coerceAtLeast(0)
-                            val residualDeg = ((raw - laps).coerceIn(0f, 1f)) * 360f
+                            val residualDeg = ((raw - laps).coerceIn(0.0, 1.0)) * 360.0
 
                             // hit-test helper for circular sweeps
                             fun containsAngle(start: Float, sweep: Float, target: Float): Boolean {
@@ -205,7 +205,7 @@ fun ProgressChart(
 
                             // 2) Residual (remaining) sweep on top
                             if (residualDeg > 0f) {
-                                inside = inside || containsAngle(startAt, residualDeg, angleDeg)
+                                inside = inside || containsAngle(startAt, residualDeg.toFloat(), angleDeg)
                             }
 
                             if (inside) {
@@ -313,7 +313,7 @@ fun ProgressChart(
 
                     // Use a proxy ChartPoint so tooltip shows 'current' (not ratio)
                     val tooltipPoint = com.hdil.saluschart.core.chart.ChartPoint(
-                        x = i.toFloat(),
+                        x = i.toDouble(),
                         y = point.current,
                         label = point.label
                     )

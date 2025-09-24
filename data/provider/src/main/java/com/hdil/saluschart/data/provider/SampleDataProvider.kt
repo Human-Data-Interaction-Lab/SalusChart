@@ -31,10 +31,10 @@ import kotlin.random.Random
 object SampleDataProvider {
     
     // Basic sample data arrays
-    val sampleData = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f)
-    val sampleData2 = listOf(5f, 15f, 60f, 45f, 35f, 25f, 10f)
-    val sampleData3 = listOf(8f, 22f, 10f, 40f, 18f, 32f, 12f)
-    val sampleData4 = listOf(10f, 25f, 40f, 20f, 35f, 55f, 45f, 5f, 15f, 60f, 45f, 35f, 25f, 10f, 8f, 22f, 10f, 40f, 18f, 32f, 12f)
+    val sampleData = listOf(10.0, 25.0, 40.0, 20.0, 35.0, 55.0, 45.0)
+    val sampleData2 = listOf(5.0, 15.0, 60.0, 45.0, 35.0, 25.0, 10.0)
+    val sampleData3 = listOf(8.0, 22.0, 10.0, 40.0, 18.0, 32.0, 12.0)
+    val sampleData4 = listOf(10.0, 25.0, 40.0, 20.0, 35.0, 55.0, 45.0, 5.0, 15.0, 60.0, 45.0, 35.0, 25.0, 10.0, 8.0, 22.0, 10.0, 40.0, 18.0, 32.0, 12.0)
     
     // Week days labels
     val weekDays = listOf("월", "화", "수", "목", "금", "토", "일")
@@ -136,40 +136,47 @@ object SampleDataProvider {
     )
 
     fun getSingleSleepSessionData(): SleepSession = SleepSession(
-        startTime = Instant.parse("2025-05-04T22:29:00Z"),
-        endTime   = Instant.parse("2025-05-05T06:09:00Z"),
+        startTime = Instant.parse("2025-05-04T13:29:00Z"),
+        endTime   = Instant.parse("2025-05-04T21:09:00Z"),
         stages = listOf(
-            // ~10:29 PM - settling in
-            SleepStage(Instant.parse("2025-05-04T22:29:00Z"), Instant.parse("2025-05-04T22:45:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T22:45:00Z"), Instant.parse("2025-05-04T23:30:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-04T13:29:00Z"), Instant.parse("2025-05-04T13:40:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T13:40:00Z"), Instant.parse("2025-05-04T14:05:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-04T14:05:00Z"), Instant.parse("2025-05-04T14:15:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T14:15:00Z"), Instant.parse("2025-05-04T14:19:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T14:19:00Z"), Instant.parse("2025-05-04T14:30:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T14:30:00Z"), Instant.parse("2025-05-04T14:45:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T14:45:00Z"), Instant.parse("2025-05-04T15:00:00Z"), SleepStageType.LIGHT),
 
-            // pre-midnight oscillations
-            SleepStage(Instant.parse("2025-05-04T23:30:00Z"), Instant.parse("2025-05-05T00:10:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-05T00:10:00Z"), Instant.parse("2025-05-05T00:20:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:15:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-04T15:15:00Z"), Instant.parse("2025-05-04T15:19:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T15:19:00Z"), Instant.parse("2025-05-04T15:31:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T15:31:00Z"), Instant.parse("2025-05-04T15:47:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T15:47:00Z"), Instant.parse("2025-05-04T16:00:00Z"), SleepStageType.LIGHT),
 
-            // first solid REM patch
-            SleepStage(Instant.parse("2025-05-05T00:20:00Z"), Instant.parse("2025-05-05T01:00:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:20:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-04T16:20:00Z"), Instant.parse("2025-05-04T16:28:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T16:28:00Z"), Instant.parse("2025-05-04T16:32:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T16:32:00Z"), Instant.parse("2025-05-04T16:43:00Z"), SleepStageType.LIGHT),
 
-            // light → deep again
-            SleepStage(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:40:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-05T01:40:00Z"), Instant.parse("2025-05-05T02:10:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-05T02:10:00Z"), Instant.parse("2025-05-05T02:20:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T16:43:00Z"), Instant.parse("2025-05-04T17:00:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:13:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T17:13:00Z"), Instant.parse("2025-05-04T17:31:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-04T17:31:00Z"), Instant.parse("2025-05-04T17:39:00Z"), SleepStageType.LIGHT),
 
-            // mid-night light, brief REM
-            SleepStage(Instant.parse("2025-05-05T02:20:00Z"), Instant.parse("2025-05-05T03:00:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-05T03:30:00Z"), Instant.parse("2025-05-05T04:20:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T17:39:00Z"), Instant.parse("2025-05-04T17:43:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T17:43:00Z"), Instant.parse("2025-05-04T17:55:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T17:55:00Z"), Instant.parse("2025-05-04T18:13:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T18:13:00Z"), Instant.parse("2025-05-04T18:25:00Z"), SleepStageType.LIGHT),
 
-            // another deep valley before dawn
-            SleepStage(Instant.parse("2025-05-05T04:20:00Z"), Instant.parse("2025-05-05T04:50:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-05T04:50:00Z"), Instant.parse("2025-05-05T05:00:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T18:25:00Z"), Instant.parse("2025-05-04T18:45:00Z"), SleepStageType.DEEP),
+            SleepStage(Instant.parse("2025-05-04T18:45:00Z"), Instant.parse("2025-05-04T18:57:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T18:57:00Z"), Instant.parse("2025-05-04T19:01:00Z"), SleepStageType.AWAKE),
+            SleepStage(Instant.parse("2025-05-04T19:01:00Z"), Instant.parse("2025-05-04T19:13:00Z"), SleepStageType.LIGHT),
 
-            // long REM run near morning
-            SleepStage(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:40:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-05T05:40:00Z"), Instant.parse("2025-05-05T06:05:00Z"), SleepStageType.LIGHT),
-
-            // final wake just before the alarm
-            SleepStage(Instant.parse("2025-05-05T06:05:00Z"), Instant.parse("2025-05-05T06:09:00Z"), SleepStageType.AWAKE)
+            SleepStage(Instant.parse("2025-05-04T19:13:00Z"), Instant.parse("2025-05-04T19:33:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T19:33:00Z"), Instant.parse("2025-05-04T19:47:00Z"), SleepStageType.LIGHT),
+            SleepStage(Instant.parse("2025-05-04T19:47:00Z"), Instant.parse("2025-05-04T20:07:00Z"), SleepStageType.REM),
+            SleepStage(Instant.parse("2025-05-04T20:07:00Z"), Instant.parse("2025-05-04T21:09:00Z"), SleepStageType.LIGHT)
         )
     )
 
@@ -600,84 +607,84 @@ object SampleDataProvider {
      */
     fun getHeartRateRangeData(): List<ChartPoint> = listOf(
         // Day 1
-        ChartPoint(x = 0f, y = 55f, label = "1일"),
-        ChartPoint(x = 0f, y = 150f, label = "1일"),
+        ChartPoint(x = 0.0, y = 55.0, label = "1일"),
+        ChartPoint(x = 0.0, y = 150.0, label = "1일"),
 
         // Day 2
-        ChartPoint(x = 1f, y = 54f, label = "2일"),
-        ChartPoint(x = 1f, y = 160f, label = "2일"),
+        ChartPoint(x = 1.0, y = 54.0, label = "2일"),
+        ChartPoint(x = 1.0, y = 160.0, label = "2일"),
 
         // Day 3
-        ChartPoint(x = 2f, y = 65f, label = "3일"),
-        ChartPoint(x = 2f, y = 145f, label = "3일"),
+        ChartPoint(x = 2.0, y = 65.0, label = "3일"),
+        ChartPoint(x = 2.0, y = 145.0, label = "3일"),
 
         // Day 4
-        ChartPoint(x = 3f, y = 58f, label = "4일"),
-        ChartPoint(x = 3f, y = 125f, label = "4일"),
+        ChartPoint(x = 3.0, y = 58.0, label = "4일"),
+        ChartPoint(x = 3.0, y = 125.0, label = "4일"),
 
         // Day 5
-        ChartPoint(x = 4f, y = 70f, label = "5일"),
-        ChartPoint(x = 4f, y = 140f, label = "5일"),
+        ChartPoint(x = 4.0, y = 70.0, label = "5일"),
+        ChartPoint(x = 4.0, y = 140.0, label = "5일"),
 
         // Day 6
-        ChartPoint(x = 5f, y = 75f, label = "6일"),
-        ChartPoint(x = 5f, y = 110f, label = "6일"),
+        ChartPoint(x = 5.0, y = 75.0, label = "6일"),
+        ChartPoint(x = 5.0, y = 110.0, label = "6일"),
 
         // Day 7
-        ChartPoint(x = 6f, y = 68f, label = "7일"),
-        ChartPoint(x = 6f, y = 162f, label = "7일"),
+        ChartPoint(x = 6.0, y = 68.0, label = "7일"),
+        ChartPoint(x = 6.0, y = 162.0, label = "7일"),
 
         // Day 8
-        ChartPoint(x = 7f, y = 72f, label = "8일"),
-        ChartPoint(x = 7f, y = 168f, label = "8일"),
+        ChartPoint(x = 7.0, y = 72.0, label = "8일"),
+        ChartPoint(x = 7.0, y = 168.0, label = "8일"),
 
         // Day 9
-        ChartPoint(x = 8f, y = 65f, label = "9일"),
-        ChartPoint(x = 8f, y = 138f, label = "9일"),
+        ChartPoint(x = 8.0, y = 65.0, label = "9일"),
+        ChartPoint(x = 8.0, y = 138.0, label = "9일"),
 
         // Day 10
-        ChartPoint(x = 9f, y = 85f, label = "10일"),
-        ChartPoint(x = 9f, y = 105f, label = "10일"),
+        ChartPoint(x = 9.0, y = 85.0, label = "10일"),
+        ChartPoint(x = 9.0, y = 105.0, label = "10일"),
 
         // Day 11
-        ChartPoint(x = 10f, y = 62f, label = "11일"),
-        ChartPoint(x = 10f, y = 140f, label = "11일"),
+        ChartPoint(x = 10.0, y = 62.0, label = "11일"),
+        ChartPoint(x = 10.0, y = 140.0, label = "11일"),
 
         // Day 12
-        ChartPoint(x = 11f, y = 70f, label = "12일"),
-        ChartPoint(x = 11f, y = 155f, label = "12일"),
+        ChartPoint(x = 11.0, y = 70.0, label = "12일"),
+        ChartPoint(x = 11.0, y = 155.0, label = "12일"),
 
         // Day 13
-        ChartPoint(x = 12f, y = 60f, label = "13일"),
-        ChartPoint(x = 12f, y = 130f, label = "13일"),
+        ChartPoint(x = 12.0, y = 60.0, label = "13일"),
+        ChartPoint(x = 12.0, y = 130.0, label = "13일"),
 
         // Day 14
-        ChartPoint(x = 13f, y = 75f, label = "14일"),
-        ChartPoint(x = 13f, y = 150f, label = "14일"),
+        ChartPoint(x = 13.0, y = 75.0, label = "14일"),
+        ChartPoint(x = 13.0, y = 150.0, label = "14일"),
 
         // Day 15
-        ChartPoint(x = 14f, y = 66f, label = "15일"),
-        ChartPoint(x = 14f, y = 142f, label = "15일"),
+        ChartPoint(x = 14.0, y = 66.0, label = "15일"),
+        ChartPoint(x = 14.0, y = 142.0, label = "15일"),
 
         // Day 16
-        ChartPoint(x = 15f, y = 78f, label = "16일"),
-        ChartPoint(x = 15f, y = 160f, label = "16일"),
+        ChartPoint(x = 15.0, y = 78.0, label = "16일"),
+        ChartPoint(x = 15.0, y = 160.0, label = "16일"),
 
         // Day 17
-        ChartPoint(x = 16f, y = 64f, label = "17일"),
-        ChartPoint(x = 16f, y = 135f, label = "17일"),
+        ChartPoint(x = 16.0, y = 64.0, label = "17일"),
+        ChartPoint(x = 16.0, y = 135.0, label = "17일"),
 
         // Day 18
-        ChartPoint(x = 17f, y = 72f, label = "18일"),
-        ChartPoint(x = 17f, y = 150f, label = "18일"),
+        ChartPoint(x = 17.0, y = 72.0, label = "18일"),
+        ChartPoint(x = 17.0, y = 150.0, label = "18일"),
 
         // Day 19
-        ChartPoint(x = 18f, y = 70f, label = "19일"),
-        ChartPoint(x = 18f, y = 145f, label = "19일"),
+        ChartPoint(x = 18.0, y = 70.0, label = "19일"),
+        ChartPoint(x = 18.0, y = 145.0, label = "19일"),
 
         // Day 20
-        ChartPoint(x = 19f, y = 68f, label = "20일"),
-        ChartPoint(x = 19f, y = 155f, label = "20일"),
+        ChartPoint(x = 19.0, y = 68.0, label = "20일"),
+        ChartPoint(x = 19.0, y = 155.0, label = "20일"),
     )
 
     /**
@@ -686,48 +693,48 @@ object SampleDataProvider {
      */
     fun getNutritionStackedData(): List<ChartPoint> = listOf(
         // Monday (x = 0)
-        ChartPoint(x = 0f, y = 80f, label = "월"),
-        ChartPoint(x = 0f, y = 45f, label = "월"),
-        ChartPoint(x = 0f, y = 120f, label = "월"),
+        ChartPoint(x = 0.0, y = 80.0, label = "월"),
+        ChartPoint(x = 0.0, y = 45.0, label = "월"),
+        ChartPoint(x = 0.0, y = 120.0, label = "월"),
 
         // Tuesday (x = 1)
-        ChartPoint(x = 1f, y = 75f, label = "화"),
-        ChartPoint(x = 1f, y = 38f, label = "화"),
-        ChartPoint(x = 1f, y = 110f, label = "화"),
+        ChartPoint(x = 1.0, y = 75.0, label = "화"),
+        ChartPoint(x = 1.0, y = 38.0, label = "화"),
+        ChartPoint(x = 1.0, y = 110.0, label = "화"),
 
         // Wednesday (x = 2)
-        ChartPoint(x = 2f, y = 90f, label = "수"),
-        ChartPoint(x = 2f, y = 52f, label = "수"),
-        ChartPoint(x = 2f, y = 140f, label = "수"),
+        ChartPoint(x = 2.0, y = 90.0, label = "수"),
+        ChartPoint(x = 2.0, y = 52.0, label = "수"),
+        ChartPoint(x = 2.0, y = 140.0, label = "수"),
 
         // Thursday (x = 3)
-        ChartPoint(x = 3f, y = 85f, label = "목"),
-        ChartPoint(x = 3f, y = 41f, label = "목"),
-        ChartPoint(x = 3f, y = 135f, label = "목"),
+        ChartPoint(x = 3.0, y = 85.0, label = "목"),
+        ChartPoint(x = 3.0, y = 41.0, label = "목"),
+        ChartPoint(x = 3.0, y = 135.0, label = "목"),
 
         // Friday (x = 4)
-        ChartPoint(x = 4f, y = 95f, label = "금"),
-        ChartPoint(x = 4f, y = 58f, label = "금"),
-        ChartPoint(x = 4f, y = 150f, label = "금"),
+        ChartPoint(x = 4.0, y = 95.0, label = "금"),
+        ChartPoint(x = 4.0, y = 58.0, label = "금"),
+        ChartPoint(x = 4.0, y = 150.0, label = "금"),
 
         // Saturday (x = 5)
-        ChartPoint(x = 5f, y = 70f, label = "토"),
-        ChartPoint(x = 5f, y = 35f, label = "토"),
-        ChartPoint(x = 5f, y = 100f, label = "토"),
+        ChartPoint(x = 5.0, y = 70.0, label = "토"),
+        ChartPoint(x = 5.0, y = 35.0, label = "토"),
+        ChartPoint(x = 5.0, y = 100.0, label = "토"),
 
         // Sunday (x = 6)
-        ChartPoint(x = 6f, y = 88f, label = "일"),
-        ChartPoint(x = 6f, y = 48f, label = "일"),
-        ChartPoint(x = 6f, y = 125f, label = "일")
+        ChartPoint(x = 6.0, y = 88.0, label = "일"),
+        ChartPoint(x = 6.0, y = 48.0, label = "일"),
+        ChartPoint(x = 6.0, y = 125.0, label = "일")
     )
 
     /**
      * Sample progress data for Apple Watch-style activity rings
      */
     fun getActivityProgressData(): List<ProgressChartPoint> = listOf(
-        ProgressChartPoint(x = 0f, current = 2500f, max = 2000f, label = "Move", unit = "KJ"),
-        ProgressChartPoint(x = 1f, current = 20f, max = 60f, label = "Exercise", unit = "min"),
-        ProgressChartPoint(x = 2f, current = 7f, max = 10f, label = "Stand", unit = "h")
+        ProgressChartPoint(x = 0.0, current = 2500.0, max = 2000.0, label = "Move", unit = "KJ"),
+        ProgressChartPoint(x = 1.0, current = 20.0, max = 60.0, label = "Exercise", unit = "min"),
+        ProgressChartPoint(x = 2.0, current = 7.0, max = 10.0, label = "Stand", unit = "h")
     )
 
     /**
@@ -741,8 +748,8 @@ object SampleDataProvider {
         return generateSequence(startDate) { date ->
             if (date.isBefore(endDate)) date.plusDays(1) else null
         }.map { date ->
-            val value = random.nextFloat() * 100
-            CalendarEntry(date = date, value = value)
+            val value = random.nextDouble() * 100
+            CalendarEntry(date = date, value = value.toFloat())
         }.toList()
     }
 
@@ -750,14 +757,14 @@ object SampleDataProvider {
      * Convert basic sample data to ChartPoint format
      */
     fun getBasicChartPoints(): List<ChartPoint> = sampleData.mapIndexed { index, value ->
-        ChartPoint(x = index.toFloat(), y = value, label = weekDays.getOrElse(index) { "" })
+        ChartPoint(x = index.toDouble(), y = value, label = weekDays.getOrElse(index) { "" })
     }
 
     /**
      * Convert extended sample data to ChartPoint format (for pagination demos)
      */
     fun getExtendedChartPoints(): List<ChartPoint> = sampleData4.mapIndexed { index, value ->
-        ChartPoint(x = index.toFloat(), y = value, label = weekDays[index % weekDays.size])
+        ChartPoint(x = index.toDouble(), y = value, label = weekDays[index % weekDays.size])
     }
 
     /**
@@ -765,9 +772,9 @@ object SampleDataProvider {
      */
     fun getDenseChartPoints(count: Int = 50): List<ChartPoint> {
         val labels = (1..count).map { "Day $it" }
-        val values = (1..count).map { (20..80).random().toFloat() }
+        val values = (1..count).map { (20..80).random().toDouble() }
         return labels.mapIndexed { index, label ->
-            ChartPoint(x = index.toFloat(), y = values[index], label = label)
+            ChartPoint(x = index.toDouble(), y = values[index], label = label)
         }
     }
 

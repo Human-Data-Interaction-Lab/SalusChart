@@ -118,8 +118,8 @@ object BarChartDraw {
     @Composable
     fun BarMarker(
         data: List<BaseChartPoint>,
-        minValues: List<Float>,
-        maxValues: List<Float>,
+        minValues: List<Double>,
+        maxValues: List<Double>,
         metrics: ChartMath.ChartMetrics,
         color: Color = Color.Black,
         barWidthRatio: Float = 0.8f,
@@ -151,8 +151,8 @@ object BarChartDraw {
 
         (0 until dataSize).forEach { index ->
             // 값 추출
-            val minValue = minValues.getOrNull(index) ?: 0f
-            val maxValue = maxValues.getOrNull(index) ?: 0f
+            val minValue = minValues.getOrNull(index) ?: 0.0
+            val maxValue = maxValues.getOrNull(index) ?: 0.0
 
             // 툴팁 텍스트 결정: 커스텀 텍스트가 있으면 사용, 없으면 기본 로직 사용
             val tooltipText = customTooltipText?.getOrNull(index) ?: run {
@@ -209,11 +209,11 @@ object BarChartDraw {
                 Pair(barW, barXPos)
             }
 
-            // Float 좌표를 Dp로 변환
-            val barXDp = with(density) { barX.toDp() }
-            val barYDp = with(density) { barY.toDp() }
-            val barWidthDp = with(density) { barWidth.toDp() }
-            val barHeightDp = with(density) { barHeight.toDp() }
+            // Double 좌표를 Dp로 변환
+            val barXDp = with(density) { barX.toFloat().toDp() }
+            val barYDp = with(density) { barY.toFloat().toDp() }
+            val barWidthDp = with(density) { barWidth.toFloat().toDp() }
+            val barHeightDp = with(density) { barHeight.toFloat().toDp() }
 
             // 툴팁 표시 여부 결정:
             // - isTouchArea = true인 경우 툴팁 표시 안함 (터치 영역용이므로)
@@ -233,7 +233,7 @@ object BarChartDraw {
 
             if (shouldShowTooltip) {
                 tooltipData = data[index]
-                tooltipOffset = Offset(barX, barY)
+                tooltipOffset = Offset(barX.toFloat(), barY.toFloat())
             }
 
             val actualColor = if (isTouchArea) {

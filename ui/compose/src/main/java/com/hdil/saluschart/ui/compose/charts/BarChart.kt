@@ -49,14 +49,14 @@ fun BarChart(
     yLabel: String = "Value",
     title: String = "Bar Chart Example",
     barColor: Color = ChartColor.Default,
-    minY: Float? = null,
-    maxY: Float? = null,
+    minY: Double? = null,
+    maxY: Double? = null,
     barWidthRatio: Float = 0.8f,
     xLabelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Bar = InteractionType.Bar.BAR,
-    onBarClick: ((Int, Float) -> Unit)? = null,
+    onBarClick: ((Int, Double) -> Unit)? = null,
     showLabel: Boolean = false,
     windowSize: Int? = null,                 // used by free-scroll mode
     chartType: ChartType = ChartType.BAR,
@@ -75,7 +75,7 @@ fun BarChart(
     yAxisFixedWidth: Dp = 16.dp,
 
     // grid tick step (both modes)
-    yTickStep: Float? = null,
+    yTickStep: Double? = null,
 
     // Outer padding when using the free-scroll mode
     contentPadding: PaddingValues = PaddingValues(16.dp),
@@ -85,7 +85,7 @@ fun BarChart(
     // NEW — paged mode
     pageSize: Int? = null,                      // if not null => paged mode
     unifyYAxisAcrossPages: Boolean = true,      // for paged mode
-    yTickStepDefaultForPaged: Float = 10f,       // for paged mode (use 10s)
+    yTickStepDefaultForPaged: Double = 10.0,       // for paged mode (use 10s)
     unit: String = "",
 ) {
     if (data.isEmpty()) return
@@ -106,7 +106,7 @@ fun BarChart(
         val rawMax = if (unifyYAxisAcrossPages) data.maxOf { it.y } else data.maxOf { it.y }
         val tickStep = yTickStep ?: yTickStepDefaultForPaged
         val maxRounded = remember(rawMax, tickStep) {
-            (kotlin.math.ceil(rawMax / tickStep) * tickStep).toFloat()
+            kotlin.math.ceil(rawMax / tickStep) * tickStep
         }
 
         Column(modifier) {
@@ -121,7 +121,7 @@ fun BarChart(
                     FixedPagerYAxis(
                         maxY = maxRounded,
                         yAxisPosition = YAxisPosition.LEFT,
-                        step = tickStep,
+                        step = tickStep.toFloat(),
                         width = yAxisFixedWidth
                     )
                 }
@@ -173,7 +173,7 @@ fun BarChart(
                     FixedPagerYAxis(
                         maxY = maxRounded,
                         yAxisPosition = YAxisPosition.RIGHT,
-                        step = tickStep,
+                        step = tickStep.toFloat(),
                         width = yAxisFixedWidth
                     )
                 }
@@ -303,7 +303,7 @@ fun BarChart(
                                     metrics = metrics,
                                     onBarClick = { index, tooltipText ->
                                         selectedBarIndex = if (selectedBarIndex == index) null else index
-                                        onBarClick?.invoke(index, tooltipText.toFloat())
+                                        onBarClick?.invoke(index, data.getOrNull(index)?.y ?: 0.0)
                                     },
                                     chartType = chartType,
                                     isTouchArea = true,
@@ -322,7 +322,7 @@ fun BarChart(
                                     barWidthRatio = barWidthRatio,
                                     interactive = true,
                                     onBarClick = { index, tooltipText ->
-                                        onBarClick?.invoke(index, tooltipText.toFloat())
+                                        onBarClick?.invoke(index, data.getOrNull(index)?.y ?: 0.0)
                                     },
                                     chartType = chartType,
                                     showLabel = showLabel,
@@ -379,7 +379,7 @@ fun BarChart(
 
 @Composable
 private fun FixedPagerYAxis(
-    maxY: Float,
+    maxY: Double,
     yAxisPosition: YAxisPosition,
     step: Float,
     width: Dp
@@ -392,12 +392,12 @@ private fun FixedPagerYAxis(
         // Metrics for just the vertical axis & ticks
         val m = ChartMath.computeMetrics(
             size = size,
-            values = listOf(0f, maxY),
+            values = listOf(0.0, maxY),
             chartType = ChartType.BAR,
-            minY = 0f,
+            minY = 0.0,
             maxY = maxY,
             includeYAxisPadding = false,
-            fixedTickStep = step
+            fixedTickStep = step.toDouble()
         )
 
         ChartDraw.drawYAxisStandalone(
@@ -416,21 +416,21 @@ private fun BarChartPageContent(
     yLabel: String,
     title: String,
     barColor: Color,
-    minY: Float?,
-    maxY: Float?,
+    minY: Double?,
+    maxY: Double?,
     barWidthRatio: Float,
     xLabelTextSize: Float,
     tooltipTextSize: Float,
     yAxisPosition: YAxisPosition,
     interactionType: InteractionType.Bar,
-    onBarClick: ((Int, Float) -> Unit)?,
+    onBarClick: ((Int, Double) -> Unit)?,
     showLabel: Boolean,
     chartType: ChartType,
     maxXTicksLimit: Int?,
     referenceLineType: ReferenceLineType,
     fixedYAxis: Boolean,
     yAxisFixedWidth: Dp,
-    yTickStep: Float,
+    yTickStep: Double,
     showTitle: Boolean,
     contentPadding: PaddingValues,
     unit: String = "",

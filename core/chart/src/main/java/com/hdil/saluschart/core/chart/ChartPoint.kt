@@ -1,14 +1,14 @@
 package com.hdil.saluschart.core.chart
 
 interface BaseChartPoint {
-    val x: Float
-    val y: Float
+    val x: Double
+    val y: Double
     val label: String?
 }
 
 data class ChartPoint(
-    override val x: Float,
-    override val y: Float,
+    override val x: Double,
+    override val y: Double,
     override val label: String? = null,
     val color: Int? = null,
     val isSelected: Boolean = false
@@ -22,12 +22,12 @@ data class ChartPoint(
  * 범위 바 차트를 위한 데이터 포인트 클래스
  */
 data class RangeChartPoint(
-    override val x: Float,
+    override val x: Double,
     val minPoint: ChartPoint,
     val maxPoint: ChartPoint,
     override val label: String? = null
 ) : BaseChartPoint {
-    override val y: Float get() = maxPoint.y - minPoint.y
+    override val y: Double get() = maxPoint.y - minPoint.y
     override fun toString(): String {
         return "RangeChartPoint(x=$x, minPoint=$minPoint, maxPoint=$maxPoint, label=$label)"
     }
@@ -37,11 +37,11 @@ data class RangeChartPoint(
  * 스택 바 차트를 위한 데이터 포인트 클래스
  */
 data class StackedChartPoint(
-    override val x: Float,
+    override val x: Double,
     val segments: List<ChartPoint>,
     override val label: String? = null
 ) : BaseChartPoint {
-    override val y: Float get() = segments.sumOf { it.y.toDouble() }.toFloat()
+    override val y: Double get() = segments.sumOf { it.y }
     override fun toString(): String {
         return "StackedChartPoint(x=$x, segments=$segments, label=$label)"
     }
@@ -59,17 +59,17 @@ data class StackedChartPoint(
  * @param isSelected 선택 상태 여부
  */
 data class ProgressChartPoint(
-    override val x: Float,
-    val current: Float,
-    val max: Float,
+    override val x: Double,
+    val current: Double,
+    val max: Double,
     override val label: String? = null,
     val unit: String? = null,
     val color: Int? = null,
     val isSelected: Boolean = false
 ) : BaseChartPoint {
-    val progress: Float = if (max > 0f) (current / max).coerceIn(0f, 1f) else 0f
-    val percentage: Float = progress * 100f
-    override val y: Float get() = progress
+    val progress: Double = if (max > 0.0) (current / max).coerceIn(0.0, 1.0) else 0.0
+    val percentage: Double = progress * 100.0
+    override val y: Double get() = progress
 
     override fun toString(): String {
         return "ProgressChartPoint(x=$x, current=$current, max=$max, progress=$progress, label=$label, unit=$unit)"

@@ -1,6 +1,7 @@
 package com.hdil.saluschart.ui.compose.charts
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -9,10 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,18 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartDraw.SleepStageChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.chart.chartMath.SleepStageChartMath
 import com.hdil.saluschart.core.chart.chartMath.SleepStageChartMath.toSleepStageRangeChartPoints
 import com.hdil.saluschart.data.model.model.SleepSession
 import com.hdil.saluschart.data.model.model.SleepStageType
-import com.hdil.saluschart.ui.theme.ChartColor
-import java.time.Instant
 
 @Composable
 fun SleepStageChart(
@@ -44,6 +40,7 @@ fun SleepStageChart(
     title: String = "Sleep Stage Chart",
     showLabels: Boolean = true,
     onStageClick: ((Int, String) -> Unit)? = null,
+    barHeightRatio: Float = 0.5f,
     fixedYAxis: Boolean = false,
     yAxisFixedWidth: Dp = 8.dp,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
@@ -57,6 +54,7 @@ fun SleepStageChart(
     // windowSize 기반 스크롤 여부 결정
     val useScrolling = windowSize != null && windowSize < sleepSession.stages.size
     val isFixedYAxis = if (autoFixYAxisOnScroll) (fixedYAxis || useScrolling) else fixedYAxis
+    val scrollState = rememberScrollState()
 
     Column(modifier = modifier.padding(contentPadding)) {
         if (showTitle) {
@@ -96,7 +94,7 @@ fun SleepStageChart(
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
-                            SleepStageChartMath.drawSleepStageYAxisStandalone(
+                            ChartDraw.SleepStage.drawSleepStageYAxisStandalone(
                                 drawScope = this,
                                 metrics = m,
                                 yAxisPosition = yAxisPosition,
@@ -110,6 +108,7 @@ fun SleepStageChart(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .let { if (useScrolling) it.horizontalScroll(scrollState, overscrollEffect = null) else it }
                         .padding(start = startPad, end = endPad)
                 ) {
                     Canvas(
@@ -120,14 +119,22 @@ fun SleepStageChart(
                         }
                     ) {
                         // Calculate metrics for sleep stage chart
-                        val metrics = SleepStageChartMath.computeSleepStageMetrics(size, sleepSession)
+                        val metrics = ChartMath.SleepStage.computeSleepStageMetrics(size, sleepSession)
                         chartMetrics = metrics
 
                         // Draw grid lines between sleep stages
-                        SleepStageChartMath.drawSleepStageGridLines(drawContext, metrics)
+                        ChartDraw.SleepStage.drawSleepStageGridLines(drawContext, metrics)
 
                         // Draw X-axis line (time axis)
                         ChartDraw.drawXAxis(this, metrics)
+                        
+                        // Draw X-axis labels (start and end time of SleepSession)
+                        ChartDraw.SleepStage.drawSleepStageXAxisLabels(
+                            ctx = drawContext,
+                            metrics = metrics,
+                            startTimeMillis = sleepSession.startTime.toEpochMilli().toDouble(),
+                            endTimeMillis = sleepSession.endTime.toEpochMilli().toDouble()
+                        )
                     }
 
                     // Draw horizontal bars for each sleep stage
@@ -137,25 +144,36 @@ fun SleepStageChart(
                         
                         // Step 2: Group by sleep stage type for different colors
                         val stagesByType = sleepSession.stages.groupBy { it.stage }
-                        
+
+                        // Step 3: Draw connecting lines between sleep stages for timeline continuity
+                        // Use the full range data (all stages) to draw connections
+                        ChartDraw.SleepStage.SleepStageBarConnector(
+                            data = rangeData,
+                            metrics = metrics,
+                            lineColor = Color(0xFFCCCCCC), // Light gray connecting lines, fixed values
+                            lineWidth = 2f,
+                            totalSleepStages = 4,
+                            barHeightRatio = barHeightRatio // Match the barHeightRatio used in HorizontalBarMarker
+                        )
+
                         stagesByType.forEach { (stageType, stages) ->
                             val stageColor = getSleepStageColor(stageType)
                             
                             // Filter range data for this sleep stage type
                             val stageRangeData = rangeData.filter { rangePoint ->
                                 stages.any { stage -> 
-                                    stage.stage.ordinal.toFloat() == rangePoint.x
+                                    stage.stage.ordinal.toDouble() == rangePoint.x
                                 }
                             }
 
-                            // Step 3: Draw horizontal bars for this sleep stage type
-                            SleepStageChartDraw.HorizontalBarMarker(
+                            // Step 4: Draw horizontal bars for each sleep stage type
+                            ChartDraw.SleepStage.HorizontalBarMarker(
                                 data = stageRangeData,
                                 minValues = stageRangeData.map { it.minPoint.y },
                                 maxValues = stageRangeData.map { it.maxPoint.y }, 
                                 metrics = metrics,
                                 color = stageColor,
-                                barHeightRatio = 0.5f,
+                                barHeightRatio = barHeightRatio,
                                 interactive = true,
                                 onBarClick = { index, tooltipText ->
                                     selectedStageIndex = if (selectedStageIndex == index) null else index
@@ -166,6 +184,8 @@ fun SleepStageChart(
                                 unit = ""
                             )
                         }
+
+
                     }
                 }
 
@@ -177,7 +197,7 @@ fun SleepStageChart(
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
-                            SleepStageChartMath.drawSleepStageYAxisStandalone(
+                            ChartDraw.SleepStage.drawSleepStageYAxisStandalone(
                                 drawScope = this,
                                 metrics = m,
                                 yAxisPosition = yAxisPosition,

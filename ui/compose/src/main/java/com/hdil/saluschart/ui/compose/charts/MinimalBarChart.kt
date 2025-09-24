@@ -76,7 +76,7 @@ fun MinimalBarChart(
         chartMetrics?.let { metrics ->
             ChartDraw.Bar.BarMarker(
                 data = data,
-                minValues = List(yValues.size) { 0f },
+                minValues = List(yValues.size) { 0.0 },
                 maxValues = yValues,
                 metrics = metrics,
                 color = color,

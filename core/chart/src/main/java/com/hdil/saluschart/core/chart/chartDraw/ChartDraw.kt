@@ -24,6 +24,7 @@ object ChartDraw {
     val Scatter = ScatterPlotDraw
     val Progress = ProgressChartDraw
     val Gauge = GaugeChartDraw
+    val SleepStage = SleepStageChartDraw
 
     /**
      * 눈금 값을 적절한 형식으로 포맷합니다.
@@ -69,14 +70,14 @@ object ChartDraw {
 
             drawScope.drawLine(
                 color = Color.LightGray,
-                start = Offset(gridStart, y),
-                end = Offset(gridEnd, y),
+                start = Offset(gridStart, y.toFloat()),
+                end = Offset(gridEnd, y.toFloat()),
                 strokeWidth = 1f
             )
 
             // only draw labels when drawLabels = true
             if (drawLabels) {
-                val labelText = formatTickLabel(yVal)
+                val labelText = formatTickLabel(yVal.toFloat())
 
                 // Y축 레이블 위치를 yAxisPosition에 따라 결정
                 val labelX = when (yAxisPosition) {
@@ -93,7 +94,7 @@ object ChartDraw {
                 drawScope.drawContext.canvas.nativeCanvas.drawText(
                     labelText,
                     labelX,
-                    y + 10f,
+                    y.toFloat() + 10f,
                     android.graphics.Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 28f
@@ -169,12 +170,12 @@ object ChartDraw {
             val tickEndX = if (yAxisPosition == YAxisPosition.RIGHT) axisX - tickLen else axisX + tickLen
             drawScope.drawLine(
                 color = Color.DarkGray,
-                start = Offset(tickStartX, y),
-                end = Offset(tickEndX, y),
+                start = Offset(tickStartX, y.toFloat()),
+                end = Offset(tickEndX, y.toFloat()),
                 strokeWidth = 1f
             )
 
-            val label = formatTickLabel(yVal)
+            val label = formatTickLabel(yVal.toFloat())
             val paint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 color = android.graphics.Color.DKGRAY
@@ -185,7 +186,7 @@ object ChartDraw {
             val labelX = if (yAxisPosition == YAxisPosition.RIGHT)
                 axisX + 10f else axisX - 10f
 
-            drawScope.drawContext.canvas.nativeCanvas.drawText(label, labelX, y + 10f, paint)
+            drawScope.drawContext.canvas.nativeCanvas.drawText(label, labelX, y.toFloat() + 10f, paint)
         }
     }
 

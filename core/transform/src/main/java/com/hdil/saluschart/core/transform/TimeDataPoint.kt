@@ -21,8 +21,8 @@ import java.time.DayOfWeek
  */
 data class TimeDataPoint(
     val x : List<Instant>,
-    val y : List<Float>? = null,
-    val yMultiple : Map<String, List<Float>>? = null,
+    val y : List<Double>? = null,
+    val yMultiple : Map<String, List<Double>>? = null,
     val timeUnit : TimeUnitGroup = TimeUnitGroup.HOUR
 ) {
     init {
@@ -50,7 +50,7 @@ data class TimeDataPoint(
     
     val isSingleValue: Boolean get() = y != null     // 단일 값 여부 확인
     val isMultiValue: Boolean get() = yMultiple != null    // 다중 값 여부 확인
-    fun getValues(property: String): List<Float>? = yMultiple?.get(property)    // 다중 값에서 특정 속성의 값 가져오기
+    fun getValues(property: String): List<Double>? = yMultiple?.get(property)    // 다중 값에서 특정 속성의 값 가져오기
     val propertyNames: Set<String> get() = yMultiple?.keys ?: emptySet()    // 다중 값의 속성명 목록 가져오기
 }
 
@@ -74,7 +74,7 @@ fun TimeDataPoint.toChartPoints(): List<ChartPoint> {
 
     return x.indices.map { index ->
         ChartPoint(
-            x = index.toFloat(),
+            x = index.toDouble(),
             y = y!![index],
             label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
         )
@@ -98,7 +98,7 @@ fun TimeDataPoint.toChartPointsByProperty(property: String): List<ChartPoint> {
 
     return x.indices.map { index ->
         ChartPoint(
-            x = index.toFloat(),
+            x = index.toDouble(),
             y = values[index],
             label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
         )
@@ -119,7 +119,7 @@ fun TimeDataPoint.toChartPointsMap(): Map<String, List<ChartPoint>> {
         val values = getValues(property)!!
         x.indices.map { index ->
             ChartPoint(
-                x = index.toFloat(),
+                x = index.toDouble(),
                 y = values[index],
                 label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
             )

@@ -226,7 +226,7 @@ object ReferenceLine {
             modifier = Modifier
                 .offset(
                     x = with(density) { metrics.paddingX.toDp() },
-                    y = with(density) { (y - touchThreshold.toPx()).toDp() }
+                    y = with(density) { (y.toFloat() - touchThreshold.toPx()).toDp() }
                 )
                 .size(width = lineWidth, height = touchAreaHeight)
         ) {
@@ -318,8 +318,8 @@ object ReferenceLine {
         val dataStartX = if (data.isNotEmpty()) data.first().x else 0f
         val dataEndX = if (data.isNotEmpty()) data.last().x else 1f
 
-        val startY = slope * dataStartX + intercept
-        val endY = slope * dataEndX + intercept
+        val startY = slope * dataStartX.toFloat() + intercept
+        val endY = slope * dataEndX.toFloat() + intercept
 
         // Y 좌표를 화면 좌표계로 변환
         val screenStartY = metrics.chartHeight - ((startY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
@@ -337,8 +337,8 @@ object ReferenceLine {
             // 추세선 그리기
             drawLine(
                 color = color,
-                start = Offset(startX, screenStartY),
-                end = Offset(endX, screenEndY),
+                start = Offset(startX, screenStartY.toFloat()),
+                end = Offset(endX, screenEndY.toFloat()),
                 strokeWidth = strokeWidth.toPx(),
                 pathEffect = pathEffect
             )

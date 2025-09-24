@@ -31,7 +31,7 @@ object PieChartMath {
         var startAngle = -90f // 12시 방향에서 시작
 
         return data.map { point ->
-            val ratio = point.y / totalValue
+            val ratio = (point.y / totalValue).toFloat()
             val sweepAngle = ratio * 360f
             val result = Triple(startAngle, sweepAngle, ratio)
             startAngle += sweepAngle

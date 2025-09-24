@@ -75,8 +75,8 @@ object ProgressChartDraw {
                 )
 
                 // Total sweep (allow >100%)
-                val raw = if (pt.max > 0f) pt.current / pt.max else pt.progress
-                val sweepDeg = (raw * 360f).coerceAtLeast(0.5f)  // ensure tiny head shows
+                val raw = if (pt.max > 0.0) pt.current / pt.max else pt.progress
+                val sweepDeg = (raw * 360.0).coerceAtLeast(0.5).toFloat()  // ensure tiny head shows
 
                 // Full-ring gradient (light→dark around circle)
                 val brush = Brush.sweepGradient(
@@ -108,7 +108,7 @@ object ProgressChartDraw {
             data.forEachIndexed { index, point ->
                 val y = topPadding + index * (barHeight + barSpacing)
                 val color = colors.getOrElse(index) { colors.first() }
-                val progressWidth = trackWidth * point.progress.coerceIn(0f, 1f)
+                val progressWidth = trackWidth * point.progress.coerceIn(0.0, 1.0).toFloat()
 
                 drawScope.drawRoundRect(
                     color = color.copy(alpha = backgroundAlpha),

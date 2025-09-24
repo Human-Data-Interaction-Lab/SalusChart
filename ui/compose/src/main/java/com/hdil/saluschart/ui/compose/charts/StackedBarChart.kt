@@ -78,7 +78,7 @@ fun StackedBarChart(
     // fixed Y (free-scroll)
     fixedYAxis: Boolean = false,
     yAxisFixedWidth: Dp = 16.dp,
-    yTickStep: Float? = null,
+    yTickStep: Double? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
     autoFixYAxisOnScroll: Boolean = true,
@@ -86,7 +86,7 @@ fun StackedBarChart(
     // paged mode
     pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
-    yTickStepDefaultForPaged: Float = 10f,
+    yTickStepDefaultForPaged: Double = 10.0,
     axisOuterPadding: Dp = 12.dp,
     axisToBarsGap: Dp = 0.dp,
     tooltipSafePaddingEnd: Dp = 0.dp
@@ -115,9 +115,9 @@ fun StackedBarChart(
         )
 
         val tickStep = yTickStep ?: yTickStepDefaultForPaged
-        val minRounded = 0f
-        val maxRounded = (totals.maxOrNull() ?: 0f).let { v ->
-            if (v <= 0f) tickStep else (ceil(v / tickStep) * tickStep).toFloat()
+        val minRounded: Double = 0.0
+        val maxRounded: Double = (totals.maxOrNull() ?: 0.0).let { v ->
+            if (v <= 0.0) tickStep else (ceil(v / tickStep) * tickStep)
         }
 
         Column(modifier) {
@@ -139,7 +139,7 @@ fun StackedBarChart(
                             minY = minRounded,
                             maxY = maxRounded,
                             yAxisPosition = YAxisPosition.LEFT,
-                            step = tickStep,
+                            step = tickStep.toFloat(),
                             width = yAxisFixedWidth
                         )
                     }
@@ -169,8 +169,8 @@ fun StackedBarChart(
                         yTickStep = tickStep,
                         contentPadding = PaddingValues(start = padStart, end = padEnd),
                         unit = unit,
-                        fixedMinY = minRounded,
-                        fixedMaxY = if (unifyYAxisAcrossPages) maxRounded else (slice.maxOfOrNull { it.y } ?: maxRounded)
+                        fixedMinY = minRounded.toFloat(),
+                        fixedMaxY = if (unifyYAxisAcrossPages) maxRounded.toFloat() else (slice.maxOfOrNull { it.y } ?: maxRounded).toFloat()
                     )
                 }
 
@@ -186,7 +186,7 @@ fun StackedBarChart(
                             minY = minRounded,
                             maxY = maxRounded,
                             yAxisPosition = YAxisPosition.RIGHT,
-                            step = tickStep,
+                            step = tickStep.toFloat(),
                             width = yAxisFixedWidth
                         )
                     }
@@ -260,10 +260,10 @@ fun StackedBarChart(
                                 size = size,
                                 values = totals,
                                 chartType = ChartType.STACKED_BAR,
-                                minY = 0f,
+                                minY = 0.0,
                                 maxY = null,
                                 includeYAxisPadding = !isFixedYAxis,
-                                fixedTickStep = yTickStep
+                                fixedTickStep = yTickStep?.toDouble()
                             )
                             chartMetrics = metrics
 
@@ -283,12 +283,12 @@ fun StackedBarChart(
                             val segmentCounts = stackedData.map { it.segments.size }
                             val maxSegments = segmentCounts.maxOrNull() ?: 0
                             for (segmentIndex in 0 until maxSegments) {
-                                val segmentMin = mutableListOf<Float>()
-                                val segmentMax = mutableListOf<Float>()
+                                val segmentMin = mutableListOf<Double>()
+                                val segmentMax = mutableListOf<Double>()
                                 stackedData.forEach { sp ->
-                                    var cum = 0f
-                                    for (i in 0 until segmentIndex) cum += sp.segments.getOrNull(i)?.y ?: 0f
-                                    val seg = sp.segments.getOrNull(segmentIndex)?.y ?: 0f
+                                    var cum = 0.0
+                                    for (i in 0 until segmentIndex) cum += sp.segments.getOrNull(i)?.y ?: 0.0
+                                    val seg = sp.segments.getOrNull(segmentIndex)?.y ?: 0.0
                                     segmentMin.add(cum)
                                     segmentMax.add(cum + seg)
                                 }
@@ -317,7 +317,7 @@ fun StackedBarChart(
                                 metrics = metrics,
                                 onBarClick = { index, _ ->
                                     val sp = stackedData.getOrNull(index)
-                                    if (sp != null) onBarClick?.invoke(index, null, sp.y)
+                                    if (sp != null) onBarClick?.invoke(index, null, sp.y.toFloat())
                                 },
                                 barWidthRatio = barWidthRatio,
                                 chartType = chartType,
@@ -404,8 +404,8 @@ fun StackedBarChart(
 
 @Composable
 private fun FixedPagerYAxisStacked(
-    minY: Float,
-    maxY: Float,
+    minY: Double,
+    maxY: Double,
     yAxisPosition: YAxisPosition,
     step: Float,
     width: Dp
@@ -417,12 +417,12 @@ private fun FixedPagerYAxisStacked(
     ) {
         val m = ChartMath.computeMetrics(
             size = size,
-            values = listOf(minY, maxY),
+            values = listOf(minY.toDouble(), maxY.toDouble()),
             chartType = ChartType.STACKED_BAR,
             minY = minY,
             maxY = maxY,
             includeYAxisPadding = false,
-            fixedTickStep = step
+            fixedTickStep = step.toDouble()
         )
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
@@ -442,7 +442,7 @@ private fun StackedBarChartPage(
     yAxisPosition: YAxisPosition,
     onBarClick: (index: Int, total: Float) -> Unit,
     maxXTicksLimit: Int?,
-    yTickStep: Float,
+    yTickStep: Double,
     contentPadding: PaddingValues,
     unit: String,
     fixedMinY: Float,
@@ -458,10 +458,10 @@ private fun StackedBarChartPage(
                 size = size,
                 values = totals,
                 chartType = ChartType.STACKED_BAR,
-                minY = fixedMinY,
-                maxY = fixedMaxY,
+                minY = fixedMinY.toDouble(),
+                maxY = fixedMaxY.toDouble(),
                 includeYAxisPadding = false,
-                fixedTickStep = yTickStep
+                fixedTickStep = yTickStep.toDouble()
             )
             metrics = m
 
@@ -480,12 +480,12 @@ private fun StackedBarChartPage(
             val segmentCounts = stackedData.map { it.segments.size }
             val maxSegments = segmentCounts.maxOrNull() ?: 0
             for (segmentIndex in 0 until maxSegments) {
-                val segmentMin = mutableListOf<Float>()
-                val segmentMax = mutableListOf<Float>()
+                val segmentMin = mutableListOf<Double>()
+                val segmentMax = mutableListOf<Double>()
                 stackedData.forEach { sp ->
-                    var cum = 0f
-                    for (i in 0 until segmentIndex) cum += sp.segments.getOrNull(i)?.y ?: 0f
-                    val seg = sp.segments.getOrNull(segmentIndex)?.y ?: 0f
+                    var cum = 0.0
+                    for (i in 0 until segmentIndex) cum += sp.segments.getOrNull(i)?.y ?: 0.0
+                    val seg = sp.segments.getOrNull(segmentIndex)?.y ?: 0.0
                     segmentMin.add(cum)
                     segmentMax.add(cum + seg)
                 }
@@ -512,7 +512,7 @@ private fun StackedBarChartPage(
                 minValues = List(stackedData.size) { m.minY },
                 maxValues = totals,
                 metrics = m,
-                onBarClick = { index, _ -> onBarClick(index, totals[index]) },
+                onBarClick = { index, _ -> onBarClick(index, totals[index].toFloat()) },
                 barWidthRatio = barWidthRatio,
                 chartType = ChartType.STACKED_BAR,
                 interactive = true,

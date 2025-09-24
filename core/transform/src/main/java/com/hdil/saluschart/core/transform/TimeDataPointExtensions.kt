@@ -21,13 +21,13 @@ fun List<StepCount>.toStepCountTimeDataPoint(): TimeDataPoint {
         activities = this,
         getStartTime = { it.startTime },
         getEndTime = { it.endTime },
-        extractValues = { mapOf("stepCount" to it.stepCount.toFloat()) }
+        extractValues = { mapOf("stepCount" to it.stepCount.toDouble()) }
     )
     
     val sortedTimes = aggregatedData.keys.sorted()
     return TimeDataPoint(
         x = sortedTimes,
-        y = sortedTimes.map { aggregatedData[it]?.get("stepCount") ?: 0f },
+        y = sortedTimes.map { aggregatedData[it]?.get("stepCount") ?: 0.0 },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -41,13 +41,13 @@ fun List<Exercise>.toExerciseTimeDataPoint(): TimeDataPoint {
         activities = this,
         getStartTime = { it.startTime },
         getEndTime = { it.endTime },
-        extractValues = { mapOf("caloriesBurned" to it.caloriesBurned.toFloat()) }
+        extractValues = { mapOf("caloriesBurned" to it.caloriesBurned.toDouble()) }
     )
     
     val sortedTimes = aggregatedData.keys.sorted()
     return TimeDataPoint(
         x = sortedTimes,
-        y = sortedTimes.map { aggregatedData[it]?.get("caloriesBurned") ?: 0f },
+        y = sortedTimes.map { aggregatedData[it]?.get("caloriesBurned") ?: 0.0 },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -63,10 +63,10 @@ fun List<Diet>.toDietTimeDataPoint(): TimeDataPoint {
         getEndTime = { it.endTime },
         extractValues = { diet ->
             mapOf(
-                "calories" to diet.calories.toFloat(),
-                "protein" to diet.protein.toKilograms().toFloat(),
-                "carbohydrate" to diet.carbohydrate.toKilograms().toFloat(),
-                "fat" to diet.fat.toKilograms().toFloat()
+                "calories" to diet.calories.toDouble(),
+                "protein" to diet.protein.toKilograms().toDouble(),
+                "carbohydrate" to diet.carbohydrate.toKilograms().toDouble(),
+                "fat" to diet.fat.toKilograms().toDouble()
             )
         }
     )
@@ -76,7 +76,7 @@ fun List<Diet>.toDietTimeDataPoint(): TimeDataPoint {
     
     val yMultiple = propertyNames.associateWith { property ->
         sortedTimes.map { time ->
-            aggregatedData[time]?.get(property) ?: 0f
+            aggregatedData[time]?.get(property) ?: 0.0
         }
     }
     
@@ -100,9 +100,9 @@ fun List<HeartRate>.toHeartRateTimeDataPoint(): TimeDataPoint {
         extractValues = { heartRate ->
             // 해당 HeartRate의 평균 BPM 계산
             val avgBpm = if (heartRate.samples.isNotEmpty()) {
-                heartRate.samples.map { it.beatsPerMinute.toFloat() }.average().toFloat()
+                heartRate.samples.map { it.beatsPerMinute.toDouble() }.average()
             } else {
-                0f
+                0.0
             }
             mapOf("bpm" to avgBpm)
         }
@@ -111,7 +111,7 @@ fun List<HeartRate>.toHeartRateTimeDataPoint(): TimeDataPoint {
     val sortedTimes = aggregatedData.keys.sorted()
     return TimeDataPoint(
         x = sortedTimes,
-        y = sortedTimes.map { aggregatedData[it]?.get("bpm") ?: 0f },
+        y = sortedTimes.map { aggregatedData[it]?.get("bpm") ?: 0.0 },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -125,16 +125,16 @@ fun List<HeartRate>.toRangeTimeDataPoint(): TimeDataPoint {
     val yMultiple = mapOf(
         "min" to this.map { heartRate ->
             if (heartRate.samples.isNotEmpty()) {
-                heartRate.samples.minOf { it.beatsPerMinute }.toFloat()
+                heartRate.samples.minOf { it.beatsPerMinute }.toDouble()
             } else {
-                0f
+                0.0
             }
         },
         "max" to this.map { heartRate ->
             if (heartRate.samples.isNotEmpty()) {
-                heartRate.samples.maxOf { it.beatsPerMinute }.toFloat()
+                heartRate.samples.maxOf { it.beatsPerMinute }.toDouble()
             } else {
-                0f
+                0.0
             }
         }
     )
@@ -161,7 +161,7 @@ fun List<SleepSession>.toSleepSessionTimeDataPoint(): TimeDataPoint {
         getEndTime = { it.endTime },
         extractValues = { sleepSession ->
             // 수면 세션의 총 시간을 시간 단위로 계산
-            val totalSleepHours = Duration.between(sleepSession.startTime, sleepSession.endTime).toMinutes() / 60.0f
+            val totalSleepHours = Duration.between(sleepSession.startTime, sleepSession.endTime).toMinutes() / 60.0
             mapOf("sleepHours" to totalSleepHours)
         }
     )
@@ -169,7 +169,7 @@ fun List<SleepSession>.toSleepSessionTimeDataPoint(): TimeDataPoint {
     val sortedTimes = aggregatedData.keys.sorted()
     return TimeDataPoint(
         x = sortedTimes,
-        y = sortedTimes.map { aggregatedData[it]?.get("sleepHours") ?: 0f },
+        y = sortedTimes.map { aggregatedData[it]?.get("sleepHours") ?: 0.0 },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -227,8 +227,8 @@ fun List<SleepSession>.toSleepSessionTimeDataPoint(): TimeDataPoint {
 fun List<BloodPressure>.toBloodPressureTimeDataPoint(): TimeDataPoint {
     val times = this.map { it.time }
     val yMultiple = mapOf(
-        "systolic" to this.map { it.systolic.toFloat() },
-        "diastolic" to this.map { it.diastolic.toFloat() }
+        "systolic" to this.map { it.systolic.toDouble() },
+        "diastolic" to this.map { it.diastolic.toDouble() }
     )
 
     return TimeDataPoint(
@@ -245,7 +245,7 @@ fun List<BloodPressure>.toBloodPressureTimeDataPoint(): TimeDataPoint {
 fun List<BloodGlucose>.toBloodGlucoseTimeDataPoint(): TimeDataPoint {
     return TimeDataPoint(
         x = this.map { it.time },
-        y = this.map { it.level.toFloat() },
+        y = this.map { it.level.toDouble() },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -257,7 +257,7 @@ fun List<BloodGlucose>.toBloodGlucoseTimeDataPoint(): TimeDataPoint {
 fun List<Weight>.toWeightTimeDataPoint(): TimeDataPoint {
     return TimeDataPoint(
         x = this.map { it.time },
-        y = this.map { it.weight.toKilograms().toFloat() },
+        y = this.map { it.weight.toKilograms().toDouble() },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -269,7 +269,7 @@ fun List<Weight>.toWeightTimeDataPoint(): TimeDataPoint {
 fun List<BodyFat>.toBodyFatTimeDataPoint(): TimeDataPoint {
     return TimeDataPoint(
         x = this.map { it.time },
-        y = this.map { it.bodyFatPercentage.toFloat() },
+        y = this.map { it.bodyFatPercentage.toDouble() },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -281,7 +281,7 @@ fun List<BodyFat>.toBodyFatTimeDataPoint(): TimeDataPoint {
 fun List<SkeletalMuscleMass>.toSkeletalMuscleMassTimeDataPoint(): TimeDataPoint {
     return TimeDataPoint(
         x = this.map { it.time },
-        y = this.map { it.skeletalMuscleMass.toFloat() },
+        y = this.map { it.skeletalMuscleMass.toDouble() },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -577,7 +577,7 @@ fun List<Weight>.transform(
             MassUnit.POUND -> chartPoint.y * 2.20462 // kg to pounds
             MassUnit.GRAM -> chartPoint.y * 1000.0 // kg to grams  
             MassUnit.OUNCE -> chartPoint.y * 35.274 // kg to ounces
-        }.toFloat()
+        }
         
         ChartPoint(
             x = chartPoint.x,
@@ -688,9 +688,9 @@ private fun <T> aggregateActivityDataTime(
     activities: List<T>,
     getStartTime: (T) -> Instant,
     getEndTime: (T) -> Instant,
-    extractValues: (T) -> Map<String, Float>
-): Map<Instant, Map<String, Float>> {
-    val minuteValues = mutableMapOf<Instant, MutableMap<String, Float>>()
+    extractValues: (T) -> Map<String, Double>
+): Map<Instant, Map<String, Double>> {
+    val minuteValues = mutableMapOf<Instant, MutableMap<String, Double>>()
     
     activities.forEach { activity ->
         val startTime = getStartTime(activity)
@@ -708,7 +708,7 @@ private fun <T> aggregateActivityDataTime(
             // 같은 분 내의 활동
             val minuteMap = minuteValues.getOrPut(startMinute) { mutableMapOf() }
             activityValues.forEach { (property, value) ->
-                minuteMap[property] = minuteMap.getOrDefault(property, 0f) + value
+                minuteMap[property] = minuteMap.getOrDefault(property, 0.0) + value
             }
         } else {
             // 여러 분에 걸친 활동 - 분별로 비례 분할
@@ -731,8 +731,8 @@ private fun <T> aggregateActivityDataTime(
                 
                 val minuteMap = minuteValues.getOrPut(currentMinute) { mutableMapOf() }
                 activityValues.forEach { (property, value) ->
-                    val proportionalValue = (value * proportion).toFloat()
-                    minuteMap[property] = minuteMap.getOrDefault(property, 0f) + proportionalValue
+                    val proportionalValue = value * proportion
+                    minuteMap[property] = minuteMap.getOrDefault(property, 0.0) + proportionalValue
                 }
                 
                 currentMinute = currentMinute.atZone(ZoneId.systemDefault()).plusMinutes(1).toInstant()

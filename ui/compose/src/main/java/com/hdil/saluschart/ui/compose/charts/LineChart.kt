@@ -60,8 +60,8 @@ fun LineChart(
     title: String = "Line Chart Example",
     lineColor: Color = ChartColor.Default,
     strokeWidth: Float = 4f,
-    minY: Float? = null,                    // 사용자 지정 최소 Y값
-    maxY: Float? = null,                    // 사용자 지정 최대 Y값
+    minY: Double? = null,                    // 사용자 지정 최소 Y값
+    maxY: Double? = null,                    // 사용자 지정 최대 Y값
     xLabelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,  // Y축 위치
@@ -86,7 +86,7 @@ fun LineChart(
     // fixed external Y-axis support
     fixedYAxis: Boolean = false,
     yAxisFixedWidth: Dp = 16.dp,
-    yTickStep: Float? = null,                    // e.g., 10f for even ticks
+    yTickStep: Double? = null,                    // e.g., 10.0 for even ticks
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
     autoFixYAxisOnScroll: Boolean = true,         // auto-fix when horizontally scrollable
@@ -237,7 +237,7 @@ fun LineChart(
 
                         ChartMath.Line.computeLabelAnchors(
                             points = points,
-                            values = yValues,
+                            values = yValues.map { it.toFloat() },
                             canvas = canvasForLabels,
                             textPx = with(drawContext.density) { 12.sp.toPx() },
                             padPx  = with(drawContext.density) { 2.dp.toPx() },
@@ -423,10 +423,10 @@ private fun LineChartPagedInternal(
     onReferenceLineClick: (() -> Unit)?,
     // scale/paging
     unifyYAxisAcrossPages: Boolean,
-    yTickStep: Float?,
+    yTickStep: Double?,
     initialPage: Int?,
-    minY: Float?,
-    maxY: Float?,
+    minY: Double?,
+    maxY: Double?,
     unit : String = "",
 ) {
     // how many pages
@@ -439,9 +439,9 @@ private fun LineChartPagedInternal(
     // single fixed Y range for all pages (so the external axis matches)
     val rawMax = if (unifyYAxisAcrossPages) data.maxOf { it.y } else data.maxOf { it.y }
     val forcedMax = maxY ?: rawMax
-    val step = yTickStep ?: 0f
+    val step = yTickStep ?: 0.0
     val maxRounded = remember(forcedMax, step) {
-        if (step > 0f) (kotlin.math.ceil(forcedMax / step) * step).toFloat() else forcedMax
+        if (step > 0.0) (kotlin.math.ceil(forcedMax / step) * step) else forcedMax
     }
 
     Column(modifier) {
@@ -455,7 +455,7 @@ private fun LineChartPagedInternal(
                 FixedPagerYAxisLine(
                     maxY = maxRounded,
                     yAxisPosition = yAxisPosition,
-                    step = yTickStep,
+                    step = yTickStep?.toFloat() ?: 10f,
                     width = yAxisFixedWidth
                 )
             }
@@ -485,7 +485,7 @@ private fun LineChartPagedInternal(
                     title = title,
                     lineColor = lineColor,
                     strokeWidth = strokeWidth,
-                    minY = 0f.takeIf { chartTypeForLineWantsZero() } ?: minY,
+                    minY = 0.0.takeIf { chartTypeForLineWantsZero() } ?: minY,
                     maxY = maxRounded,
                     xLabelTextSize = xLabelTextSize,
                     tooltipTextSize = tooltipTextSize,
@@ -518,7 +518,7 @@ private fun LineChartPagedInternal(
                 FixedPagerYAxisLine(
                     maxY = maxRounded,
                     yAxisPosition = yAxisPosition,
-                    step = yTickStep,
+                    step = yTickStep?.toFloat() ?: 10f,
                     width = yAxisFixedWidth
                 )
             }
@@ -528,9 +528,9 @@ private fun LineChartPagedInternal(
 
 @Composable
 private fun FixedPagerYAxisLine(
-    maxY: Float,
+    maxY: Double,
     yAxisPosition: YAxisPosition,
-    step: Float?,
+    step: Float,
     width: Dp
 ) {
     Canvas(
@@ -540,12 +540,12 @@ private fun FixedPagerYAxisLine(
     ) {
         val m = ChartMath.computeMetrics(
             size = size,
-            values = listOf(0f, maxY),
+            values = listOf(0.0, maxY.toDouble()),
             chartType = ChartType.LINE,
-            minY = 0f,                    // start at 0 for typical activity charts (tweak if needed)
-            maxY = maxY,
+            minY = 0.0,                    // start at 0 for typical activity charts (tweak if needed)
+            maxY = maxY.toDouble(),
             includeYAxisPadding = false,  // no inner side padding; this pane is just the axis
-            fixedTickStep = step,
+            fixedTickStep = step.toDouble(),
         )
         ChartDraw.drawYAxisStandalone(
             drawScope = this,

@@ -186,9 +186,9 @@ fun SingleMonthCalendarChart(
                                         tooltipPoint = null
                                         tooltipAnchor = null
 
-                                        val rounded = tappedEntry.value.roundToInt().toFloat()
+                                        val rounded = tappedEntry.value.roundToInt().toDouble()
                                         tooltipPoint = com.hdil.saluschart.core.chart.ChartPoint(
-                                            x = date.dayOfMonth.toFloat(),
+                                            x = date.dayOfMonth.toDouble(),
                                             y = rounded,
                                             label = date.toString()
                                         )

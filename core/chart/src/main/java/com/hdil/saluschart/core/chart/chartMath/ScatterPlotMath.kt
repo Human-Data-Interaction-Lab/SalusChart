@@ -21,18 +21,18 @@ object ScatterPlotMath {
         // X축 범위 계산
         val minX = data.minOf { it.x }
         val maxX = data.maxOf { it.x }
-        val xRange = if (maxX > minX) maxX - minX else 1f
+        val xRange = if (maxX > minX) (maxX - minX).toFloat() else 1f
         
         return data.map { point ->
             // X값을 실제 좌표계에 매핑
             val xPosition = if (xRange > 0f) {
-                metrics.paddingX + ((point.x - minX) / xRange) * metrics.chartWidth
+                metrics.paddingX + ((point.x - minX).toFloat() / xRange) * metrics.chartWidth
             } else {
                 metrics.paddingX + metrics.chartWidth / 2f
             }
             
             // Y값을 좌표계에 매핑
-            val yPosition = metrics.paddingY + metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+            val yPosition = metrics.paddingY + metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)).toFloat() * metrics.chartHeight
 
             Offset(xPosition, yPosition)
         }

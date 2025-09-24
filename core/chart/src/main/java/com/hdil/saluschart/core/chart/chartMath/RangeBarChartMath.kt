@@ -22,8 +22,8 @@ object RangeBarChartMath {
         val chartHeight = size.height - paddingY
 
         val allYValues = data.flatMap { listOf(it.minPoint.y, it.maxPoint.y) }
-        val dataMax = allYValues.maxOrNull() ?: 1f
-        val dataMin = allYValues.minOrNull() ?: 0f
+        val dataMax = allYValues.maxOrNull() ?: 1.0
+        val dataMin = allYValues.minOrNull() ?: 0.0
 
         val yTicks = computeNiceTicks(dataMin, dataMax, tickCount, ChartType.RANGE_BAR)
 

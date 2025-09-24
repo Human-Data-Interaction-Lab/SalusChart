@@ -59,7 +59,7 @@ object ScatterPlotDraw {
     fun PointMarker(
         data: List<ChartPoint>,
         points: List<Offset>,
-        values: List<Float>,
+        values: List<Double>,
         color: Color = Color.Black,
         pointRadius: Dp = 4.dp,
         innerRadius: Dp = 2.dp,
@@ -107,7 +107,7 @@ object ScatterPlotDraw {
                 } else {
                     LineChartMath.computeLabelAnchors(
                         points = points,
-                        values = values,
+                        values = values.map { it.toFloat() },
                         canvas = canvasSize,
                         textPx = textPx,
                         padPx = with(density) { 4.dp.toPx() },
@@ -179,8 +179,8 @@ object ScatterPlotDraw {
             }
             if (showValue && anchors.size == points.size) {
                 anchors.forEachIndexed { i, topLeft ->
-                    val label = values.getOrElse(i) { 0f }.let { v ->
-                        if (kotlin.math.abs(v - v.toInt()) < 0.001f) v.toInt().toString() else v.toString()
+                    val label = values.getOrElse(i) { 0.0 }.let { v ->
+                        if (kotlin.math.abs(v - v.toInt()) < 0.001) v.toInt().toString() else v.toString()
                     }
                     val xDp = with(density) { topLeft.x.toDp() }
                     val yDp = with(density) { topLeft.y.toDp() }

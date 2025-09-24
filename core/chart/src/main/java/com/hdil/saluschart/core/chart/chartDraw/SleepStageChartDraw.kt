@@ -1,5 +1,6 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
+import android.graphics.Paint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawContext
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -26,10 +30,8 @@ import com.hdil.saluschart.core.chart.BaseChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.chart.chartMath.SleepStageChartMath
 
 object SleepStageChartDraw {
-    
     /**
      * 수평 바 차트의 바들을 Composable로 생성합니다.
      * 수면 단계 차트와 같은 수평 바 차트에 사용됩니다.
@@ -52,8 +54,8 @@ object SleepStageChartDraw {
     @Composable
     fun HorizontalBarMarker(
         data: List<BaseChartPoint>,
-        minValues: List<Float>,
-        maxValues: List<Float>,
+        minValues: List<Double>,
+        maxValues: List<Double>,
         metrics: ChartMath.ChartMetrics,
         color: Color = Color.Black,
         barHeightRatio: Float = 0.5f,
@@ -83,8 +85,8 @@ object SleepStageChartDraw {
 
         (0 until dataSize).forEach { index ->
             // 값 추출
-            val minValue = minValues.getOrNull(index) ?: 0f
-            val maxValue = maxValues.getOrNull(index) ?: 0f
+            val minValue = minValues.getOrNull(index) ?: 0.0
+            val maxValue = maxValues.getOrNull(index) ?: 0.0
 
             // tooltipText is only used for onBarClick callback
             val tooltipText = customTooltipText?.getOrNull(index) ?: "Sleep Stage"
@@ -109,11 +111,11 @@ object SleepStageChartDraw {
             val barHeight = spacing * actualBarHeightRatio
             val barY = metrics.paddingY + sleepStageOrdinal * spacing + (spacing - barHeight) / 2f
 
-            // Float 좌표를 Dp로 변환
-            val barXDp = with(density) { barX.toDp() }
-            val barYDp = with(density) { barY.toDp() }
-            val barWidthDp = with(density) { barWidth.toDp() }
-            val barHeightDp = with(density) { barHeight.toDp() }
+            // Double 좌표를 Dp로 변환
+            val barXDp = with(density) { barX.toFloat().toDp() }
+            val barYDp = with(density) { barY.toFloat().toDp() }
+            val barWidthDp = with(density) { barWidth.toFloat().toDp() }
+            val barHeightDp = with(density) { barHeight.toFloat().toDp() }
 
             // 툴팁 표시 여부 결정
             val shouldShowTooltip = when {
@@ -130,7 +132,7 @@ object SleepStageChartDraw {
 
             if (shouldShowTooltip) {
                 tooltipData = data[index]
-                tooltipOffset = Offset(barX, barY)
+                tooltipOffset = Offset(barX.toFloat(), barY.toFloat())
             }
 
             val actualColor = if (isTouchArea) {
@@ -182,8 +184,8 @@ object SleepStageChartDraw {
                     3 -> "Deep"
                     else -> "Unknown"
                 }
-                val startTime = SleepStageChartMath.formatTimeFromMilliseconds(tooltipData.minPoint.y)
-                val endTime = SleepStageChartMath.formatTimeFromMilliseconds(tooltipData.maxPoint.y)
+                val startTime = ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.minPoint.y)
+                val endTime = ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.maxPoint.y)
                 "$startTime - $endTime"
             } else null
             
@@ -195,4 +197,270 @@ object SleepStageChartDraw {
             )
         }
     }
+
+    /**
+     * 수면 단계 차트의 X축 레이블을 그립니다.
+     * SleepSession의 시작 시간과 끝 시간을 X축의 첫 번째와 마지막 위치에 표시합니다.
+     *
+     * @param ctx 그리기 컨텍스트
+     * @param metrics 차트 메트릭 정보
+     * @param startTimeMillis SleepSession의 시작 시간 (밀리초)
+     * @param endTimeMillis SleepSession의 끝 시간 (밀리초)
+     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
+     */
+    fun drawSleepStageXAxisLabels(
+        ctx: DrawContext,
+        metrics: ChartMath.ChartMetrics,
+        startTimeMillis: Double,
+        endTimeMillis: Double,
+        textSize: Float = 28f
+    ) {
+        // 시간을 HH:MM:SS 형식으로 변환
+        val startTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis)
+        val endTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis)
+        
+        // X축 레이블 위치 계산
+        // 시작 시간: 차트 영역의 맨 왼쪽 (paddingX)
+        val startX = metrics.paddingX
+        // 끝 시간: 차트 영역의 맨 오른쪽 (paddingX + chartWidth)
+        val endX = metrics.paddingX + metrics.chartWidth
+        
+        // Y 위치: 차트 영역 아래쪽에 레이블 배치
+        val labelY = metrics.paddingY + metrics.chartHeight + 50f
+        
+        // Paint 설정
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.DKGRAY
+            this.textSize = textSize
+            isAntiAlias = true
+        }
+        
+        // 시작 시간 레이블 그리기 (왼쪽 정렬)
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        ctx.canvas.nativeCanvas.drawText(startTimeText, startX, labelY, paint)
+        
+        // 끝 시간 레이블 그리기 (오른쪽 정렬)
+        paint.textAlign = android.graphics.Paint.Align.RIGHT
+        ctx.canvas.nativeCanvas.drawText(endTimeText, endX, labelY, paint)
+    }
+
+    /**
+     * 수면 단계 차트의 그리드 라인을 그립니다.
+     * 각 수면 단계 사이에 수평선을 그려서 구분을 명확하게 합니다.
+     *
+     * @param ctx 그리기 컨텍스트
+     * @param metrics 차트 메트릭 정보
+     * @param lineColor 그리드 라인 색상 (기본값: 연한 회색)
+     * @param lineWidth 그리드 라인 두께 (기본값: 1f)
+     */
+    fun drawSleepStageGridLines(
+        ctx: DrawContext,
+        metrics: ChartMath.ChartMetrics,
+        lineColor: Int = android.graphics.Color.LTGRAY,
+        lineWidth: Float = 1f
+    ) {
+        val totalStages = 4 // AWAKE, REM, LIGHT, DEEP
+        val stageHeight = metrics.chartHeight / totalStages
+
+        // 각 수면 단계 사이에 수평선 그리기
+        for (i in 1 until totalStages) {
+            val y = metrics.paddingY + i * stageHeight
+
+            ctx.canvas.nativeCanvas.drawLine(
+                metrics.paddingX, // 시작 X (차트 영역 시작)
+                y,                // Y 위치
+                metrics.paddingX + metrics.chartWidth, // 끝 X (차트 영역 끝)
+                y,                // Y 위치
+                Paint().apply {
+                    color = lineColor
+                    strokeWidth = lineWidth
+                    isAntiAlias = true
+                }
+            )
+        }
+    }
+    /**
+     * 수면 단계 차트의 독립적인 Y축을 그립니다.
+     * 고정된 Y축 패널에서 사용됩니다.
+     *
+     * @param drawScope 그리기 영역
+     * @param metrics 차트 메트릭 정보
+     * @param yAxisPosition Y축 위치
+     * @param paneWidthPx Y축 패널의 너비 (픽셀)
+     * @param labelTextSizePx 레이블 텍스트 크기 (기본값: 28f)
+     */
+    fun drawSleepStageYAxisStandalone(
+        drawScope: DrawScope,
+        metrics: ChartMath.ChartMetrics,
+        yAxisPosition: YAxisPosition,
+        paneWidthPx: Float,
+        labelTextSizePx: Float = 28f
+    ) {
+        val totalStages = 4 // AWAKE, REM, LIGHT, DEEP
+        val stageHeight = metrics.chartHeight / totalStages
+
+        // Y축 라인 위치 결정
+        val axisX = if (yAxisPosition == YAxisPosition.RIGHT) paneWidthPx - 0.5f else 0.5f
+
+        // 수면 단계 레이블 그리기
+        val sleepStages = listOf("Awake", "REM", "Light", "Deep")
+
+        sleepStages.forEachIndexed { index, stage ->
+            val y = metrics.paddingY + (index + 0.5f) * stageHeight
+
+            // 레이블 텍스트 그리기
+            val paint = Paint().apply {
+                isAntiAlias = true
+                color = android.graphics.Color.DKGRAY
+                textSize = labelTextSizePx
+                textAlign = if (yAxisPosition == YAxisPosition.RIGHT)
+                    Paint.Align.LEFT else Paint.Align.RIGHT
+            }
+            val labelX = if (yAxisPosition == YAxisPosition.RIGHT)
+                axisX + 10f else axisX - 10f
+
+            drawScope.drawContext.canvas.nativeCanvas.drawText(stage, labelX, y + 10f, paint)
+        }
+    }
+
+    /**
+     * 수면 단계 차트의 바들 사이에 연결선을 그립니다.
+     * 연속된 수면 단계들 사이에 수평선을 그려서 시간 연속성을 시각적으로 표현합니다.
+     *
+     * @param data 차트 데이터 포인트 목록 (시간순으로 정렬된 RangeChartPoint)
+     * @param metrics 차트 메트릭 정보
+     * @param lineColor 연결선 색상 (기본값: 연한 회색)
+     * @param lineWidth 연결선 두께 (기본값: 2f)
+     * @param totalSleepStages 전체 수면 단계 수 (기본값: 4)
+     * @param barHeightRatio 바 높이 비율 (기본값: 0.5f)
+     */
+    @Composable
+    fun SleepStageBarConnector(
+        data: List<BaseChartPoint>,
+        metrics: ChartMath.ChartMetrics,
+        lineColor: Color = Color(0xFFCCCCCC),
+        lineWidth: Float = 2f,
+        totalSleepStages: Int = 4,
+        barHeightRatio: Float = 0.5f
+    ) {
+        val density = LocalDensity.current
+        
+        // 데이터가 2개 미만이면 연결선을 그릴 수 없음
+        if (data.size < 2) return
+        
+        // 바 높이 계산
+        val spacing = metrics.chartHeight / totalSleepStages
+        val barHeight = spacing * barHeightRatio
+        
+        // 시간순으로 정렬된 데이터에서 연속된 단계들 사이에 연결선 그리기
+        for (i in 0 until data.size - 1) {
+            val currentStage = data[i]
+            val nextStage = data[i + 1]
+            
+            // 현재 단계의 끝점과 다음 단계의 시작점 계산
+            val currentEndX = if (currentStage is RangeChartPoint) {
+                // RangeChartPoint의 경우 maxPoint.y가 끝 시간
+                ((currentStage.maxPoint.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
+            } else {
+                // 일반 ChartPoint의 경우 x가 시간
+                ((currentStage.x - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
+            }
+            
+            val nextStartX = if (nextStage is RangeChartPoint) {
+                // RangeChartPoint의 경우 minPoint.y가 시작 시간
+                ((nextStage.minPoint.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
+            } else {
+                // 일반 ChartPoint의 경우 x가 시간
+                ((nextStage.x - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
+            }
+            
+            // 현재 단계와 다음 단계의 Y 위치 계산 (수면 단계 ordinal 기반)
+            val currentStageOrdinal = currentStage.x.toInt()
+            val nextStageOrdinal = nextStage.x.toInt()
+            
+            val currentY = metrics.paddingY + currentStageOrdinal * spacing + spacing / 2f
+            val nextY = metrics.paddingY + nextStageOrdinal * spacing + spacing / 2f
+            
+            // 연결선 시작점과 끝점 계산 (바 높이를 고려하여 조정)
+            val startX = currentEndX.toFloat()
+            val endX = nextStartX.toFloat()
+            
+            // Y 좌표를 바 높이에 따라 조정
+            val adjustedStartY = if (currentY < nextY) {
+                // startY < endY: 시작점을 아래로, 끝점을 위로 이동
+                currentY + barHeight / 2f
+            } else {
+                // startY > endY: 시작점을 위로, 끝점을 아래로 이동
+                currentY - barHeight / 2f
+            }
+            
+            val adjustedEndY = if (currentY < nextY) {
+                // startY < endY: 끝점을 위로 이동
+                nextY - barHeight / 2f
+            } else {
+                // startY > endY: 끝점을 아래로 이동
+                nextY + barHeight / 2f
+            }
+            
+            // Double 좌표를 Dp로 변환
+            val startXDp = with(density) { startX.toDp() }
+            val startYDp = with(density) { adjustedStartY.toDp() }
+            val endXDp = with(density) { endX.toDp() }
+            val endYDp = with(density) { adjustedEndY.toDp() }
+            
+            // 연결선을 그리기 위한 Box (투명하지만 시각적 연결선 역할)
+            // Use absolute values to handle cases where endY < startY (e.g., Awake -> Deep transition)
+            val absoluteWidth = kotlin.math.abs(endXDp.value - startXDp.value).coerceAtLeast(1f).dp
+            val absoluteHeight = kotlin.math.abs(endYDp.value - startYDp.value).coerceAtLeast(1f).dp
+            
+            // Use the minimum Y coordinate as the starting position to avoid negative positioning
+            val minY = kotlin.math.min(startYDp.value, endYDp.value).dp
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = startXDp, y = minY)
+                    .size(
+                        width = absoluteWidth,
+                        height = absoluteHeight
+                    )
+                    .background(color = lineColor.copy(alpha = 0.9f))
+            )
+        }
+    }
+
+//    /**
+//     * 수면 단계 차트의 Y축 레이블을 그립니다.
+//     * 수면 단계는 고정된 순서로 표시됩니다: AWAKE, REM, LIGHT, DEEP
+//     *
+//     * @param ctx 그리기 컨텍스트
+//     * @param metrics 차트 메트릭 정보
+//     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
+//     */
+//    fun drawSleepStageLabels(
+//        ctx: androidx.compose.ui.graphics.drawscope.DrawContext,
+//        metrics: ChartMetrics,r
+//        textSize: Float = 28f
+//    ) {
+//        // 수면 단계는 고정된 순서 (위에서 아래로)
+//        val sleepStages = listOf("Awake", "REM", "Light", "Deep")
+//        val totalStages = sleepStages.size
+//        val stageHeight = metrics.chartHeight / totalStages
+//
+//        sleepStages.forEachIndexed { index, stage ->
+//            // 각 수면 단계의 중앙 Y 위치 계산
+//            val y = metrics.paddingY + (index + 0.5f) * stageHeight
+//
+//            ctx.canvas.nativeCanvas.drawText(
+//                stage,
+//                20f, // Y축 레이블은 왼쪽에 고정
+//                y,
+//                android.graphics.Paint().apply {
+//                    color = android.graphics.Color.DKGRAY
+//                    this.textSize = textSize
+//                    textAlign = android.graphics.Paint.Align.CENTER
+//                }
+//            )
+//        }
+//    }
 }
+

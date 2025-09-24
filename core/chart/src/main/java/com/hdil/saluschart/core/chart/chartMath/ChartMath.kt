@@ -22,6 +22,7 @@ object ChartMath {
     val Line = LineChartMath
     val Scatter = ScatterPlotMath
     val Progress = ProgressChartMath
+    val SleepStage = SleepStageChartMath
 
     /**
      * 차트 그리기에 필요한 메트릭 정보를 담는 데이터 클래스
@@ -40,9 +41,9 @@ object ChartMath {
         val paddingY: Float,
         val chartWidth: Float,
         val chartHeight: Float,
-        val minY: Float,
-        val maxY: Float,
-        val yTicks: List<Float>
+        val minY: Double,
+        val maxY: Double,
+        val yTicks: List<Double>
     )
 
     /**
@@ -58,22 +59,22 @@ object ChartMath {
      * @return 계산된 눈금 값들의 리스트
      */
     fun computeNiceTicks(
-        min: Float, 
-        max: Float, 
-        tickCount: Int = 5, 
+        min: Double,
+        max: Double,
+        tickCount: Int = 5,
         chartType: ChartType? = null,
-        actualMin: Float? = null,
-        actualMax: Float? = null
-    ): List<Float> {
+        actualMin: Double? = null,
+        actualMax: Double? = null
+    ): List<Double> {
         if (min >= max) {
-            return listOf(0f, 1f)
+            return listOf(0.0, 1.0)
         }
         
         // 바 차트의 경우 최소값을 0으로 강제 설정
         var min = if (chartType == ChartType.BAR ||
                              chartType == ChartType.STACKED_BAR || 
                              chartType == ChartType.MINIMAL_BAR) {
-            0f
+            0.0
         } else {
             min
         }
@@ -91,7 +92,7 @@ object ChartMath {
         val finalMax = actualMax?.toDouble() ?: niceMax
 
         // 최종 범위에 대해 ticks 생성
-        val ticks = mutableListOf<Float>()
+        val ticks = mutableListOf<Double>()
         
         // 사용자 지정 최소값이 있으면 먼저 추가
         actualMin?.let { userMin ->
@@ -108,7 +109,7 @@ object ChartMath {
         
         while (t <= finalMax + 1e-6) {
             val roundedTick = round(t * 1000000) / 1000000
-            val tickValue = roundedTick.toFloat()
+            val tickValue = roundedTick
             
             // 사용자 지정 값과 중복되지 않는 경우만 추가
             if (actualMin == null || abs(tickValue - actualMin) > 1e-6) {
@@ -144,46 +145,46 @@ object ChartMath {
      */
     fun computeMetrics(
         size: Size,
-        values: List<Float>,
+        values: List<Double>,
         tickCount: Int = 5,
         chartType: ChartType? = null,
         isMinimal: Boolean = false,
         paddingX: Float = if (isMinimal) 4f else 30f,
         paddingY: Float = if (isMinimal) 8f else 40f,
-        minY: Float? = null,
-        maxY: Float? = null,
+        minY: Double? = null,
+        maxY: Double? = null,
 
         includeYAxisPadding: Boolean = true,
         // defaults to current paddingX
         yAxisPaddingPx: Float = paddingX,
-        // force a constant tick step (e.g., 10f)
-        fixedTickStep: Float? = null
+        // force a constant tick step (e.g., 10.0)
+        fixedTickStep: Double? = null
     ): ChartMetrics {
         val effectivePaddingX = if (includeYAxisPadding) yAxisPaddingPx else 0f
 
         // data range
-        val dataMax = values.maxOrNull() ?: 1f
-        val dataMin = values.minOrNull() ?: 0f
+        val dataMax = values.maxOrNull() ?: 1.0
+        val dataMin = values.minOrNull() ?: 0.0
 
         // decide min/max used for ticks
         val wantsZeroMin = (chartType == ChartType.BAR ||
                 chartType == ChartType.STACKED_BAR ||
                 chartType == ChartType.MINIMAL_BAR)
 
-        val baseMin = minY ?: if (wantsZeroMin) 0f else dataMin
+        val baseMin = minY ?: if (wantsZeroMin) 0.0 else dataMin
         val baseMax = maxY ?: dataMax
 
         // ticks
-        val yTicks: List<Float>
-        val actualMinY: Float
-        val actualMaxY: Float
+        val yTicks: List<Double>
+        val actualMinY: Double
+        val actualMaxY: Double
 
-        if (fixedTickStep != null && fixedTickStep > 0f) {
-            val start = if (wantsZeroMin) 0f else kotlin.math.floor(baseMin / fixedTickStep) * fixedTickStep
+        if (fixedTickStep != null && fixedTickStep > 0.0) {
+            val start = if (wantsZeroMin) 0.0 else kotlin.math.floor(baseMin / fixedTickStep) * fixedTickStep
             val end = kotlin.math.ceil(baseMax / fixedTickStep) * fixedTickStep
-            val ticks = mutableListOf<Float>()
+            val ticks = mutableListOf<Double>()
             var t = start
-            while (t <= end + 1e-6f) {
+            while (t <= end + 1e-6) {
                 ticks.add(t)
                 t += fixedTickStep
             }

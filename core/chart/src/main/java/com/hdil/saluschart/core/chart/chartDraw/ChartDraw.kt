@@ -57,8 +57,8 @@ object ChartDraw {
         }
 
         metrics.yTicks.forEach { yVal ->
-            val y =
-                metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+            // Convert chart-relative Y to canvas coordinates
+            val y = metrics.paddingY + metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
 
             // 그리드 라인은 차트 영역 전체에 걸쳐 그리기
             val gridStart = metrics.paddingX // 왼쪽 Y축까지
@@ -113,8 +113,8 @@ object ChartDraw {
     fun drawXAxis(drawScope: DrawScope, metrics: ChartMath.ChartMetrics) {
         drawScope.drawLine(
             color = Color.Black,
-            start = Offset(metrics.paddingX, metrics.chartHeight),
-            end = Offset(metrics.paddingX + metrics.chartWidth, metrics.chartHeight),
+            start = Offset(metrics.paddingX, metrics.paddingY + metrics.chartHeight),
+            end = Offset(metrics.paddingX + metrics.chartWidth, metrics.paddingY + metrics.chartHeight),
             strokeWidth = 2f
         )
     }
@@ -135,8 +135,8 @@ object ChartDraw {
 
         drawScope.drawLine(
             color = Color.Black,
-            start = Offset(axisStartX, 0f),
-            end = Offset(axisStartX, metrics.chartHeight),
+            start = Offset(axisStartX, metrics.paddingY),
+            end = Offset(axisStartX, metrics.paddingY + metrics.chartHeight),
             strokeWidth = 2f
         )
     }
@@ -154,14 +154,14 @@ object ChartDraw {
         // Axis line
         drawScope.drawLine(
             color = Color.Black,
-            start = Offset(axisX, 0f),
-            end = Offset(axisX, metrics.chartHeight),
+            start = Offset(axisX, metrics.paddingY),
+            end = Offset(axisX, metrics.paddingY + metrics.chartHeight),
             strokeWidth = 2f
         )
 
         // Ticks & labels
         metrics.yTicks.forEach { yVal ->
-            val y = metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+            val y = metrics.paddingY + metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
 
             // small tick mark
             val tickLen = 8f

@@ -25,6 +25,7 @@ import kotlin.math.roundToInt
  * @param unit 데이터 단위 (예: "kg", "lb", "bpm" 등)
  * @param backgroundColor 툴팁 배경색
  * @param textColor 텍스트 색상
+ * @param customText 커스텀 툴팁 텍스트 (null이 아니면 기본 로직 대신 사용)
  * @param modifier 모디파이어
  */
 @Composable
@@ -33,6 +34,7 @@ fun ChartTooltip(
     unit: String = "",
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
+    customText: String? = null,
     color: Color = Color.Black,
     modifier: Modifier = Modifier
 ) {
@@ -68,31 +70,79 @@ fun ChartTooltip(
                     lineHeight = 16.sp
                 )
             }
-            when(chartPoint) {
-                is com.hdil.saluschart.core.chart.RangeChartPoint -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                                    shape = CircleShape
-                                )
-                        )
-                        Text(
-                            text = "${chartPoint.minPoint.y.roundToInt()}$unit ~ ${chartPoint.maxPoint.y.roundToInt()}$unit",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = textColor.copy(alpha = 0.9f),
-                            lineHeight = 14.sp
-                        )
-                    }
+            // Custom text has the highest priority
+            if (customText != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                shape = CircleShape
+                            )
+                    )
+                    Text(
+                        text = customText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = textColor.copy(alpha = 0.9f),
+                        lineHeight = 14.sp
+                    )
                 }
-                is com.hdil.saluschart.core.chart.StackedChartPoint -> {
-                    chartPoint.segments.asReversed().forEachIndexed { index, segment ->
+            } else {
+                when (chartPoint) {
+                    is com.hdil.saluschart.core.chart.RangeChartPoint -> {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        shape = CircleShape
+                                    )
+                            )
+                            Text(
+                                text = "${chartPoint.minPoint.y.roundToInt()}$unit ~ ${chartPoint.maxPoint.y.roundToInt()}$unit",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = textColor.copy(alpha = 0.9f),
+                                lineHeight = 14.sp
+                            )
+                        }
+                    }
+
+                    is com.hdil.saluschart.core.chart.StackedChartPoint -> {
+                        chartPoint.segments.asReversed().forEachIndexed { index, segment ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(
+                                            color = color,
+                                            shape = CircleShape
+                                        )
+                                )
+                                Text(
+                                    text = segment.y.roundToInt().toString(),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = textColor.copy(alpha = 0.9f),
+                                    lineHeight = 14.sp
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -106,38 +156,17 @@ fun ChartTooltip(
                                     )
                             )
                             Text(
-                                text = segment.y.roundToInt().toString(),
+                                text = if (unit.isNotEmpty()) {
+                                    "${chartPoint.y.roundToInt()}$unit"
+                                } else {
+                                    chartPoint.y.roundToInt().toString()
+                                },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = textColor.copy(alpha = 0.9f),
                                 lineHeight = 14.sp
                             )
                         }
-                    }
-                } else -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(
-                                    color = color,
-                                    shape = CircleShape
-                                )
-                        )
-                        Text(
-                            text = if (unit.isNotEmpty()) {
-                                "${chartPoint.y.roundToInt()}$unit"
-                            } else {
-                                chartPoint.y.roundToInt().toString()
-                            },
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = textColor.copy(alpha = 0.9f),
-                            lineHeight = 14.sp
-                        )
                     }
                 }
             }

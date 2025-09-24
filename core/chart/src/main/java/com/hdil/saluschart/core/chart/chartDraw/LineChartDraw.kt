@@ -44,7 +44,7 @@ object LineChartDraw {
      * @param textSize 레이블 텍스트 크기 (기본값: 28f)
      * @param maxXTicksLimit X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
      */
-    fun drawXAxisLabels(
+    fun drawLineXAxisLabels(
         ctx: DrawContext,
         labels: List<String>,
         metrics: ChartMath.ChartMetrics,
@@ -69,7 +69,7 @@ object LineChartDraw {
             ctx.canvas.nativeCanvas.drawText(
                 label,
                 x,
-                metrics.chartHeight + 50f,
+                metrics.paddingY + metrics.chartHeight + 50f,
                 android.graphics.Paint().apply {
                     color = android.graphics.Color.DKGRAY
                     this.textSize = textSize

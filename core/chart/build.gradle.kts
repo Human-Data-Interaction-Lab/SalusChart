@@ -40,6 +40,7 @@ android {
 dependencies {
     // Core module dependencies
     implementation(project(":core:util"))
+    implementation(project(":data:model"))
 
     // Core Android dependencies
     implementation(libs.androidx.core.ktx)

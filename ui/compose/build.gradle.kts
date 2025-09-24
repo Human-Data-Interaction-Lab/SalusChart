@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":core:dsl"))
     implementation(project(":core:transform"))
     implementation(project(":ui:theme"))
+    implementation(project(":data:model"))
 
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)

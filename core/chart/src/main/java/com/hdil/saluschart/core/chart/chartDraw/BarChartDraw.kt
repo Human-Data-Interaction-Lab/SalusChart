@@ -85,7 +85,7 @@ object BarChartDraw {
             ctx.canvas.nativeCanvas.drawText(
                 label,
                 x,
-                metrics.chartHeight + 50f,
+                metrics.paddingY + metrics.chartHeight + 50f,
                 android.graphics.Paint().apply {
                     color = android.graphics.Color.DKGRAY
                     this.textSize = textSize
@@ -156,10 +156,7 @@ object BarChartDraw {
 
             // 툴팁 텍스트 결정: 커스텀 텍스트가 있으면 사용, 없으면 기본 로직 사용
             val tooltipText = customTooltipText?.getOrNull(index) ?: run {
-                if (chartType == ChartType.STACKED_BAR) {
-                    // For stacked bars, always show segment value (maxValue - minValue)
-                    (maxValue - minValue).toInt().toString()
-                } else if (minValue == metrics.minY) {
+                if (minValue == metrics.minY) {
                     // For regular bars starting from chart minimum, show only max value
                     maxValue.toInt().toString()
                 } else {
@@ -171,13 +168,14 @@ object BarChartDraw {
             // 바 높이와 위치 계산
             val (barHeight, barY) = if (isTouchArea) {
                 // 전체 차트 높이 사용 (터치 영역용)
-                Pair(metrics.chartHeight, 0f)
+                Pair(metrics.chartHeight, metrics.paddingY)
             } else {
                 // minValue에서 maxValue까지의 바 계산
                 val yMinScreen = metrics.chartHeight - ((minValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
                 val yMaxScreen = metrics.chartHeight - ((maxValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
                 val height = yMinScreen - yMaxScreen
-                Pair(height, yMaxScreen)
+                // Convert chart-relative Y to canvas coordinates by adding paddingY
+                Pair(height, metrics.paddingY + yMaxScreen)
             }
 
             // 바 X 위치 계산 - 차트 타입에 따라 다른 포지셔닝 로직 사용

@@ -163,7 +163,7 @@ fun ScatterPlot(
                         if (!isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
-                        ChartDraw.Line.drawXAxisLabels(drawContext, xLabels, metrics, maxXTicksLimit = maxXTicksLimit)
+                        ChartDraw.Line.drawLineXAxisLabels(drawContext, xLabels, metrics, maxXTicksLimit = maxXTicksLimit)
                     }
 
                     ChartDraw.Scatter.PointMarker(

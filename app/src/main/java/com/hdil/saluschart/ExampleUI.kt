@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
@@ -57,6 +60,7 @@ import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
 import com.hdil.saluschart.ui.compose.charts.ScatterPlot
+import com.hdil.saluschart.ui.compose.charts.SleepStageChart
 import com.hdil.saluschart.ui.compose.charts.StackedBarChart
 import com.hdil.saluschart.ui.theme.Orange
 import com.hdil.saluschart.ui.theme.Primary_Purple
@@ -68,6 +72,7 @@ import java.time.YearMonth
 
 // Sample data references - now organized in SampleDataProvider
 private val stepCountHealthData = SampleDataProvider.getStepCountData()
+private val singleSleepSessionData = SampleDataProvider.getSingleSleepSessionData()
 private val weightHealthData = SampleDataProvider.getWeightData()
 private val bloodPressureHealthData = SampleDataProvider.getBloodPressureData()
 private val bodyFatHealthData = SampleDataProvider.getBodyFatData()
@@ -106,20 +111,30 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "CalendarChart with Paging",
         "Minimal Charts",
         "PieChart 1",
+        "DonutChart 1",
+        "Progress Bar Chart",
+        "Progress Ring Chart",
+        "Sleep Stage Chart",
         "X-Axis Tick Reduction Demo"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Standard Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
-            chartType.forEach { type ->
-                Text(
-                    text = type,
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .clickable { selectedChartType = type }
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                chartType.forEach { type ->
+                    Text(
+                        text = type,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .clickable { selectedChartType = type }
+                    )
+                }
             }
         } else {
 
@@ -160,6 +175,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
+                "Sleep Stage Chart" -> SleepStageChart_1()
                 "X-Axis Tick Reduction Demo" -> XAxisTickReductionDemo()
                 else -> Text("Unknown Chart Type")
             }
@@ -492,7 +508,6 @@ fun LineChart_3() {
         pagingEnabled = true,
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yAxisFixedWidth = 28.dp,
         yTickStep = 10f
     )
 }
@@ -1069,4 +1084,21 @@ fun TimeStepBarChart() {
             }
         )
     }
+}
+
+@Composable
+fun SleepStageChart_1() {
+    SleepStageChart(
+        modifier = Modifier.fillMaxWidth().height(300.dp),
+        sleepSession = singleSleepSessionData,
+        title = "Sleep Stage Analysis",
+        showLabels = true,
+        onStageClick = { index, tooltipText ->
+            // Handle stage click if needed
+        },
+        fixedYAxis = true,
+        yAxisPosition = YAxisPosition.LEFT,
+//        windowSize = 1,
+//        autoFixYAxisOnScroll = true
+    )
 }

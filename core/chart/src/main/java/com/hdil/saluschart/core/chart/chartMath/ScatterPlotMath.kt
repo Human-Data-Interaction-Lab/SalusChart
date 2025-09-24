@@ -32,8 +32,8 @@ object ScatterPlotMath {
             }
             
             // Y값을 좌표계에 매핑
-            val yPosition = metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
-            
+            val yPosition = metrics.paddingY + metrics.chartHeight - ((point.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+
             Offset(xPosition, yPosition)
         }
     }

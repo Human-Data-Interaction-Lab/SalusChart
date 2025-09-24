@@ -66,10 +66,8 @@ fun RangeBarChart(
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
     onBarClick: ((Int, RangeChartPoint) -> Unit)? = null,
     chartType: ChartType = ChartType.RANGE_BAR,
-
-    // Free-scroll mode
-    windowSize: Int? = null,
-    maxXTicksLimit: Int? = null,
+    windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
+    maxXTicksLimit: Int? = null, // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
     unit: String = "",
 
     // Fixed Y-axis (free-scroll mode)

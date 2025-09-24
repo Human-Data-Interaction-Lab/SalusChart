@@ -85,7 +85,7 @@ fun LineChart(
 
     // fixed external Y-axis support
     fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 56.dp,
+    yAxisFixedWidth: Dp = 16.dp,
     yTickStep: Float? = null,                    // e.g., 10f for even ticks
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
@@ -222,7 +222,7 @@ fun LineChart(
                         val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
                         canvasPoints = points
                         ChartDraw.Line.drawLine(this, points, lineColor, strokeWidth)
-                        ChartDraw.Line.drawXAxisLabels(
+                        ChartDraw.Line.drawLineXAxisLabels(
                             ctx = drawContext,
                             labels = xLabels,
                             metrics = metrics,

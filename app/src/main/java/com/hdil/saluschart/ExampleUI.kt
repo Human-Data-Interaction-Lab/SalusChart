@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -89,13 +88,13 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
-        "Sleep Stage Chart",
-        "Sleep Stage Chart - FreeScroll Fixed Axis",
         "Heart Rate - Range Bar Basic Chart",
         "Heart Rate - Range Bar FreeScroll Fixed Axis",
         "Heart Rate - Range Bar Paged (Left Fixed)",
         "Diet - Stacked Bar Chart FreeScroll",
         "Diet - Stacked Bar Chart Paged",
+        "Sleep Stage Chart",
+        "Sleep Stage Chart - FreeScroll Fixed Axis",
         "Progress Bar Chart",
         "Progress Ring Chart",
         //"Standard Bar Chart",
@@ -576,7 +575,7 @@ fun ScatterPlot_1() {
         timeUnit = TimeUnitGroup.DAY,
         aggregationType = AggregationType.DAILY_AVERAGE
     )
-    
+
     // Flatten the map into a single list of ChartPoints
     // This allows multiple points (systolic + diastolic) at the same x-axis
     val allBloodPressurePoints = bloodPressureMap.flatMap { (property, chartPoints) ->
@@ -588,7 +587,7 @@ fun ScatterPlot_1() {
             )
         }
     }
-    
+
     ScatterPlot(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = allBloodPressurePoints,
@@ -966,10 +965,10 @@ fun XAxisTickReductionDemo() {
             color = Color.Black,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         // Create dense data with many labels (50 points)
         val denseChartPoints = SampleDataProvider.getDenseChartPoints(50)
-        
+
         Text(
             text = "Without Tick Reduction (50 labels)",
             fontSize = 16.sp,
@@ -984,9 +983,9 @@ fun XAxisTickReductionDemo() {
             xLabelTextSize = 20f, // Normal size to show overlap
             maxXTicksLimit = null // Show all labels
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Text(
             text = "With Tick Reduction (Max 10 labels)",
             fontSize = 16.sp,

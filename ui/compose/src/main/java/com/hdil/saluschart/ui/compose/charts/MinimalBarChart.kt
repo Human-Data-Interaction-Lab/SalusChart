@@ -40,7 +40,6 @@ fun MinimalBarChart(
     data: List<ChartPoint>,
     color: Color = Color.Blue,
     padding: Float = 4f,
-    chartType: ChartType = ChartType.MINIMAL_BAR, // 차트 타입 (툴팁 위치 결정용)
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 1.dp,
@@ -52,6 +51,7 @@ fun MinimalBarChart(
     if (data.isEmpty()) return
 
     val yValues = data.map { it.y }
+    val chartType = ChartType.MINIMAL_BAR
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 
@@ -65,7 +65,7 @@ fun MinimalBarChart(
                 isMinimal = true,
                 paddingX = padding,
                 paddingY = padding,
-                chartType = ChartType.MINIMAL_BAR
+                chartType = chartType
             )
 
             // Store metrics for BarMarker

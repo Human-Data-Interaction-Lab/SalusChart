@@ -72,7 +72,6 @@ fun LineChart(
     showLegend: Boolean = false,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
-    chartType : ChartType = ChartType.LINE, // 차트 타입 (툴팁 위치 결정용
     maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
@@ -100,6 +99,7 @@ fun LineChart(
     unit: String = "",
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.LINE
 
     if (pagingEnabled && pageSize > 0 && data.size > pageSize) {
         LineChartPagedInternal(
@@ -208,7 +208,7 @@ fun LineChart(
                         val metrics = ChartMath.computeMetrics(
                             size = size,
                             values = yValues,
-                            chartType = ChartType.LINE,
+                            chartType = chartType,
                             minY = minY,
                             maxY = maxY,
                             includeYAxisPadding = !isFixedYAxis,  // no inner L/R padding when fixed axis is used
@@ -494,7 +494,6 @@ private fun LineChartPagedInternal(
                     showPoint = showPoint,
                     showValue = showValue,
                     windowSize = null,                    // no inner scroll
-                    chartType = ChartType.LINE,
                     maxXTicksLimit = slice.size,          // show all X labels of the slice
                     referenceLineType = ReferenceLineType.NONE,
                     fixedYAxis = true,                    // suppress in-canvas axis

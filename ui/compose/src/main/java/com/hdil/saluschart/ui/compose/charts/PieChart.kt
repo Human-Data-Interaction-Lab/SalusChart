@@ -50,7 +50,6 @@ import com.hdil.saluschart.ui.theme.ColorUtils
  * @param showLegend 범례를 표시할지 여부
  * @param legendPosition 범례 위치 (LEFT, RIGHT, TOP, BOTTOM)
  * @param showLabel 레이블 표시 여부
- * @param chartType 차트 타입 (툴팁 위치 결정용)
  */
 @Composable
 fun PieChart(
@@ -62,9 +61,9 @@ fun PieChart(
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     showLabel: Boolean = false,
-    chartType: ChartType = ChartType.PIE // 차트 타입 (툴팁 위치 결정용)
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.PIE
 
     // 클릭된 섹션의 인덱스 상태
     var selectedSectionIndex by remember { mutableStateOf(-1) }

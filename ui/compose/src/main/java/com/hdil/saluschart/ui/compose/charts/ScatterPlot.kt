@@ -50,7 +50,6 @@ fun ScatterPlot(
     tooltipTextSize: Float = 32f,        // 툴팁 텍스트 크기
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT, // Y축 위치
     interactionType: InteractionType.Scatter = InteractionType.Scatter.POINT,
-    chartType: ChartType = ChartType.SCATTERPLOT, // 차트 타입 (툴팁 위치 결정용
     windowSize: Int? = null,             // 윈도우 크기 (null이면 전체 화면)
     maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
@@ -64,13 +63,13 @@ fun ScatterPlot(
 
     // Fixed y-axis parameters (same as BarChart)
     fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 16.dp,
     autoFixYAxisOnScroll: Boolean = true,
     minY: Double? = null,
     maxY: Double? = null,
-    unit: String = "", // 단위 (예: "kg", "bpm" 등)
+    unit: String = "",
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.SCATTERPLOT
 
     // windowSize 기반 스크롤 여부 결정
     val useScrolling = windowSize != null && windowSize < data.size
@@ -105,10 +104,10 @@ fun ScatterPlot(
 
             Row(Modifier.fillMaxSize()) {
                 // LEFT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
-                            .width(yAxisFixedWidth)
+                            .width(0.dp)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -142,7 +141,7 @@ fun ScatterPlot(
                         val metrics = ChartMath.computeMetrics(
                             size = size,
                             values = yValues,
-                            chartType = ChartType.SCATTERPLOT,
+                            chartType = chartType,
                             minY = minY,
                             maxY = maxY,
                             includeYAxisPadding = !isFixedYAxis
@@ -247,10 +246,10 @@ fun ScatterPlot(
                 }
 
                 // RIGHT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
-                            .width(yAxisFixedWidth)
+                            .width(0.dp)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->

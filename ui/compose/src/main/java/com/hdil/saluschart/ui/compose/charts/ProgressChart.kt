@@ -56,7 +56,6 @@ import kotlin.math.hypot
  * @param showCenterInfo 중앙 정보를 표시할지 여부 (도넛 모드일 때만)
  * @param centerTitle 중앙 제목 텍스트 (도넛 모드일 때만)
  * @param centerSubtitle 중앙 부제목 텍스트 (도넛 모드일 때만)
- * @param chartType 차트 타입 (툴팁 위치 결정용)
  */
 @Composable
 fun ProgressChart(
@@ -73,7 +72,6 @@ fun ProgressChart(
     showCenterInfo: Boolean = true,
     centerTitle: String = "Activity",
     centerSubtitle: String = "Progress",
-    chartType: ChartType = ChartType.PROGRESS, // 차트 타입 (툴팁 위치 결정용)
     barSpacing: Float = 16f,
     topPadding: Float = 8f,
     bottomPadding: Float = 8f,
@@ -85,6 +83,7 @@ fun ProgressChart(
     legendPadding: Dp = 8.dp
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.PROGRESS
     val legendLabels = data.mapIndexed { i, p -> p.label ?: "항목 ${i + 1}" }
     // Tap state for donut interaction
     var tappedIndex by remember { mutableStateOf<Int?>(null) }

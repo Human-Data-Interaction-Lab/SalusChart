@@ -52,9 +52,9 @@ fun MinimalRangeBarChart(
     modifier: Modifier = Modifier,
     data: List<ChartPoint>,
     color: Color = Color.Blue,
-    chartType: ChartType = ChartType.MINIMAL_RANGE_BAR
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.MINIMAL_RANGE_BAR
 
     // Transform ChartPoints to RangeChartPoints automatically
     val rangeData = data.toRangeChartPoints(

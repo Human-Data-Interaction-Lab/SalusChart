@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
  * @param strokeWidth 라인 두께
  * @param padding 차트 주변 패딩
  * @param showPoints 끝점을 원으로 표시할지 여부
- * @param chartType 차트 타입 (툴팁 위치 결정용)
  */
 @Composable
 fun MinimalLineChart(
@@ -44,7 +43,6 @@ fun MinimalLineChart(
     strokeWidth: Float = 2f,
     padding: Float = 4f,
     showPoints: Boolean = false,
-    chartType: ChartType = ChartType.MINIMAL_LINE,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 1.dp,
@@ -54,6 +52,7 @@ fun MinimalLineChart(
     referenceLineInteractive: Boolean = false
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.MINIMAL_LINE
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 

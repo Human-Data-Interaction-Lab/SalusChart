@@ -97,22 +97,22 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Sleep Stage Chart - FreeScroll Fixed Axis",
         "Progress Bar Chart",
         "Progress Ring Chart",
-        //"Standard Bar Chart",
-        //"BarChart with Paging",
-        //"BarChart 3",
-        //"Standard Line Chart",
-        //"LineChart with Paging",
-        //"CalendarChart 1",
-        //"CalendarChart 2",
-        //"Heart Rate - Range Bar Paged (Right Fixed)",
-        //"Step Count - Bar Chart",
-        //"Weight - Line Chart",
-        //"Body Fat - Line Chart",
-        //"Blood Pressure - Scatter Plot",
-        //"CalendarChart with Paging",
-        //"Minimal Charts",
-        //"PieChart 1",
-        //"DonutChart 1",
+        "Standard Bar Chart",
+        "BarChart with Paging",
+        "BarChart 3",
+        "Standard Line Chart",
+        "LineChart with Paging",
+        "CalendarChart 1",
+        "CalendarChart 2",
+        "Heart Rate - Range Bar Paged (Right Fixed)",
+        "Step Count - Bar Chart",
+        "Weight - Line Chart",
+        "Body Fat - Line Chart",
+        "Blood Pressure - Scatter Plot",
+        "CalendarChart with Paging",
+        "Minimal Charts",
+        "PieChart 1",
+        "DonutChart 1",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }
@@ -326,7 +326,6 @@ fun BarChart_2() {
             referenceLineType = ReferenceLineType.AVERAGE,
             referenceLineStyle = LineStyle.DASHED,
             showReferenceLineLabel = false,
-            yAxisFixedWidth = 16.dp
         )
     }
 }
@@ -847,11 +846,11 @@ fun StackedBarChart_Paged_LeftAxis() {
         unifyYAxisAcrossPages = true,
         yTickStepDefaultForPaged = 20.0,
         yAxisPosition = YAxisPosition.LEFT,
-        yAxisFixedWidth = 24.dp,
         interactionType = InteractionType.StackedBar.BAR,
         colors = listOf(
             Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF4CAF50)
-        )
+        ),
+        unit = "g"
     )
 }
 
@@ -878,7 +877,6 @@ fun RangeBarChart_FreeScroll_FixedAxis() {
         title = "Free-scroll + Fixed Y-Axis",
         windowSize = 7,
         fixedYAxis = true,
-        yAxisFixedWidth = 24.dp,
         yTickStep = 10.0,
         barWidthRatio = 0.7f,
         interactionType = InteractionType.RangeBar.BAR, // bars themselves are tappable
@@ -895,7 +893,6 @@ fun RangeBarChart_Paged_LeftAxis() {
         pageSize = 7,
         unifyYAxisAcrossPages = true,
         yTickStepDefaultForPaged = 10.0,
-        yAxisFixedWidth = 24.dp,
         barWidthRatio = 0.75f,
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "bpm"
@@ -912,7 +909,6 @@ fun RangeBarChart_Paged_RightAxis() {
         unifyYAxisAcrossPages = true,
         yTickStepDefaultForPaged = 10.0,
         yAxisPosition = YAxisPosition.RIGHT,
-        yAxisFixedWidth = 24.dp,
         barWidthRatio = 0.75f,
         interactionType = InteractionType.RangeBar.BAR,
         unit = "bpm"
@@ -1092,6 +1088,7 @@ fun SleepStageChart_1() {
         sleepSession = singleSleepSessionData,
         title = "Sleep Stage Analysis",
         showLabels = true,
+        showXAxis = false,
         onStageClick = { index, tooltipText ->
             // Handle stage click if needed
         },
@@ -1108,6 +1105,7 @@ fun SleepStageChart_2() {
         sleepSession = singleSleepSessionData,
         title = "Sleep Stage Analysis",
         showLabels = true,
+        showXAxis = true,
         onStageClick = { index, tooltipText ->
             // Handle stage click if needed
         },

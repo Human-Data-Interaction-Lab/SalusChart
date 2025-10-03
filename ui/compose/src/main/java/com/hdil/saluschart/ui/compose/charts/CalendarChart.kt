@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -113,6 +114,7 @@ fun SingleMonthCalendarChart(
     )
     val (firstDayOfWeek, totalDays, weeks) = ChartMath.Calendar.computeCalendarMetrics(yearMonth)
     val density = LocalDensity.current
+    val chartType = ChartType.CALENDAR
 
     // Tooltip state
     var chartRootBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
@@ -373,6 +375,7 @@ fun PagedCalendarChart(
 ) {
     val anchor = virtualSpanMonths / 2
     val pagerState = rememberPagerState(initialPage = anchor, pageCount = { virtualSpanMonths })
+    val chartType = ChartType.CALENDAR
 
     fun pageToYearMonth(page: Int): YearMonth =
         initialYearMonth.plusMonths((page - anchor).toLong())

@@ -36,7 +36,6 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
  * @param rangeColor 범위 바 색상
  * @param textColor 범위 텍스트 색상
  * @param showRangeText 범위 텍스트를 표시할지 여부
- * @param chartType 차트 타입 (사용되지 않음, 호환성을 위해 유지)
  */
 @Composable
 fun MinimalGaugeChart(
@@ -48,8 +47,9 @@ fun MinimalGaugeChart(
     rangeColor: Color = Color(0xFFFF9500),
     textColor: Color = Color.Black,
     showRangeText: Boolean = true,
-    chartType: ChartType = ChartType.MINIMAL_GAUGE
 ) {
+    val chartType = ChartType.MINIMAL_GAUGE
+
     // 데이터 범위가 컨테이너 범위를 벗어나지 않도록 클램핑
     val clampedDataMin = data.minPoint.y.coerceIn(containerMin, containerMax)
     val clampedDataMax = data.maxPoint.y.coerceIn(containerMin, containerMax)

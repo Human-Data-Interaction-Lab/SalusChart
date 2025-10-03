@@ -61,7 +61,6 @@ fun StackedBarChart(
     // interaction – choose one
     interactionType: InteractionType.StackedBar = InteractionType.StackedBar.TOUCH_AREA,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)? = null,
-    chartType: ChartType = ChartType.STACKED_BAR,
     maxXTicksLimit: Int? = null,
 
     // reference line
@@ -77,7 +76,6 @@ fun StackedBarChart(
 
     // fixed Y (free-scroll)
     fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 16.dp,
     yTickStep: Double? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
@@ -92,6 +90,7 @@ fun StackedBarChart(
     tooltipSafePaddingEnd: Dp = 0.dp
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.STACKED_BAR
 
     // transform to stacked points
     val stackedData = data.toStackedChartPoints(
@@ -132,14 +131,14 @@ fun StackedBarChart(
                             Modifier
                                 .padding(start = axisOuterPadding)
                                 .fillMaxHeight()
-                                .width(yAxisFixedWidth)
+                                .width(0.dp)
                         ) {
                             FixedPagerYAxisStacked(
                                 minY = minRounded,
                                 maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
                                 yAxisPosition = YAxisPosition.LEFT,
                                 step = tick,
-                                width = yAxisFixedWidth
+                                width = 0.dp
                             )
                         }
                     }
@@ -180,14 +179,14 @@ fun StackedBarChart(
                             Modifier
                                 .padding(end = axisOuterPadding)
                                 .fillMaxHeight()
-                                .width(yAxisFixedWidth)
+                                .width(0.dp)
                         ) {
                             FixedPagerYAxisStacked(
                                 minY = minRounded,
                                 maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
                                 yAxisPosition = YAxisPosition.RIGHT,
                                 step = tick,
-                                width = yAxisFixedWidth
+                                width = 0.dp
                             )
                         }
                     }
@@ -259,10 +258,10 @@ fun StackedBarChart(
                 } else null
 
                 Row(Modifier.fillMaxSize()) {
-                    if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                    if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                         Canvas(
                             modifier = Modifier
-                                .width(yAxisFixedWidth)
+                                .width(0.dp)
                                 .fillMaxHeight()
                         ) {
                             chartMetrics?.let { m ->
@@ -295,7 +294,7 @@ fun StackedBarChart(
                             val m = ChartMath.computeMetrics(
                                 size = size,
                                 values = totals,
-                                chartType = ChartType.STACKED_BAR,
+                                chartType = chartType,
                                 minY = 0.0,
                                 maxY = null,
                                 includeYAxisPadding = !isFixedYAxis,
@@ -401,10 +400,10 @@ fun StackedBarChart(
                         }
                     }
 
-                    if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                    if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                         Canvas(
                             modifier = Modifier
-                                .width(yAxisFixedWidth)
+                                .width(0.dp)
                                 .fillMaxHeight()
                         ) {
                             chartMetrics?.let { m ->
@@ -520,6 +519,7 @@ private fun StackedBarChartPage(
     fixedMaxY: Float
 ) {
     if (stackedData.isEmpty()) return
+    var chartType = ChartType.STACKED_BAR
 
     val labels = stackedData.map { it.label ?: it.x.toString() }
     val totals: List<Double> = stackedData.map { it.y }
@@ -530,7 +530,7 @@ private fun StackedBarChartPage(
             val m = ChartMath.computeMetrics(
                 size = size,
                 values = totals,
-                chartType = ChartType.STACKED_BAR,
+                chartType = chartType,
                 minY = fixedMinY.toDouble(),
                 maxY = fixedMaxY.toDouble(),
                 includeYAxisPadding = false,
@@ -570,7 +570,7 @@ private fun StackedBarChartPage(
                         color = c,
                         barWidthRatio = barWidthRatio,
                         interactive = false,
-                        chartType = ChartType.STACKED_BAR,
+                        chartType = chartType,
                         unit = unit
                     )
                 }
@@ -583,7 +583,7 @@ private fun StackedBarChartPage(
                         minValues = List(stackedData.size) { m.minY },
                         maxValues = totals,
                         metrics = m,
-                        chartType = ChartType.STACKED_BAR,
+                        chartType = chartType,
                         isTouchArea = true,
                         unit = unit,
                         onBarClick = { index, _ -> onBarClick(index, totals[index].toFloat()) }
@@ -596,7 +596,7 @@ private fun StackedBarChartPage(
                         minValues = List(stackedData.size) { m.minY },
                         maxValues = totals,
                         metrics = m,
-                        chartType = ChartType.STACKED_BAR,
+                        chartType = chartType,
                         interactive = true,
                         color = Color.Transparent,
                         unit = unit,

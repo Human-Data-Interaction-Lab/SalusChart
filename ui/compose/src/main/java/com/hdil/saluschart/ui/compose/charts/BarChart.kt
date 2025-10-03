@@ -33,6 +33,7 @@ import com.hdil.saluschart.core.chart.ChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
+import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
@@ -59,7 +60,6 @@ fun BarChart(
     onBarClick: ((Int, Double) -> Unit)? = null,
     showLabel: Boolean = false,
     windowSize: Int? = null,                 // used by free-scroll mode
-    chartType: ChartType = ChartType.BAR,
     maxXTicksLimit: Int? = null,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Black,
@@ -72,8 +72,6 @@ fun BarChart(
 
     // Fixed internal axis (free-scroll mode)
     fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 16.dp,
-
     // grid tick step (both modes)
     yTickStep: Double? = null,
 
@@ -89,6 +87,8 @@ fun BarChart(
     unit: String = "",
 ) {
     if (data.isEmpty()) return
+
+    val chartType = ChartType.BAR
 
     // ─────────────────────────────
     // Paged mode (HorizontalPager)
@@ -122,7 +122,7 @@ fun BarChart(
                         maxY = maxRounded,
                         yAxisPosition = YAxisPosition.LEFT,
                         step = tickStep.toFloat(),
-                        width = yAxisFixedWidth
+                        width = 0.dp
                     )
                 }
 
@@ -155,12 +155,10 @@ fun BarChart(
                         interactionType = interactionType,
                         onBarClick = if (onBarClick != null) { i, v -> onBarClick(start + i, v) } else null,
                         showLabel = showLabel,
-                        chartType = chartType,
                         maxXTicksLimit = pageSize,   // show all labels for the slice
                         referenceLineType = ReferenceLineType.NONE,
                         // suppress internal axis & labels
                         fixedYAxis = true,
-                        yAxisFixedWidth = 0.dp,
                         yTickStep = tickStep,
                         showTitle = false,
                         contentPadding = PaddingValues(start = padStart, end = padEnd),
@@ -174,7 +172,7 @@ fun BarChart(
                         maxY = maxRounded,
                         yAxisPosition = YAxisPosition.RIGHT,
                         step = tickStep.toFloat(),
-                        width = yAxisFixedWidth
+                        width = 0.dp
                     )
                 }
             }
@@ -213,10 +211,10 @@ fun BarChart(
 
             Row(Modifier.fillMaxSize()) {
                 // LEFT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
-                            .width(yAxisFixedWidth)
+                            .width(0.dp)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -250,7 +248,7 @@ fun BarChart(
                         val metrics = ChartMath.computeMetrics(
                             size = size,
                             values = yValues,
-                            chartType = ChartType.BAR,
+                            chartType = chartType,
                             minY = minY,
                             maxY = maxY,
                             includeYAxisPadding = !isFixedYAxis,
@@ -289,7 +287,7 @@ fun BarChart(
                                     color = barColor,
                                     barWidthRatio = barWidthRatio,
                                     interactive = false,
-                                    chartType = ChartType.BAR,
+                                    chartType = chartType,
                                     showTooltipForIndex = selectedBarIndex,
                                     showLabel = showLabel,
                                     unit = unit
@@ -354,10 +352,10 @@ fun BarChart(
                 }
 
                 // RIGHT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
-                            .width(yAxisFixedWidth)
+                            .width(0.dp)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -425,11 +423,9 @@ private fun BarChartPageContent(
     interactionType: InteractionType.Bar,
     onBarClick: ((Int, Double) -> Unit)?,
     showLabel: Boolean,
-    chartType: ChartType,
     maxXTicksLimit: Int?,
     referenceLineType: ReferenceLineType,
     fixedYAxis: Boolean,
-    yAxisFixedWidth: Dp,
     yTickStep: Double,
     showTitle: Boolean,
     contentPadding: PaddingValues,
@@ -451,12 +447,10 @@ private fun BarChartPageContent(
         interactionType = interactionType,
         onBarClick = onBarClick,
         showLabel = showLabel,
-        windowSize = null,                 // no inner scrolling for a page
-        chartType = chartType,
+        windowSize = null,
         maxXTicksLimit = maxXTicksLimit,
         referenceLineType = referenceLineType,
         fixedYAxis = fixedYAxis,
-        yAxisFixedWidth = yAxisFixedWidth,
         yTickStep = yTickStep,
         showTitle = showTitle,
         contentPadding = contentPadding,

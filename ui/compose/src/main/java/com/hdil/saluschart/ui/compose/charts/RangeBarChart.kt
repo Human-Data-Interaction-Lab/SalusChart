@@ -65,14 +65,12 @@ fun RangeBarChart(
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
     onBarClick: ((Int, RangeChartPoint) -> Unit)? = null,
-    chartType: ChartType = ChartType.RANGE_BAR,
     windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
     maxXTicksLimit: Int? = null, // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
     unit: String = "",
 
     // Fixed Y-axis (free-scroll mode)
     fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 16.dp,
     yTickStep: Double? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
@@ -89,6 +87,7 @@ fun RangeBarChart(
     tooltipSafePaddingEnd: Dp = 0.dp  // extra space on the far end to avoid clipping tooltips
 ) {
     if (data.isEmpty()) return
+    val chartType = ChartType.RANGE_BAR
 
     val rangeData = data.toRangeChartPoints(
         minValueSelector = { group: List<ChartPoint> -> group.minByOrNull { it.y } ?: group.first() },
@@ -127,14 +126,14 @@ fun RangeBarChart(
                     Box(Modifier
                         .padding(start = axisOuterPadding)   // gap from the screen edge
                         .fillMaxHeight()
-                        .width(yAxisFixedWidth)
+                        .width(0.dp)
                     ) {
                         FixedPagerYAxisRange(
                             minY = if (unifyYAxisAcrossPages) minRounded.toDouble() else globalMin,
                             maxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else globalMax,
                             yAxisPosition = YAxisPosition.LEFT,
                             step = tickStep.toFloat(),
-                            width = yAxisFixedWidth
+                            width = 0.dp
                         )
                     }
                 }
@@ -162,7 +161,6 @@ fun RangeBarChart(
                         yAxisPosition = yAxisPosition,
                         interactionType = interactionType,
                         onBarClick = if (onBarClick != null) { i, p -> onBarClick(start + i, p) } else null,
-                        chartType = chartType,
                         maxXTicksLimit = pageSize,
                         fixedYAxis = true,
                         yTickStep = tickStep.toDouble(),
@@ -179,14 +177,14 @@ fun RangeBarChart(
                     Box(Modifier
                         .padding(end = axisOuterPadding)     // gap from the screen edge
                         .fillMaxHeight()
-                        .width(yAxisFixedWidth)
+                        .width(0.dp)
                     ) {
                         FixedPagerYAxisRange(
                             minY = if (unifyYAxisAcrossPages) minRounded.toDouble() else globalMin,
                             maxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else globalMax,
                             yAxisPosition = YAxisPosition.RIGHT,
                             step = tickStep.toFloat(),
-                            width = yAxisFixedWidth
+                            width = 0.dp
                         )
                     }
                 }
@@ -225,10 +223,10 @@ fun RangeBarChart(
 
             Row(Modifier.fillMaxSize()) {
                 // LEFT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
-                            .width(yAxisFixedWidth)
+                            .width(0.dp)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -270,7 +268,7 @@ fun RangeBarChart(
                         val metrics = ChartMath.computeMetrics(
                             size = size,
                             values = valuesForScale,
-                            chartType = ChartType.RANGE_BAR,
+                            chartType = chartType,
                             minY = null,
                             maxY = null,
                             includeYAxisPadding = !isFixedYAxis,
@@ -352,10 +350,10 @@ fun RangeBarChart(
                 }
 
                 // RIGHT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
-                            .width(yAxisFixedWidth)
+                            .width(0.dp)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -414,7 +412,6 @@ private fun RangeBarChartPageContent(
     yAxisPosition: YAxisPosition,
     interactionType: InteractionType.RangeBar,
     onBarClick: ((Int, RangeChartPoint) -> Unit)?,
-    chartType: ChartType,
     maxXTicksLimit: Int?,
     fixedYAxis: Boolean,
     yTickStep: Double,
@@ -425,6 +422,7 @@ private fun RangeBarChartPageContent(
     fixedMaxY: Double?
 ) {
     if (rangeData.isEmpty()) return
+    var chartType = ChartType.RANGE_BAR
 
     Column(Modifier.fillMaxWidth().padding(contentPadding)) {
         if (showTitle) {
@@ -445,7 +443,7 @@ private fun RangeBarChartPageContent(
                 val metrics = ChartMath.computeMetrics(
                     size = size,
                     values = valuesForScale,
-                    chartType = ChartType.RANGE_BAR,
+                    chartType = chartType,
                     minY = fixedMinY,
                     maxY = fixedMaxY,
                     includeYAxisPadding = !fixedYAxis,

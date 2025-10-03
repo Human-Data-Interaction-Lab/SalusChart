@@ -30,6 +30,10 @@ import com.hdil.saluschart.core.chart.BaseChartPoint
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.data.model.model.SleepStageType
+import java.time.Instant
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 object SleepStageChartDraw {
     /**
@@ -135,20 +139,30 @@ object SleepStageChartDraw {
                 tooltipOffset = Offset(barX.toFloat(), barY.toFloat())
             }
 
+            // Get sleep stage color based on ordinal (reuse existing sleepStageOrdinal)
+            val sleepStageType = when (sleepStageOrdinal) {
+                0 -> SleepStageType.AWAKE
+                1 -> SleepStageType.REM
+                2 -> SleepStageType.LIGHT
+                3 -> SleepStageType.DEEP
+                else -> SleepStageType.UNKNOWN
+            }
+            val stageColor = ChartMath.SleepStage.getSleepStageColor(sleepStageType)
+            
             val actualColor = if (isTouchArea) {
                 Color.Transparent // 터치 영역용은 투명
             } else {
                 if (actualInteractive) {
                     if (clickedBarIndex == index || clickedBarIndex == null) {
-                        color
+                        stageColor
                     } else {
-                        color.copy(alpha = 0.3f) // 클릭되지 않은 바는 반투명 처리
+                        stageColor.copy(alpha = 0.3f) // 클릭되지 않은 바는 반투명 처리
                     }
                 } else {
                     if (showTooltipForIndex == index || showTooltipForIndex == null) {
-                        color
+                        stageColor
                     } else {
-                        color.copy(alpha = 0.3f) // 클릭되지 않은 바는 반투명 처리
+                        stageColor.copy(alpha = 0.3f) // 클릭되지 않은 바는 반투명 처리
                     }
                 }
             }
@@ -200,7 +214,7 @@ object SleepStageChartDraw {
 
     /**
      * 수면 단계 차트의 X축 레이블을 그립니다.
-     * SleepSession의 시작 시간과 끝 시간을 X축의 첫 번째와 마지막 위치에 표시합니다.
+     * SleepSession의 시작/끝 시간과 중간에 0~3개의 정각 레이블을 표시합니다.
      *
      * @param ctx 그리기 컨텍스트
      * @param metrics 차트 메트릭 정보
@@ -215,17 +229,17 @@ object SleepStageChartDraw {
         endTimeMillis: Double,
         textSize: Float = 28f
     ) {
-        // 시간을 HH:MM:SS 형식으로 변환
-        val startTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis)
-        val endTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis)
+        // 시작/끝 시간을 Instant로 변환
+        val startInstant = Instant.ofEpochMilli(kotlin.math.round(startTimeMillis).toLong())
+        val endInstant = Instant.ofEpochMilli(kotlin.math.round(endTimeMillis).toLong())
+        
+        // 시작과 끝 시간 텍스트 (날짜 포함)
+        val startTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis, withDate = true)
+        val endTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis, withDate = true)
         
         // X축 레이블 위치 계산
-        // 시작 시간: 차트 영역의 맨 왼쪽 (paddingX)
         val startX = metrics.paddingX
-        // 끝 시간: 차트 영역의 맨 오른쪽 (paddingX + chartWidth)
         val endX = metrics.paddingX + metrics.chartWidth
-        
-        // Y 위치: 차트 영역 아래쪽에 레이블 배치
         val labelY = metrics.paddingY + metrics.chartHeight + 50f
         
         // Paint 설정
@@ -237,11 +251,27 @@ object SleepStageChartDraw {
         
         // 시작 시간 레이블 그리기 (왼쪽 정렬)
         paint.textAlign = android.graphics.Paint.Align.LEFT
-        ctx.canvas.nativeCanvas.drawText(startTimeText, startX, labelY, paint)
+        ctx.canvas.nativeCanvas.drawText(startTimeText, startX, labelY + textSize, paint)
         
         // 끝 시간 레이블 그리기 (오른쪽 정렬)
         paint.textAlign = android.graphics.Paint.Align.RIGHT
-        ctx.canvas.nativeCanvas.drawText(endTimeText, endX, labelY, paint)
+        ctx.canvas.nativeCanvas.drawText(endTimeText, endX, labelY + textSize, paint)
+        
+        // 중간 정각 레이블 계산 및 그리기
+        val intermediateLabels = ChartMath.SleepStage.calculateIntermediateHourLabels(startInstant, endInstant)
+        
+        // 중간 레이블 그리기 (중앙 정렬, 날짜 제외)
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        intermediateLabels.forEach { hourInstant ->
+            val hourTimeMs = hourInstant.toEpochMilli().toDouble()
+            val hourText = ChartMath.SleepStage.formatTimeFromMilliseconds(hourTimeMs, withDate = false)
+            
+            // X 위치 계산 (시간 비율에 따라)
+            val ratio = (hourTimeMs - startTimeMillis) / (endTimeMillis - startTimeMillis)
+            val x = metrics.paddingX + ratio.toFloat() * metrics.chartWidth
+            
+            ctx.canvas.nativeCanvas.drawText(hourText, x, labelY, paint)
+        }
     }
 
     /**
@@ -263,7 +293,7 @@ object SleepStageChartDraw {
         val stageHeight = metrics.chartHeight / totalStages
 
         // 각 수면 단계 사이에 수평선 그리기
-        for (i in 1 until totalStages) {
+        for (i in 0 until totalStages + 1) {
             val y = metrics.paddingY + i * stageHeight
 
             ctx.canvas.nativeCanvas.drawLine(
@@ -334,96 +364,75 @@ object SleepStageChartDraw {
      * @param totalSleepStages 전체 수면 단계 수 (기본값: 4)
      * @param barHeightRatio 바 높이 비율 (기본값: 0.5f)
      */
-    @Composable
-    fun SleepStageBarConnector(
+    fun drawSleepStageConnector(
+        drawScope: DrawScope,
         data: List<BaseChartPoint>,
         metrics: ChartMath.ChartMetrics,
         lineColor: Color = Color(0xFFCCCCCC),
-        lineWidth: Float = 2f,
+        lineWidth: Float = 8f,
         totalSleepStages: Int = 4,
         barHeightRatio: Float = 0.5f
     ) {
-        val density = LocalDensity.current
-        
         // 데이터가 2개 미만이면 연결선을 그릴 수 없음
         if (data.size < 2) return
-        
+
         // 바 높이 계산
         val spacing = metrics.chartHeight / totalSleepStages
         val barHeight = spacing * barHeightRatio
-        
-        // 시간순으로 정렬된 데이터에서 연속된 단계들 사이에 연결선 그리기
+
+        // 연속된 단계들 사이에 선 그리기
         for (i in 0 until data.size - 1) {
             val currentStage = data[i]
             val nextStage = data[i + 1]
-            
-            // 현재 단계의 끝점과 다음 단계의 시작점 계산
+
             val currentEndX = if (currentStage is RangeChartPoint) {
-                // RangeChartPoint의 경우 maxPoint.y가 끝 시간
                 ((currentStage.maxPoint.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             } else {
-                // 일반 ChartPoint의 경우 x가 시간
                 ((currentStage.x - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             }
-            
+
             val nextStartX = if (nextStage is RangeChartPoint) {
-                // RangeChartPoint의 경우 minPoint.y가 시작 시간
                 ((nextStage.minPoint.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             } else {
-                // 일반 ChartPoint의 경우 x가 시간
                 ((nextStage.x - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             }
-            
-            // 현재 단계와 다음 단계의 Y 위치 계산 (수면 단계 ordinal 기반)
+
             val currentStageOrdinal = currentStage.x.toInt()
             val nextStageOrdinal = nextStage.x.toInt()
-            
+
             val currentY = metrics.paddingY + currentStageOrdinal * spacing + spacing / 2f
             val nextY = metrics.paddingY + nextStageOrdinal * spacing + spacing / 2f
-            
-            // 연결선 시작점과 끝점 계산 (바 높이를 고려하여 조정)
-            val startX = currentEndX.toFloat()
-            val endX = nextStartX.toFloat()
-            
-            // Y 좌표를 바 높이에 따라 조정
+
+            // (startY < endY)일 때 -barHeight/2 적용
+            val adjustedStartX = if (currentY < nextY) {
+                currentEndX.toFloat()
+            } else {
+                currentEndX.toFloat()
+            }
+            val adjustedEndX = if (currentY < nextY) {
+                nextStartX.toFloat()
+            } else {
+                nextStartX.toFloat()
+            }
+
+            // (startY < endY)일 때 -barHeight/2 적용
             val adjustedStartY = if (currentY < nextY) {
-                // startY < endY: 시작점을 아래로, 끝점을 위로 이동
-                currentY + barHeight / 2f
-            } else {
-                // startY > endY: 시작점을 위로, 끝점을 아래로 이동
                 currentY - barHeight / 2f
-            }
-            
-            val adjustedEndY = if (currentY < nextY) {
-                // startY < endY: 끝점을 위로 이동
-                nextY - barHeight / 2f
             } else {
-                // startY > endY: 끝점을 아래로 이동
-                nextY + barHeight / 2f
+                currentY + barHeight / 2f
             }
-            
-            // Double 좌표를 Dp로 변환
-            val startXDp = with(density) { startX.toDp() }
-            val startYDp = with(density) { adjustedStartY.toDp() }
-            val endXDp = with(density) { endX.toDp() }
-            val endYDp = with(density) { adjustedEndY.toDp() }
-            
-            // 연결선을 그리기 위한 Box (투명하지만 시각적 연결선 역할)
-            // Use absolute values to handle cases where endY < startY (e.g., Awake -> Deep transition)
-            val absoluteWidth = kotlin.math.abs(endXDp.value - startXDp.value).coerceAtLeast(1f).dp
-            val absoluteHeight = kotlin.math.abs(endYDp.value - startYDp.value).coerceAtLeast(1f).dp
-            
-            // Use the minimum Y coordinate as the starting position to avoid negative positioning
-            val minY = kotlin.math.min(startYDp.value, endYDp.value).dp
-            
-            Box(
-                modifier = Modifier
-                    .offset(x = startXDp, y = minY)
-                    .size(
-                        width = absoluteWidth,
-                        height = absoluteHeight
-                    )
-                    .background(color = lineColor.copy(alpha = 0.9f))
+            val adjustedEndY = if (currentY < nextY) {
+                nextY + barHeight / 2f
+            } else {
+                nextY - barHeight / 2f
+            }
+
+            // 선 그리기
+            drawScope.drawLine(
+                color = lineColor.copy(alpha = 0.9f),
+                start = Offset(adjustedStartX, adjustedStartY),
+                end = Offset(adjustedEndX, adjustedEndY),
+                strokeWidth = lineWidth
             )
         }
     }

@@ -65,8 +65,8 @@ fun RangeBarChart(
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
     onBarClick: ((Int, RangeChartPoint) -> Unit)? = null,
-    windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
-    maxXTicksLimit: Int? = null, // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    windowSize: Int? = null,
+    maxXTicksLimit: Int? = null,
     unit: String = "",
 
     // Fixed Y-axis (free-scroll mode)
@@ -77,119 +77,55 @@ fun RangeBarChart(
     autoFixYAxisOnScroll: Boolean = true,
 
     // Paged mode
+    pagingEnabled: Boolean = false,
     pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
     yTickStepDefaultForPaged: Double = 10.0,
+    initialPage: Int? = null,
+    yAxisFixedWidth: Dp = 2.dp,               // external fixed axis width in paged mode
+    outerPadding: PaddingValues = contentPadding, // wraps axis + pager
 
-    // spacing / layout (paged mode)
-    axisOuterPadding: Dp = 12.dp,      // gap between screen edge and fixed Y axis
-    axisToBarsGap: Dp = 0.dp,          // tiny gap between fixed Y axis and first bar
-    tooltipSafePaddingEnd: Dp = 0.dp  // extra space on the far end to avoid clipping tooltips
+    // spacing (paged)
+    axisToBarsGap: Dp = 0.dp,
+    tooltipSafePaddingEnd: Dp = 0.dp
 ) {
     if (data.isEmpty()) return
     val chartType = ChartType.RANGE_BAR
 
-    val rangeData = data.toRangeChartPoints(
-        minValueSelector = { group: List<ChartPoint> -> group.minByOrNull { it.y } ?: group.first() },
-        maxValueSelector = { group: List<ChartPoint> -> group.maxByOrNull { it.y } ?: group.first() }
-    )
+    // transform once
+    val rangeData = remember(data) {
+        data.toRangeChartPoints(
+            minValueSelector = { g -> g.minByOrNull { it.y } ?: g.first() },
+            maxValueSelector = { g -> g.maxByOrNull { it.y } ?: g.first() }
+        )
+    }
     if (rangeData.isEmpty()) return
 
-    // ─────────────────────────────
-    // Paged mode (HorizontalPager)
-    // ─────────────────────────────
-    if (pageSize != null && pageSize > 0) {
-        val pageCount = remember(rangeData.size, pageSize) {
-            kotlin.math.ceil(rangeData.size / pageSize.toFloat()).toInt()
-        }
-        val pagerState = rememberPagerState(
-            initialPage = pageCount - 1,
-            pageCount = { pageCount }
+    val effectivePageSize = (pageSize ?: 0).coerceAtLeast(0)
+    val enablePaging = effectivePageSize > 0 && rangeData.size > effectivePageSize
+
+    if (enablePaging) {
+        RangeBarChartPagedInternal(
+            modifier = modifier,
+            data = rangeData,
+            title = title,
+            barColor = barColor,
+            barWidthRatio = barWidthRatio,
+            yAxisPosition = yAxisPosition,
+            interactionType = interactionType,
+            onBarClick = onBarClick,
+            maxXTicksLimit = effectivePageSize,
+            unit = unit,
+            // paging/scale
+            pageSize = effectivePageSize,
+            unifyYAxisAcrossPages = unifyYAxisAcrossPages,
+            yTickStep = yTickStep ?: yTickStepDefaultForPaged,
+            initialPage = initialPage,
+            yAxisFixedWidth = yAxisFixedWidth,
+            axisToBarsGap = axisToBarsGap,
+            tooltipSafePaddingEnd = tooltipSafePaddingEnd,
+            outerPadding = outerPadding
         )
-
-        // Unified axis across pages for a stable Y scale
-        val globalMin = rangeData.minOf { it.minPoint.y }
-        val globalMax = rangeData.maxOf { it.maxPoint.y }
-        val tickStep = yTickStep ?: yTickStepDefaultForPaged
-        val minRounded = (kotlin.math.floor(globalMin / tickStep) * tickStep).toFloat()
-        val maxRounded = globalMax.toFloat().roundUpToStep(tickStep.toFloat())
-
-        Column(modifier) {
-            if (showTitle) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-            }
-
-            Row(Modifier.fillMaxWidth()) {
-                // LEFT fixed axis
-                if (yAxisPosition == YAxisPosition.LEFT) {
-                    Box(Modifier
-                        .padding(start = axisOuterPadding)   // gap from the screen edge
-                        .fillMaxHeight()
-                        .width(0.dp)
-                    ) {
-                        FixedPagerYAxisRange(
-                            minY = if (unifyYAxisAcrossPages) minRounded.toDouble() else globalMin,
-                            maxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else globalMax,
-                            yAxisPosition = YAxisPosition.LEFT,
-                            step = tickStep.toFloat(),
-                            width = 0.dp
-                        )
-                    }
-                }
-
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                ) { page ->
-                    val start = page * pageSize
-                    val end   = kotlin.math.min(start + pageSize, rangeData.size)
-                    val slice = rangeData.subList(start, end)
-
-                    val padStart = if (yAxisPosition == YAxisPosition.LEFT) axisToBarsGap else 16.dp
-                    // add extra space at the far end for tooltip safety
-                    val baseEnd  = if (yAxisPosition == YAxisPosition.RIGHT) axisToBarsGap else 16.dp
-                    val padEnd   = baseEnd + tooltipSafePaddingEnd
-
-                    RangeBarChartPageContent(
-                        rangeData = slice,
-                        title = title,
-                        barColor = barColor,
-                        barWidthRatio = barWidthRatio,
-                        yAxisPosition = yAxisPosition,
-                        interactionType = interactionType,
-                        onBarClick = if (onBarClick != null) { i, p -> onBarClick(start + i, p) } else null,
-                        maxXTicksLimit = pageSize,
-                        fixedYAxis = true,
-                        yTickStep = tickStep.toDouble(),
-                        showTitle = false,
-                        contentPadding = PaddingValues(start = padStart, end = padEnd),
-                        unit = unit,
-                        fixedMinY = if (unifyYAxisAcrossPages) minRounded.toDouble() else null,
-                        fixedMaxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else null,
-                    )
-                }
-
-                // RIGHT fixed axis
-                if (yAxisPosition == YAxisPosition.RIGHT) {
-                    Box(Modifier
-                        .padding(end = axisOuterPadding)     // gap from the screen edge
-                        .fillMaxHeight()
-                        .width(0.dp)
-                    ) {
-                        FixedPagerYAxisRange(
-                            minY = if (unifyYAxisAcrossPages) minRounded.toDouble() else globalMin,
-                            maxY = if (unifyYAxisAcrossPages) maxRounded.toDouble() else globalMax,
-                            yAxisPosition = YAxisPosition.RIGHT,
-                            step = tickStep.toFloat(),
-                            width = 0.dp
-                        )
-                    }
-                }
-            }
-        }
         return
     }
 
@@ -403,9 +339,11 @@ private fun FixedPagerYAxisRange(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RangeBarChartPageContent(
-    rangeData: List<RangeChartPoint>,
+private fun RangeBarChartPagedInternal(
+    modifier: Modifier,
+    data: List<RangeChartPoint>,
     title: String,
     barColor: Color,
     barWidthRatio: Float,
@@ -413,111 +351,153 @@ private fun RangeBarChartPageContent(
     interactionType: InteractionType.RangeBar,
     onBarClick: ((Int, RangeChartPoint) -> Unit)?,
     maxXTicksLimit: Int?,
-    fixedYAxis: Boolean,
-    yTickStep: Double,
-    showTitle: Boolean,
-    contentPadding: PaddingValues,
     unit: String,
-    fixedMinY: Double?,
-    fixedMaxY: Double?
+    // paging/scale
+    pageSize: Int,
+    unifyYAxisAcrossPages: Boolean,
+    yTickStep: Double,
+    initialPage: Int?,
+    yAxisFixedWidth: Dp,
+    axisToBarsGap: Dp,
+    tooltipSafePaddingEnd: Dp,
+    outerPadding: PaddingValues
 ) {
-    if (rangeData.isEmpty()) return
-    var chartType = ChartType.RANGE_BAR
+    val pageCount = remember(data.size, pageSize) {
+        kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
+    }
+    val firstPage = initialPage ?: (pageCount - 1).coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
 
-    Column(Modifier.fillMaxWidth().padding(contentPadding)) {
-        if (showTitle) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-        }
+    val globalMin = remember(data) { data.minOf { it.minPoint.y } }
+    val globalMax = remember(data) { data.maxOf { it.maxPoint.y } }
+    val minRounded = kotlin.math.floor(globalMin / yTickStep) * yTickStep
+    val maxRounded = kotlin.math.ceil(globalMax / yTickStep) * yTickStep
 
-        val labels = rangeData.map { it.label ?: it.x.toString() }
-        var metricsState by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
-        var selectedIndex by remember { mutableStateOf<Int?>(null) }
+    Column(modifier = modifier.padding(outerPadding)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(12.dp))
 
-        Box(Modifier.fillMaxWidth().fillMaxHeight()) {
-            Canvas(Modifier.fillMaxSize()) {
-                val valuesForScale = buildList {
-                    addAll(rangeData.map { it.minPoint.y })
-                    addAll(rangeData.map { it.maxPoint.y })
-                }
-                val metrics = ChartMath.computeMetrics(
-                    size = size,
-                    values = valuesForScale,
-                    chartType = chartType,
-                    minY = fixedMinY,
-                    maxY = fixedMaxY,
-                    includeYAxisPadding = !fixedYAxis,
-                    fixedTickStep = yTickStep
-                )
-                metricsState = metrics
-
-                ChartDraw.drawGrid(
-                    drawScope = this,
-                    size = size,
-                    metrics = metrics,
-                    yAxisPosition = yAxisPosition,
-                    drawLabels = !fixedYAxis
-                )
-                if (!fixedYAxis) {
-                    ChartDraw.drawYAxis(this, metrics, yAxisPosition)
-                }
-                ChartDraw.Bar.drawBarXAxisLabels(
-                    ctx = drawContext,
-                    labels = labels,
-                    metrics = metrics,
-                    maxXTicksLimit = maxXTicksLimit
+        Row(Modifier.fillMaxWidth()) {
+            if (yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                FixedPagerYAxisRange(
+                    minY = if (unifyYAxisAcrossPages) minRounded else globalMin,
+                    maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                    yAxisPosition = YAxisPosition.LEFT,
+                    step = yTickStep.toFloat(),
+                    width = yAxisFixedWidth
                 )
             }
 
-            val minValues = rangeData.map { it.minPoint.y }
-            val maxValues = rangeData.map { it.maxPoint.y }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) { page ->
+                val start = page * pageSize
+                val end = kotlin.math.min(start + pageSize, data.size)
+                val slice = data.subList(start, end)
 
-            when (interactionType) {
-                InteractionType.RangeBar.TOUCH_AREA -> {
-                    metricsState?.let { m ->
-                        ChartDraw.Bar.BarMarker(
-                            data = rangeData,
-                            minValues = minValues,
-                            maxValues = maxValues,
-                            metrics = m,
-                            color = barColor,
-                            barWidthRatio = barWidthRatio,
-                            interactive = false,
-                            chartType = chartType,
-                            showTooltipForIndex = selectedIndex,
-                            unit = unit
+                val labels = slice.map { it.label ?: it.x.toString() }
+                val minValues = slice.map { it.minPoint.y }
+                val maxValues = slice.map { it.maxPoint.y }
+
+                val padStart = if (yAxisPosition == YAxisPosition.LEFT) axisToBarsGap else 0.dp
+                val baseEnd  = if (yAxisPosition == YAxisPosition.RIGHT) axisToBarsGap else 0.dp
+                val padEnd   = baseEnd + tooltipSafePaddingEnd
+
+                var metrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
+                var selectedIndex by remember { mutableStateOf<Int?>(null) }
+
+                Box(Modifier.fillMaxWidth().padding(PaddingValues(start = padStart, end = padEnd))) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        val valuesForScale = if (unifyYAxisAcrossPages) {
+                            listOf(minRounded, maxRounded)
+                        } else {
+                            buildList {
+                                addAll(minValues)
+                                addAll(maxValues)
+                            }
+                        }
+                        val m = ChartMath.computeMetrics(
+                            size = size,
+                            values = valuesForScale,
+                            chartType = ChartType.RANGE_BAR,
+                            minY = if (unifyYAxisAcrossPages) minRounded else null,
+                            maxY = if (unifyYAxisAcrossPages) maxRounded else null,
+                            includeYAxisPadding = false,
+                            fixedTickStep = yTickStep
                         )
-                        ChartDraw.Bar.BarMarker(
-                            data = rangeData,
-                            minValues = List(rangeData.size) { m.minY },
-                            maxValues = maxValues,
+                        metrics = m
+
+                        ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = false)
+                        ChartDraw.drawXAxis(this, m)
+                        ChartDraw.Bar.drawBarXAxisLabels(
+                            ctx = drawContext,
+                            labels = labels,
                             metrics = m,
-                            onBarClick = { idx, _ ->
-                                selectedIndex = if (selectedIndex == idx) null else idx
-                                onBarClick?.invoke(idx, rangeData[idx])
-                            },
-                            chartType = chartType,
-                            isTouchArea = true,
-                            unit = unit
-                        )
-                    }
-                }
-                InteractionType.RangeBar.BAR -> {
-                    metricsState?.let { m ->
-                        ChartDraw.Bar.BarMarker(
-                            data = rangeData,
-                            minValues = minValues,
-                            maxValues = maxValues,
-                            metrics = m,
-                            color = barColor,
-                            barWidthRatio = barWidthRatio,
-                            interactive = true,
-                            onBarClick = { idx, _ -> onBarClick?.invoke(idx, rangeData[idx]) },
-                            chartType = chartType,
-                            unit = unit
+                            maxXTicksLimit = maxXTicksLimit
                         )
                     }
+
+                    metrics?.let { m ->
+                        when (interactionType) {
+                            InteractionType.RangeBar.TOUCH_AREA -> {
+                                ChartDraw.Bar.BarMarker(
+                                    data = slice,
+                                    minValues = minValues,
+                                    maxValues = maxValues,
+                                    metrics = m,
+                                    color = barColor,
+                                    barWidthRatio = barWidthRatio,
+                                    interactive = false,
+                                    chartType = ChartType.RANGE_BAR,
+                                    showTooltipForIndex = selectedIndex,
+                                    unit = unit
+                                )
+                                ChartDraw.Bar.BarMarker(
+                                    data = slice,
+                                    minValues = List(slice.size) { m.minY },
+                                    maxValues = maxValues,
+                                    metrics = m,
+                                    onBarClick = { localIdx, _ ->
+                                        selectedIndex = if (selectedIndex == localIdx) null else localIdx
+                                        onBarClick?.invoke(start + localIdx, slice[localIdx])
+                                    },
+                                    chartType = ChartType.RANGE_BAR,
+                                    isTouchArea = true,
+                                    unit = unit
+                                )
+                            }
+                            InteractionType.RangeBar.BAR -> {
+                                ChartDraw.Bar.BarMarker(
+                                    data = slice,
+                                    minValues = minValues,
+                                    maxValues = maxValues,
+                                    metrics = m,
+                                    color = barColor,
+                                    barWidthRatio = barWidthRatio,
+                                    interactive = true,
+                                    onBarClick = { localIdx, _ ->
+                                        onBarClick?.invoke(start + localIdx, slice[localIdx])
+                                    },
+                                    chartType = ChartType.RANGE_BAR,
+                                    unit = unit
+                                )
+                            }
+                        }
+                    }
                 }
+            }
+
+            if (yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                FixedPagerYAxisRange(
+                    minY = if (unifyYAxisAcrossPages) minRounded else globalMin,
+                    maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                    yAxisPosition = YAxisPosition.RIGHT,
+                    step = yTickStep.toFloat(),
+                    width = yAxisFixedWidth
+                )
             }
         }
     }

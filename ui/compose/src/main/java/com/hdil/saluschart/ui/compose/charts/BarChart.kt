@@ -59,7 +59,7 @@ fun BarChart(
     interactionType: InteractionType.Bar = InteractionType.Bar.BAR,
     onBarClick: ((Int, Double) -> Unit)? = null,
     showLabel: Boolean = false,
-    windowSize: Int? = null,                 // used by free-scroll mode
+    windowSize: Int? = null,                 // free-scroll mode only
     maxXTicksLimit: Int? = null,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Black,
@@ -70,118 +70,69 @@ fun BarChart(
     referenceLineInteractive: Boolean = false,
     onReferenceLineClick: (() -> Unit)? = null,
 
-    // Fixed internal axis (free-scroll mode)
+    // Free-scroll mode axis fix
     fixedYAxis: Boolean = false,
-    // grid tick step (both modes)
+    // Grid tick step (both modes)
     yTickStep: Double? = null,
 
-    // Outer padding when using the free-scroll mode
+    // Free-scroll paddings
     contentPadding: PaddingValues = PaddingValues(16.dp),
     showTitle: Boolean = true,
     autoFixYAxisOnScroll: Boolean = true,
 
-    // NEW — paged mode
-    pageSize: Int? = null,                      // if not null => paged mode
-    unifyYAxisAcrossPages: Boolean = true,      // for paged mode
-    yTickStepDefaultForPaged: Double = 10.0,       // for paged mode (use 10s)
+    renderInnerYAxis: Boolean = true,
+    pagingEnabled: Boolean = false,          // when true -> pager path
+    pageSize: Int? = null,                       // items per page
+    unifyYAxisAcrossPages: Boolean = true,
+    initialPage: Int? = null,
+    yAxisFixedWidth: Dp = 6.dp,             // external axis width in paged mode
+    yTickStepDefaultForPaged: Double = 10.0, // default step if none given
     unit: String = "",
 ) {
     if (data.isEmpty()) return
 
-    val chartType = ChartType.BAR
+    // compute effective page size (0 = off)
+    val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
 
-    // ─────────────────────────────
-    // Paged mode (HorizontalPager)
-    // ─────────────────────────────
-    if (pageSize != null && pageSize > 0) {
-        val pageCount = remember(data.size, pageSize) {
-            kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
-        }
-        val pagerState = rememberPagerState(
-            initialPage = pageCount - 1,
-            pageCount = { pageCount }
+    // enable paging if either:
+    //  - caller set a positive pageSize (old style), or
+    //  - caller set pagingEnabled=true AND provided a positive pageSize (new style)
+    val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
+
+    if (enablePaging) {
+        BarChartPagedInternal(
+            modifier = modifier,
+            data = data,
+            pageSize = requestedPageSize,
+            // visuals
+            title = title,
+            xLabel = xLabel,
+            yLabel = yLabel,
+            barColor = barColor,
+            barWidthRatio = barWidthRatio,
+            xLabelTextSize = xLabelTextSize,
+            tooltipTextSize = tooltipTextSize,
+            interactionType = interactionType,
+            yAxisPosition = yAxisPosition,
+            yAxisFixedWidth = yAxisFixedWidth,
+            showLabel = showLabel,
+            onBarClick = onBarClick,
+            // scale/paging
+            outerPadding = contentPadding,
+            unifyYAxisAcrossPages = unifyYAxisAcrossPages,
+            yTickStep = yTickStep ?: yTickStepDefaultForPaged,
+            initialPage = initialPage,
+            minY = minY,
+            maxY = maxY,
+            unit = unit
         )
-
-        // Global max rounded to next tick so the fixed axis & pages align perfectly
-        val rawMax = if (unifyYAxisAcrossPages) data.maxOf { it.y } else data.maxOf { it.y }
-        val tickStep = yTickStep ?: yTickStepDefaultForPaged
-        val maxRounded = remember(rawMax, tickStep) {
-            kotlin.math.ceil(rawMax / tickStep) * tickStep
-        }
-
-        Column(modifier) {
-            if (showTitle) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-            }
-
-            Row(Modifier.fillMaxWidth()) {
-                // LEFT fixed axis
-                if (yAxisPosition == YAxisPosition.LEFT) {
-                    FixedPagerYAxis(
-                        maxY = maxRounded,
-                        yAxisPosition = YAxisPosition.LEFT,
-                        step = tickStep.toFloat(),
-                        width = 0.dp
-                    )
-                }
-
-                // Pager pages (bars only; internal axis suppressed)
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.weight(1f)
-                ) { page ->
-                    val start = page * pageSize
-                    val end = kotlin.math.min(start + pageSize, data.size)
-                    val slice = data.subList(start, end)
-
-                    // Axis side = 0.dp (so bars hug the fixed axis), far side = 16.dp
-                    val padStart = if (yAxisPosition == YAxisPosition.LEFT) 0.dp else 16.dp
-                    val padEnd   = if (yAxisPosition == YAxisPosition.RIGHT) 0.dp else 16.dp
-
-                    // Render one "page" using the same BarChart body (free-scroll path)
-                    BarChartPageContent(
-                        data = slice,
-                        xLabel = xLabel,
-                        yLabel = yLabel,
-                        title = title,
-                        barColor = barColor,
-                        minY = null,                 // BAR => baseline 0
-                        maxY = maxRounded,           // unified with axis
-                        barWidthRatio = barWidthRatio,
-                        xLabelTextSize = xLabelTextSize,
-                        tooltipTextSize = tooltipTextSize,
-                        yAxisPosition = yAxisPosition,
-                        interactionType = interactionType,
-                        onBarClick = if (onBarClick != null) { i, v -> onBarClick(start + i, v) } else null,
-                        showLabel = showLabel,
-                        maxXTicksLimit = pageSize,   // show all labels for the slice
-                        referenceLineType = ReferenceLineType.NONE,
-                        // suppress internal axis & labels
-                        fixedYAxis = true,
-                        yTickStep = tickStep,
-                        showTitle = false,
-                        contentPadding = PaddingValues(start = padStart, end = padEnd),
-                        unit = unit
-                    )
-                }
-
-                // RIGHT fixed axis
-                if (yAxisPosition == YAxisPosition.RIGHT) {
-                    FixedPagerYAxis(
-                        maxY = maxRounded,
-                        yAxisPosition = YAxisPosition.RIGHT,
-                        step = tickStep.toFloat(),
-                        width = 0.dp
-                    )
-                }
-            }
-        }
         return
     }
 
+    val chartType = ChartType.BAR
+
     // ─────────────────────────────
-    // Free-scroll mode (existing)
+    // Free-scroll mode
     // ─────────────────────────────
     val useScrolling  = windowSize != null && windowSize < data.size
     val isFixedYAxis = if (autoFixYAxisOnScroll) (fixedYAxis || useScrolling) else fixedYAxis
@@ -211,7 +162,7 @@ fun BarChart(
 
             Row(Modifier.fillMaxSize()) {
                 // LEFT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                if (renderInnerYAxis && isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
                             .width(0.dp)
@@ -228,7 +179,6 @@ fun BarChart(
                     }
                 }
 
-                // Chart area
                 val startPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) 0.dp else marginHorizontal
                 val endPad   = if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) 0.dp else marginHorizontal
 
@@ -261,9 +211,9 @@ fun BarChart(
                             size = size,
                             metrics = metrics,
                             yAxisPosition = yAxisPosition,
-                            drawLabels = !isFixedYAxis
+                            drawLabels = renderInnerYAxis && !isFixedYAxis
                         )
-                        if (!isFixedYAxis) {
+                        if (renderInnerYAxis && !isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
                         ChartDraw.Bar.drawBarXAxisLabels(
@@ -275,7 +225,7 @@ fun BarChart(
                         )
                     }
 
-                    // Bars & interaction (unchanged)
+                    // Bars & interaction
                     when (interactionType) {
                         InteractionType.Bar.TOUCH_AREA -> {
                             chartMetrics?.let { metrics ->
@@ -299,7 +249,7 @@ fun BarChart(
                                     minValues = List(yValues.size) { metrics.minY },
                                     maxValues = yValues,
                                     metrics = metrics,
-                                    onBarClick = { index, tooltipText ->
+                                    onBarClick = { index, _ ->
                                         selectedBarIndex = if (selectedBarIndex == index) null else index
                                         onBarClick?.invoke(index, data.getOrNull(index)?.y ?: 0.0)
                                     },
@@ -319,7 +269,7 @@ fun BarChart(
                                     color = barColor,
                                     barWidthRatio = barWidthRatio,
                                     interactive = true,
-                                    onBarClick = { index, tooltipText ->
+                                    onBarClick = { index, _ ->
                                         onBarClick?.invoke(index, data.getOrNull(index)?.y ?: 0.0)
                                     },
                                     chartType = chartType,
@@ -352,7 +302,7 @@ fun BarChart(
                 }
 
                 // RIGHT fixed axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                if (renderInnerYAxis && isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
                             .width(0.dp)
@@ -375,6 +325,126 @@ fun BarChart(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun BarChartPagedInternal(
+    modifier: Modifier,
+    data: List<ChartPoint>,
+    pageSize: Int,
+    // visuals
+    title: String,
+    xLabel: String,
+    yLabel: String,
+    barColor: Color,
+    barWidthRatio: Float,
+    xLabelTextSize: Float,
+    tooltipTextSize: Float,
+    interactionType: InteractionType.Bar,
+    yAxisPosition: YAxisPosition,
+    yAxisFixedWidth: Dp,
+    showLabel: Boolean,
+    onBarClick: ((Int, Double) -> Unit)?,
+    // scale/paging
+    unifyYAxisAcrossPages: Boolean,
+    yTickStep: Double,
+    initialPage: Int?,
+    minY: Double?,
+    maxY: Double?,
+    unit: String,
+    outerPadding: PaddingValues = PaddingValues(0.dp),
+) {
+    val pageCount = remember(data.size, pageSize) {
+        kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
+    }
+    val firstPage = initialPage ?: (pageCount - 1).coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
+
+    // unified Y-range (respect explicit maxY if provided)
+    val rawMax = if (unifyYAxisAcrossPages) data.maxOf { it.y } else data.maxOf { it.y }
+    val forcedMax = maxY ?: rawMax
+    val maxRounded = remember(forcedMax, yTickStep) {
+        kotlin.math.ceil(forcedMax / yTickStep) * yTickStep
+    }
+
+    Column(modifier = modifier.padding(outerPadding)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(12.dp))
+
+        Row(Modifier.fillMaxWidth()) {
+            // LEFT fixed external Y-axis
+            if (yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                FixedPagerYAxis(
+                    maxY = maxRounded,
+                    yAxisPosition = yAxisPosition,
+                    step = yTickStep.toFloat(),
+                    width = yAxisFixedWidth
+                )
+            }
+
+            // PAGER
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { page ->
+                val start = page * pageSize
+                val end = kotlin.math.min(start + pageSize, data.size)
+                val slice = data.subList(start, end)
+
+                val padStart = if (yAxisPosition == YAxisPosition.LEFT) 0.dp else 0.dp
+                val padEnd   = if (yAxisPosition == YAxisPosition.RIGHT) 0.dp else 0.dp
+
+                // Render a normal BarChart page:
+                // - no inner scroll (windowSize = null)
+                // - fixedYAxis = true (hide inner axis)
+                // - maxY unified with the external axis
+                BarChart(
+                    modifier = Modifier.fillMaxWidth().height(250.dp),
+                    data = slice,
+                    xLabel = xLabel,
+                    yLabel = yLabel,
+                    title = title,
+                    barColor = barColor,
+                    minY = 0.0.takeIf { false } ?: minY,
+                    maxY = maxRounded,
+                    barWidthRatio = barWidthRatio,
+                    xLabelTextSize = xLabelTextSize,
+                    tooltipTextSize = tooltipTextSize,
+                    yAxisPosition = yAxisPosition,
+                    interactionType = interactionType,
+                    onBarClick = onBarClick?.let { cb ->
+                        { i, v -> cb(start + i, v) } // rebase index to global
+                    },
+                    showLabel = showLabel,
+                    windowSize = null,                 // no inner scroll
+                    maxXTicksLimit = slice.size,       // show all labels in page
+                    referenceLineType = ReferenceLineType.NONE,
+                    fixedYAxis = true,                 // suppress inner axis
+                    yAxisFixedWidth = 0.dp,
+                    renderInnerYAxis = false,
+                    yTickStep = yTickStep,
+                    showTitle = false,
+                    contentPadding = PaddingValues(
+                        start = padStart, end = padEnd, top = 0.dp, bottom = 0.dp
+                    ),
+                    autoFixYAxisOnScroll = false,      // page isn’t scrollable
+                    pagingEnabled = false,             // don’t recurse
+                    unit = unit
+                )
+            }
+
+            // RIGHT fixed external Y-axis
+            if (yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                FixedPagerYAxis(
+                    maxY = maxRounded,
+                    yAxisPosition = yAxisPosition,
+                    step = yTickStep.toFloat(),
+                    width = yAxisFixedWidth
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun FixedPagerYAxis(
     maxY: Double,
@@ -387,7 +457,6 @@ private fun FixedPagerYAxis(
             .width(width)
             .fillMaxHeight()
     ) {
-        // Metrics for just the vertical axis & ticks
         val m = ChartMath.computeMetrics(
             size = size,
             values = listOf(0.0, maxY),
@@ -397,7 +466,6 @@ private fun FixedPagerYAxis(
             includeYAxisPadding = false,
             fixedTickStep = step.toDouble()
         )
-
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
             metrics = m,
@@ -405,55 +473,4 @@ private fun FixedPagerYAxis(
             paneWidthPx = size.width
         )
     }
-}
-
-@Composable
-private fun BarChartPageContent(
-    data: List<ChartPoint>,
-    xLabel: String,
-    yLabel: String,
-    title: String,
-    barColor: Color,
-    minY: Double?,
-    maxY: Double?,
-    barWidthRatio: Float,
-    xLabelTextSize: Float,
-    tooltipTextSize: Float,
-    yAxisPosition: YAxisPosition,
-    interactionType: InteractionType.Bar,
-    onBarClick: ((Int, Double) -> Unit)?,
-    showLabel: Boolean,
-    maxXTicksLimit: Int?,
-    referenceLineType: ReferenceLineType,
-    fixedYAxis: Boolean,
-    yTickStep: Double,
-    showTitle: Boolean,
-    contentPadding: PaddingValues,
-    unit: String = "",
-) {
-    BarChart(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = data,
-        xLabel = xLabel,
-        yLabel = yLabel,
-        title = title,
-        barColor = barColor,
-        minY = minY,
-        maxY = maxY,
-        barWidthRatio = barWidthRatio,
-        xLabelTextSize = xLabelTextSize,
-        tooltipTextSize = tooltipTextSize,
-        yAxisPosition = yAxisPosition,
-        interactionType = interactionType,
-        onBarClick = onBarClick,
-        showLabel = showLabel,
-        windowSize = null,
-        maxXTicksLimit = maxXTicksLimit,
-        referenceLineType = referenceLineType,
-        fixedYAxis = fixedYAxis,
-        yTickStep = yTickStep,
-        showTitle = showTitle,
-        contentPadding = contentPadding,
-        unit = unit
-    )
 }

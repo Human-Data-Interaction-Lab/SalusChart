@@ -99,7 +99,6 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Progress Ring Chart",
         "Standard Bar Chart",
         "BarChart with Paging",
-        "BarChart 3",
         "Standard Line Chart",
         "LineChart with Paging",
         "CalendarChart 1",

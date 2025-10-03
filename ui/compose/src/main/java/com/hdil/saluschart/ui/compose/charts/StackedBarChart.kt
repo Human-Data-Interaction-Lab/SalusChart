@@ -85,7 +85,9 @@ fun StackedBarChart(
     pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
     yTickStepDefaultForPaged: Double = 10.0,
-    axisOuterPadding: Dp = 12.dp,
+    initialPage: Int? = null,
+    yAxisFixedWidth: Dp = 2.dp,
+    outerPadding: PaddingValues = contentPadding,
     axisToBarsGap: Dp = 0.dp,
     tooltipSafePaddingEnd: Dp = 0.dp
 ) {
@@ -96,139 +98,37 @@ fun StackedBarChart(
     val stackedData = data.toStackedChartPoints(
         segmentOrdering = { group: List<ChartPoint> -> group.sortedByDescending { it.y } }
     )
-    if (stackedData.isEmpty()) return
-
+    val totals: List<Double> = stackedData.map { it.y }
     val xLabels = stackedData.map { it.label ?: it.x.toString() }
-    val totals: List<Double> = stackedData.map { it.y } // Double values for ChartMath
-    val globalMax: Double = totals.maxOrNull() ?: 0.0
+    val effectivePageSize = (pageSize ?: 0).coerceAtLeast(0)
+    val enablePaging = effectivePageSize > 0 && data.size > effectivePageSize
 
-    // ─────────────────────────
-    // PAGED MODE
-    // ─────────────────────────
-    if (pageSize != null && pageSize > 0) {
-        val pageCount = remember(stackedData.size, pageSize) {
-            ceil(stackedData.size / pageSize.toDouble()).toInt()
-        }
-        val pagerState = rememberPagerState(
-            initialPage = pageCount - 1,
-            pageCount = { pageCount }
+    if (enablePaging) {
+        StackedBarChartPagedInternal(
+            modifier = modifier,
+            data = data,
+            segmentLabels = segmentLabels,
+            xLabel = xLabel,
+            yLabel = yLabel,
+            title = title,
+            colors = colors,
+            barWidthRatio = barWidthRatio,
+            showLegend = showLegend,
+            legendPosition = legendPosition,
+            interactionType = interactionType,
+            onBarClick = onBarClick,
+            maxXTicksLimit = effectivePageSize, // show all labels in page
+            unit = unit,
+            pageSize = effectivePageSize,
+            unifyYAxisAcrossPages = unifyYAxisAcrossPages,
+            yTickStep = yTickStep ?: yTickStepDefaultForPaged,
+            initialPage = initialPage,
+            yAxisPosition = yAxisPosition,
+            yAxisFixedWidth = yAxisFixedWidth,
+            axisToBarsGap = axisToBarsGap,
+            tooltipSafePaddingEnd = tooltipSafePaddingEnd,
+            outerPadding = outerPadding
         )
-
-        val tick = yTickStep ?: yTickStepDefaultForPaged
-        val minRounded = 0.0
-        val maxRounded = ceilToStep(globalMax, tick).coerceAtLeast(tick)
-
-        Column(modifier) {
-            if (showTitle) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-            }
-
-            val chartArea: @Composable () -> Unit = {
-                Row(Modifier.fillMaxWidth()) {
-                    if (yAxisPosition == YAxisPosition.LEFT) {
-                        Box(
-                            Modifier
-                                .padding(start = axisOuterPadding)
-                                .fillMaxHeight()
-                                .width(0.dp)
-                        ) {
-                            FixedPagerYAxisStacked(
-                                minY = minRounded,
-                                maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
-                                yAxisPosition = YAxisPosition.LEFT,
-                                step = tick,
-                                width = 0.dp
-                            )
-                        }
-                    }
-
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.weight(1f)
-                    ) { page ->
-                        val start = page * pageSize
-                        val end = min(start + pageSize, stackedData.size)
-                        val slice = stackedData.subList(start, end)
-
-                        val padStart =
-                            if (yAxisPosition == YAxisPosition.LEFT) axisToBarsGap else 16.dp
-                        val baseEnd =
-                            if (yAxisPosition == YAxisPosition.RIGHT) axisToBarsGap else 16.dp
-                        val padEnd = baseEnd + tooltipSafePaddingEnd
-
-                        StackedBarChartPage(
-                            stackedData = slice,
-                            colors = colors,
-                            barWidthRatio = barWidthRatio,
-                            yAxisPosition = yAxisPosition,
-                            interactionType = interactionType,
-                            onBarClick = { i, total -> onBarClick?.invoke(start + i, null, total) },
-                            maxXTicksLimit = pageSize,
-                            yTickStep = tick,
-                            contentPadding = PaddingValues(start = padStart, end = padEnd),
-                            unit = unit,
-                            fixedMinY = minRounded.toFloat(),
-                            fixedMaxY = (if (unifyYAxisAcrossPages) maxRounded else (slice.maxOfOrNull { it.y }
-                                ?: maxRounded)).toFloat()
-                        )
-                    }
-
-                    if (yAxisPosition == YAxisPosition.RIGHT) {
-                        Box(
-                            Modifier
-                                .padding(end = axisOuterPadding)
-                                .fillMaxHeight()
-                                .width(0.dp)
-                        ) {
-                            FixedPagerYAxisStacked(
-                                minY = minRounded,
-                                maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
-                                yAxisPosition = YAxisPosition.RIGHT,
-                                step = tick,
-                                width = 0.dp
-                            )
-                        }
-                    }
-                }
-            }
-
-            when (legendPosition) {
-                LegendPosition.LEFT, LegendPosition.RIGHT -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (showLegend && legendPosition == LegendPosition.LEFT && segmentLabels.isNotEmpty()) {
-                            ChartLegend(labels = segmentLabels, colors = colors, position = LegendPosition.LEFT)
-                        }
-                        Box(Modifier.weight(1f, fill = true)) { chartArea() }   // ← weight keeps space for legends
-                        if (showLegend && legendPosition == LegendPosition.RIGHT && segmentLabels.isNotEmpty()) {
-                            ChartLegend(labels = segmentLabels, colors = colors, position = LegendPosition.RIGHT)
-                        }
-                    }
-                }
-                LegendPosition.TOP -> {
-                    Column(Modifier.fillMaxWidth()) {
-                        if (showLegend && segmentLabels.isNotEmpty()) {
-                            CenteredLegend(segmentLabels, colors, LegendPosition.TOP)
-                            Spacer(Modifier.height(40.dp))
-                        }
-                        Box(Modifier.weight(1f, fill = true)) { chartArea() }
-                    }
-                }
-                LegendPosition.BOTTOM -> {
-                    Column(Modifier.fillMaxWidth()) {
-                        Box(Modifier.weight(1f, fill = true)) { chartArea() }
-                        if (showLegend && segmentLabels.isNotEmpty()) {
-                            Spacer(Modifier.height(40.dp))
-                            CenteredLegend(segmentLabels, colors, LegendPosition.BOTTOM)
-                        }
-                    }
-                }
-            }
-        }
         return
     }
 
@@ -503,105 +403,226 @@ private fun CenteredLegend(
         )
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun StackedBarChartPage(
-    stackedData: List<StackedChartPoint>,
+private fun StackedBarChartPagedInternal(
+    modifier: Modifier,
+    data: List<ChartPoint>,
+    segmentLabels: List<String>,
+    xLabel: String,
+    yLabel: String,
+    title: String,
     colors: List<Color>,
     barWidthRatio: Float,
-    yAxisPosition: YAxisPosition,
+    showLegend: Boolean,
+    legendPosition: LegendPosition,
     interactionType: InteractionType.StackedBar,
-    onBarClick: (index: Int, total: Float) -> Unit,
+    onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)?,
     maxXTicksLimit: Int?,
-    yTickStep: Double,
-    contentPadding: PaddingValues,
     unit: String,
-    fixedMinY: Float,
-    fixedMaxY: Float
+
+    // paging/scale
+    pageSize: Int,
+    unifyYAxisAcrossPages: Boolean,
+    yTickStep: Double,
+    initialPage: Int?,
+    yAxisPosition: YAxisPosition,
+    yAxisFixedWidth: Dp,
+    axisToBarsGap: Dp,
+    tooltipSafePaddingEnd: Dp,
+    outerPadding: PaddingValues,
 ) {
+    // transform once
+    val stackedData = remember(data) {
+        data.toStackedChartPoints(segmentOrdering = { group -> group.sortedByDescending { it.y } })
+    }
     if (stackedData.isEmpty()) return
-    var chartType = ChartType.STACKED_BAR
 
-    val labels = stackedData.map { it.label ?: it.x.toString() }
-    val totals: List<Double> = stackedData.map { it.y }
-    var metrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
+    val pageCount = remember(stackedData.size, pageSize) {
+        ceil(stackedData.size / pageSize.toDouble()).toInt()
+    }
+    val firstPage = initialPage ?: (pageCount - 1).coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
 
-    Box(Modifier.fillMaxWidth().padding(contentPadding)) {
-        Canvas(Modifier.fillMaxSize()) {
-            val m = ChartMath.computeMetrics(
-                size = size,
-                values = totals,
-                chartType = chartType,
-                minY = fixedMinY.toDouble(),
-                maxY = fixedMaxY.toDouble(),
-                includeYAxisPadding = false,
-                fixedTickStep = yTickStep
-            )
-            metrics = m
+    val globalMax = remember(stackedData) { stackedData.maxOf { it.y } }
+    val minRounded = 0.0
+    val maxRounded = remember(globalMax, yTickStep) {
+        ceilToStep(globalMax, yTickStep).coerceAtLeast(yTickStep)
+    }
 
-            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = false)
-            ChartDraw.drawXAxis(this, m)
-            ChartDraw.Bar.drawBarXAxisLabels(
-                ctx = drawContext,
-                labels = labels,
-                metrics = m,
-                maxXTicksLimit = maxXTicksLimit
-            )
-        }
+    Column(modifier = modifier.padding(outerPadding)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(12.dp))
 
-        metrics?.let { m ->
-            val segCount = stackedData.firstOrNull()?.segments?.size ?: 0
-            for (segIndex in 0 until segCount) {
-                val mins = mutableListOf<Double>()
-                val maxs = mutableListOf<Double>()
-                stackedData.forEach { sp ->
-                    var cum = 0.0
-                    for (i in 0 until segIndex) cum += sp.segments.getOrNull(i)?.y ?: 0.0
-                    val seg = sp.segments.getOrNull(segIndex)?.y ?: 0.0
-                    mins.add(cum)
-                    maxs.add(cum + seg)
+        val chartArea: @Composable () -> Unit = {
+            Row(Modifier.fillMaxWidth()) {
+                // LEFT fixed external Y-axis
+                if (yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                    FixedPagerYAxisStacked(
+                        minY = minRounded,
+                        maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                        yAxisPosition = YAxisPosition.LEFT,
+                        step = yTickStep,
+                        width = yAxisFixedWidth
+                    )
                 }
-                if (maxs.zip(mins).any { (mx, mn) -> mx > mn }) {
-                    val c = colors.getOrNull(segIndex) ?: Color.Gray
-                    ChartDraw.Bar.BarMarker(
-                        data = stackedData,
-                        minValues = mins,
-                        maxValues = maxs,
-                        metrics = m,
-                        color = c,
-                        barWidthRatio = barWidthRatio,
-                        interactive = false,
-                        chartType = chartType,
-                        unit = unit
+
+                // Pages (no inner Y-axis)
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f)
+                ) { page ->
+                    val start = page * pageSize
+                    val end = min(start + pageSize, stackedData.size)
+                    val slice = stackedData.subList(start, end)
+
+                    val labels = slice.map { it.label ?: it.x.toString() }
+                    val totals = slice.map { it.y }
+                    val fixedMaxForPage = if (unifyYAxisAcrossPages) maxRounded
+                    else (slice.maxOfOrNull { it.y } ?: maxRounded)
+
+                    val padStart = if (yAxisPosition == YAxisPosition.LEFT) axisToBarsGap else 0.dp
+                    val baseEnd  = if (yAxisPosition == YAxisPosition.RIGHT) axisToBarsGap else 0.dp
+                    val padEnd   = baseEnd + tooltipSafePaddingEnd
+
+                    var metrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
+
+                    Box(Modifier.fillMaxWidth().padding(PaddingValues(start = padStart, end = padEnd))) {
+                        // canvas (grid + x labels; NO y-axis)
+                        Canvas(Modifier.fillMaxSize()) {
+                            val m = ChartMath.computeMetrics(
+                                size = size,
+                                values = totals,
+                                chartType = ChartType.STACKED_BAR,
+                                minY = 0.0,
+                                maxY = fixedMaxForPage,
+                                includeYAxisPadding = false,
+                                fixedTickStep = yTickStep
+                            )
+                            metrics = m
+
+                            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = false)
+                            ChartDraw.drawXAxis(this, m)
+                            ChartDraw.Bar.drawBarXAxisLabels(
+                                ctx = drawContext,
+                                labels = labels,
+                                metrics = m,
+                                maxXTicksLimit = maxXTicksLimit
+                            )
+                        }
+
+                        metrics?.let { m ->
+                            val segCount = slice.firstOrNull()?.segments?.size ?: 0
+                            for (segIndex in 0 until segCount) {
+                                val mins = MutableList(slice.size) { 0.0 }
+                                val maxs = MutableList(slice.size) { 0.0 }
+                                for (i in slice.indices) {
+                                    var cum = 0.0
+                                    for (j in 0 until segIndex) {
+                                        cum += slice[i].segments.getOrNull(j)?.y ?: 0.0
+                                    }
+                                    val seg = slice[i].segments.getOrNull(segIndex)?.y ?: 0.0
+                                    mins[i] = cum
+                                    maxs[i] = cum + seg
+                                }
+                                if (maxs.zip(mins).any { (mx, mn) -> mx > mn }) {
+                                    val c = colors.getOrNull(segIndex) ?: Color.Gray
+                                    ChartDraw.Bar.BarMarker(
+                                        data = slice,
+                                        minValues = mins,
+                                        maxValues = maxs,
+                                        metrics = m,
+                                        color = c,
+                                        barWidthRatio = barWidthRatio,
+                                        interactive = false,
+                                        chartType = ChartType.STACKED_BAR,
+                                        unit = unit
+                                    )
+                                }
+                            }
+
+                            when (interactionType) {
+                                InteractionType.StackedBar.TOUCH_AREA -> {
+                                    ChartDraw.Bar.BarMarker(
+                                        data = slice,
+                                        minValues = List(slice.size) { m.minY },
+                                        maxValues = totals,
+                                        metrics = m,
+                                        chartType = ChartType.STACKED_BAR,
+                                        isTouchArea = true,
+                                        unit = unit,
+                                        onBarClick = { localIndex, _ ->
+                                            val globalIndex = start + localIndex
+                                            onBarClick?.invoke(globalIndex, null, totals[localIndex].toFloat())
+                                        }
+                                    )
+                                }
+                                InteractionType.StackedBar.BAR -> {
+                                    ChartDraw.Bar.BarMarker(
+                                        data = slice,
+                                        minValues = List(slice.size) { m.minY },
+                                        maxValues = totals,
+                                        metrics = m,
+                                        chartType = ChartType.STACKED_BAR,
+                                        interactive = true,
+                                        color = Color.Transparent,
+                                        unit = unit,
+                                        onBarClick = { localIndex, _ ->
+                                            val globalIndex = start + localIndex
+                                            onBarClick?.invoke(globalIndex, null, totals[localIndex].toFloat())
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // RIGHT fixed external Y-axis
+                if (yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                    FixedPagerYAxisStacked(
+                        minY = minRounded,
+                        maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                        yAxisPosition = YAxisPosition.RIGHT,
+                        step = yTickStep,
+                        width = yAxisFixedWidth
                     )
                 }
             }
+        }
 
-            when (interactionType) {
-                InteractionType.StackedBar.TOUCH_AREA -> {
-                    ChartDraw.Bar.BarMarker(
-                        data = stackedData,
-                        minValues = List(stackedData.size) { m.minY },
-                        maxValues = totals,
-                        metrics = m,
-                        chartType = chartType,
-                        isTouchArea = true,
-                        unit = unit,
-                        onBarClick = { index, _ -> onBarClick(index, totals[index].toFloat()) }
-                    )
+        when (legendPosition) {
+            LegendPosition.LEFT, LegendPosition.RIGHT -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (showLegend && legendPosition == LegendPosition.LEFT && segmentLabels.isNotEmpty()) {
+                        ChartLegend(labels = segmentLabels, colors = colors, position = LegendPosition.LEFT)
+                    }
+                    Box(Modifier.weight(1f, fill = true)) { chartArea() }
+                    if (showLegend && legendPosition == LegendPosition.RIGHT && segmentLabels.isNotEmpty()) {
+                        ChartLegend(labels = segmentLabels, colors = colors, position = LegendPosition.RIGHT)
+                    }
                 }
-
-                InteractionType.StackedBar.BAR -> {
-                    ChartDraw.Bar.BarMarker(
-                        data = stackedData,
-                        minValues = List(stackedData.size) { m.minY },
-                        maxValues = totals,
-                        metrics = m,
-                        chartType = chartType,
-                        interactive = true,
-                        color = Color.Transparent,
-                        unit = unit,
-                        onBarClick = { index, _ -> onBarClick(index, totals[index].toFloat()) }
-                    )
+            }
+            LegendPosition.TOP -> {
+                Column(Modifier.fillMaxWidth()) {
+                    if (showLegend && segmentLabels.isNotEmpty()) {
+                        CenteredLegend(segmentLabels, colors, LegendPosition.TOP)
+                        Spacer(Modifier.height(40.dp))
+                    }
+                    Box(Modifier.weight(1f, fill = true)) { chartArea() }
+                }
+            }
+            LegendPosition.BOTTOM -> {
+                Column(Modifier.fillMaxWidth()) {
+                    Box(Modifier.weight(1f, fill = true)) { chartArea() }
+                    if (showLegend && segmentLabels.isNotEmpty()) {
+                        Spacer(Modifier.height(40.dp))
+                        CenteredLegend(segmentLabels, colors, LegendPosition.BOTTOM)
+                    }
                 }
             }
         }

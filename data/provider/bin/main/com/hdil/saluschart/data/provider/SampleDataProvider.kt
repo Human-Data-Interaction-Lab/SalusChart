@@ -1,10 +1,10 @@
 package com.hdil.saluschart.data.provider
 
-import com.hdil.saluschart.core.chart.BaseChartPoint
-import com.hdil.saluschart.core.chart.ChartPoint
-import com.hdil.saluschart.core.chart.ProgressChartPoint
-import com.hdil.saluschart.core.chart.RangeChartPoint
-import com.hdil.saluschart.core.chart.StackedChartPoint
+import com.hdil.saluschart.core.chart.BaseChartMark
+import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.ProgressChartMark
+import com.hdil.saluschart.core.chart.RangeChartMark
+import com.hdil.saluschart.core.chart.StackedChartMark
 import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.StepCount
 import com.hdil.saluschart.data.model.model.Weight
@@ -106,37 +106,37 @@ object SampleDataProvider {
     /**
      * Sample heart rate range data for range bar charts
      */
-    fun getHeartRateRangeData(): List<RangeChartPoint> = listOf(
-        RangeChartPoint(x = 0f, yMin = 54f, yMax = 160f, label = "2일"),
-        RangeChartPoint(x = 1f, yMin = 65f, yMax = 145f, label = "3일"),
-        RangeChartPoint(x = 2f, yMin = 58f, yMax = 125f, label = "4일"),
-        RangeChartPoint(x = 3f, yMin = 75f, yMax = 110f, label = "6일"),
-        RangeChartPoint(x = 4f, yMin = 68f, yMax = 162f, label = "7일"),
-        RangeChartPoint(x = 5f, yMin = 72f, yMax = 168f, label = "8일"),
-        RangeChartPoint(x = 6f, yMin = 65f, yMax = 138f, label = "9일"),
-        RangeChartPoint(x = 7f, yMin = 85f, yMax = 105f, label = "10일")
+    fun getHeartRateRangeData(): List<RangeChartMark> = listOf(
+        RangeChartMark(x = 0f, yMin = 54f, yMax = 160f, label = "2일"),
+        RangeChartMark(x = 1f, yMin = 65f, yMax = 145f, label = "3일"),
+        RangeChartMark(x = 2f, yMin = 58f, yMax = 125f, label = "4일"),
+        RangeChartMark(x = 3f, yMin = 75f, yMax = 110f, label = "6일"),
+        RangeChartMark(x = 4f, yMin = 68f, yMax = 162f, label = "7일"),
+        RangeChartMark(x = 5f, yMin = 72f, yMax = 168f, label = "8일"),
+        RangeChartMark(x = 6f, yMin = 65f, yMax = 138f, label = "9일"),
+        RangeChartMark(x = 7f, yMin = 85f, yMax = 105f, label = "10일")
     )
 
     /**
      * Sample nutrition data for stacked bar charts (protein, fat, carbs)
      */
-    fun getNutritionStackedData(): List<StackedChartPoint> = listOf(
-        StackedChartPoint(x = 0f, values = listOf(80f, 45f, 120f), label = "월"), // 단백질, 지방, 탄수화물 (g)
-        StackedChartPoint(x = 1f, values = listOf(75f, 38f, 110f), label = "화"),
-        StackedChartPoint(x = 2f, values = listOf(90f, 52f, 140f), label = "수"),
-        StackedChartPoint(x = 3f, values = listOf(85f, 41f, 135f), label = "목"),
-        StackedChartPoint(x = 4f, values = listOf(95f, 58f, 150f), label = "금"),
-        StackedChartPoint(x = 5f, values = listOf(70f, 35f, 100f), label = "토"),
-        StackedChartPoint(x = 6f, values = listOf(88f, 48f, 125f), label = "일")
+    fun getNutritionStackedData(): List<StackedChartMark> = listOf(
+        StackedChartMark(x = 0f, values = listOf(80f, 45f, 120f), label = "월"), // 단백질, 지방, 탄수화물 (g)
+        StackedChartMark(x = 1f, values = listOf(75f, 38f, 110f), label = "화"),
+        StackedChartMark(x = 2f, values = listOf(90f, 52f, 140f), label = "수"),
+        StackedChartMark(x = 3f, values = listOf(85f, 41f, 135f), label = "목"),
+        StackedChartMark(x = 4f, values = listOf(95f, 58f, 150f), label = "금"),
+        StackedChartMark(x = 5f, values = listOf(70f, 35f, 100f), label = "토"),
+        StackedChartMark(x = 6f, values = listOf(88f, 48f, 125f), label = "일")
     )
 
     /**
      * Sample progress data for Apple Watch-style activity rings
      */
-    fun getActivityProgressData(): List<ProgressChartPoint> = listOf(
-        ProgressChartPoint(x = 0f, current = 1200f, max = 2000f, label = "Move", unit = "KJ"),
-        ProgressChartPoint(x = 1f, current = 20f, max = 60f, label = "Exercise", unit = "min"),
-        ProgressChartPoint(x = 2f, current = 7f, max = 10f, label = "Stand", unit = "h")
+    fun getActivityProgressData(): List<ProgressChartMark> = listOf(
+        ProgressChartMark(x = 0f, current = 1200f, max = 2000f, label = "Move", unit = "KJ"),
+        ProgressChartMark(x = 1f, current = 20f, max = 60f, label = "Exercise", unit = "min"),
+        ProgressChartMark(x = 2f, current = 7f, max = 10f, label = "Stand", unit = "h")
     )
 
     /**
@@ -156,27 +156,27 @@ object SampleDataProvider {
     }
 
     /**
-     * Convert basic sample data to ChartPoint format
+     * Convert basic sample data to ChartMark format
      */
-    fun getBasicChartPoints(): List<ChartPoint> = sampleData.mapIndexed { index, value ->
-        ChartPoint(x = index.toFloat(), y = value, label = weekDays.getOrElse(index) { "" })
+    fun getBasicChartMarks(): List<ChartMark> = sampleData.mapIndexed { index, value ->
+        ChartMark(x = index.toFloat(), y = value, label = weekDays.getOrElse(index) { "" })
     }
 
     /**
-     * Convert extended sample data to ChartPoint format (for pagination demos)
+     * Convert extended sample data to ChartMark format (for pagination demos)
      */
-    fun getExtendedChartPoints(): List<ChartPoint> = sampleData4.mapIndexed { index, value ->
-        ChartPoint(x = index.toFloat(), y = value, label = weekDays[index % weekDays.size])
+    fun getExtendedChartMarks(): List<ChartMark> = sampleData4.mapIndexed { index, value ->
+        ChartMark(x = index.toFloat(), y = value, label = weekDays[index % weekDays.size])
     }
 
     /**
      * Generate dense chart points for tick reduction demos
      */
-    fun getDenseChartPoints(count: Int = 50): List<ChartPoint> {
+    fun getDenseChartMarks(count: Int = 50): List<ChartMark> {
         val labels = (1..count).map { "Day $it" }
         val values = (1..count).map { (20..80).random().toFloat() }
         return labels.mapIndexed { index, label ->
-            ChartPoint(x = index.toFloat(), y = values[index], label = label)
+            ChartMark(x = index.toFloat(), y = values[index], label = label)
         }
     }
 }

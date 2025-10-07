@@ -20,10 +20,10 @@ class DataTransformer {
      * @param aggregationType 집계 방법 (합계 또는 평균)
      */
     fun transform(
-        data: TimeDataPoint,
+        data: TemporalDataSet,
         transformTimeUnit: TimeUnitGroup,
         aggregationType: AggregationType = AggregationType.SUM
-    ): TimeDataPoint {
+    ): TemporalDataSet {
 
         // 평균 계산 시 유효성 검증
         if (aggregationType == AggregationType.DAILY_AVERAGE) {
@@ -46,10 +46,10 @@ class DataTransformer {
      * 시간 단위별 그룹핑
      */
     private fun groupByTimeUnit(
-        data: TimeDataPoint,
+        data: TemporalDataSet,
         targetTimeUnit: TimeUnitGroup,
         aggregationType: AggregationType
-    ): TimeDataPoint {
+    ): TemporalDataSet {
 
         // Instant를 LocalDateTime으로 변환
         val parsedTimes = data.x.map { instant ->
@@ -66,7 +66,7 @@ class DataTransformer {
             }
             val newYValues = aggregatedData.map { it.second }
 
-            TimeDataPoint(
+            TemporalDataSet(
                 x = newXValues,
                 y = newYValues,
                 timeUnit = targetTimeUnit
@@ -92,7 +92,7 @@ class DataTransformer {
                 timeValueList.map { it.second }
             }
 
-            TimeDataPoint(
+            TemporalDataSet(
                 x = newXValues,
                 yMultiple = newYMultiple,
                 timeUnit = targetTimeUnit,

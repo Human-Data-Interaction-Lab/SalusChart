@@ -2,33 +2,21 @@ package com.hdil.saluschart.ui.compose.charts
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.InteractionType
-import com.hdil.saluschart.core.chart.RangeChartPoint
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.transform.toRangeChartPoints
-import com.hdil.saluschart.ui.theme.ChartColor
+import com.hdil.saluschart.core.chart.toRangeChartMarks
 
 /**
  * 미니멀 범위 바 차트 - 위젯이나 스마트워치 등 작은 화면용
@@ -50,14 +38,14 @@ import com.hdil.saluschart.ui.theme.ChartColor
 @Composable
 fun MinimalRangeBarChart(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     color: Color = Color.Blue,
 ) {
     if (data.isEmpty()) return
     val chartType = ChartType.MINIMAL_RANGE_BAR
 
-    // Transform ChartPoints to RangeChartPoints automatically
-    val rangeData = data.toRangeChartPoints(
+    // Transform ChartMarks to RangeChartMarks automatically
+    val rangeData = data.toRangeChartMarks(
         minValueSelector = { group -> group.minByOrNull { it.y } ?: group.first() },
         maxValueSelector = { group -> group.maxByOrNull { it.y } ?: group.first() }
     )

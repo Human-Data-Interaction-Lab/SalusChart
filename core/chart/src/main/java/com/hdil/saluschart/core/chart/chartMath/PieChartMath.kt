@@ -2,7 +2,7 @@ package com.hdil.saluschart.core.chart.chartMath
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 
 object PieChartMath {
     /**
@@ -24,7 +24,7 @@ object PieChartMath {
      * @param data 차트 데이터 포인트 목록
      * @return List<Triple<시작 각도, 스윕 각도, 값 비율>>
      */
-    fun computePieAngles(data: List<ChartPoint>): List<Triple<Float, Float, Float>> {
+    fun computePieAngles(data: List<ChartMark>): List<Triple<Float, Float, Float>> {
         val totalValue = data.sumOf { it.y.toDouble() }.toFloat()
         if (totalValue <= 0f) return emptyList()
 

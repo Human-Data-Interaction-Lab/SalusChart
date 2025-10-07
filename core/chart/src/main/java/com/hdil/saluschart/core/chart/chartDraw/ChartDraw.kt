@@ -277,7 +277,7 @@ object ChartDraw {
 //    fun drawChartLegend(
 //        drawScope: DrawScope,
 //        labels: List<String>? = null,
-//        chartData: List<ChartPoint>? = null,
+//        chartData: List<ChartMark>? = null,
 //        colors: List<Color>,
 //        position: Offset,
 //        chartSize: androidx.compose.ui.geometry.Size,

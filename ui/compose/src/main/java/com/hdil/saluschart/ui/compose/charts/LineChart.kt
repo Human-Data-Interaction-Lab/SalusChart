@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
@@ -54,7 +54,7 @@ import com.hdil.saluschart.ui.theme.ChartColor
 @Composable
 fun LineChart(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,      // ChartPoint 기반
+    data: List<ChartMark>,      // ChartMark 기반
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Line Chart Example",
@@ -64,15 +64,12 @@ fun LineChart(
     maxY: Double? = null,                    // 사용자 지정 최대 Y값
     xLabelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
-    yAxisPosition: YAxisPosition = YAxisPosition.LEFT,  // Y축 위치
+    yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Line = InteractionType.Line.POINT,
-    showPoint: Boolean = false, // 포인트 표시 여부
-    pointRadius: Pair<Dp, Dp> = Pair(4.dp, 2.dp), // 포인트 외부 반지름, 내부 반지름
-    showValue: Boolean = false, // 값 표시 여부
+    pointRadius: Pair<Dp, Dp> = Pair(4.dp, 2.dp),
     showLegend: Boolean = false,
-    windowSize: Int? = null, // 윈도우 크기 (null이면 전체 화면)
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
-    maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    maxXTicksLimit: Int? = null,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 2.dp,
@@ -81,32 +78,41 @@ fun LineChart(
     referenceLineLabelFormat: String = "평균: %.0f",
     referenceLineInteractive: Boolean = false,
     onReferenceLineClick: (() -> Unit)? = null,
-
-    // fixed external Y-axis support
-    fixedYAxis: Boolean = false,
-    yAxisFixedWidth: Dp = 16.dp,
-    yTickStep: Double? = null,                    // e.g., 10.0 for even ticks
-    contentPadding: PaddingValues = PaddingValues(16.dp),
+    // Display
     showTitle: Boolean = true,
-    autoFixYAxisOnScroll: Boolean = true,         // auto-fix when horizontally scrollable
-
-    pagingEnabled: Boolean = false,  // when true: use page-based swipe instead of free scroll
-    pageSize: Int = 0,               // items per page (e.g., 7 for a week)
-    unifyYAxisAcrossPages: Boolean = true,
-    initialPage: Int? = null,
-
-    renderTooltipExternally: Boolean = true,
+    showYAxis: Boolean = true,
+    showPoint: Boolean = false,
+    showValue: Boolean = false,
+    yTickStep: Double? = null,
     unit: String = "",
+    // Scroll/Page
+    windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    pageSize: Int? = null,
+    unifyYAxisAcrossPages: Boolean = true,
+    initialPageIndex: Int? = null,
+    renderTooltipExternally: Boolean = true,
+    yAxisFixedWidth: Dp = 0.dp,
 ) {
     if (data.isEmpty()) return
-    val chartType = ChartType.LINE
 
-    if (pagingEnabled && pageSize > 0 && data.size > pageSize) {
+    // Validate that scrolling and paging modes are not both enabled
+    require(!(windowSize != null && pageSize != null)) {
+        "Cannot enable both scrolling mode (windowSize) and paging mode (pageSize) simultaneously"
+    }
+
+    // compute effective page size (0 = off)
+    val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
+
+    // enable paging if pageSize is provided and data exceeds page size
+    val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
+
+    if (enablePaging) {
         LineChartPagedInternal(
             modifier = modifier,
             data = data,
-            pageSize = pageSize,
-            // carry over visual options
+            pageSize = requestedPageSize,
+            // visuals
             title = title,
             xLabel = xLabel,
             yLabel = yLabel,
@@ -116,24 +122,26 @@ fun LineChart(
             tooltipTextSize = tooltipTextSize,
             interactionType = interactionType,
             yAxisPosition = yAxisPosition,
-            yAxisFixedWidth = yAxisFixedWidth,      // external axis width
             showPoint = showPoint,
             showValue = showValue,
-            onReferenceLineClick = onReferenceLineClick,
-            // scale/paging options
+            showYAxis = showYAxis,
+            // scale/paging
+            showTitle = showTitle,
+            outerPadding = contentPadding,
             unifyYAxisAcrossPages = unifyYAxisAcrossPages,
             yTickStep = yTickStep,
-            initialPage = initialPage,
-            // we want fixed axis + no inner scroll on each page
+            initialPageIndex = initialPageIndex,
             minY = minY,
-            maxY = maxY
+            maxY = maxY,
+            unit = unit,
+            yAxisFixedWidth = yAxisFixedWidth
         )
         return
     }
 
-    // windowSize 기반 스크롤 여부 결정
+    val chartType = ChartType.LINE
     val useScrolling = windowSize != null && windowSize < data.size
-    val isFixedYAxis = if (autoFixYAxisOnScroll) (fixedYAxis || useScrolling) else fixedYAxis
+    val isFixedYAxis = showYAxis && useScrolling
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier.padding(contentPadding)) {
@@ -145,20 +153,10 @@ fun LineChart(
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
 
-            // Use the same simple padding logic as BarChart (no axisGutter)
-            val startPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) 0.dp else marginHorizontal
-            val endPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) 0.dp else marginHorizontal
-
-            // width taken by the fixed Y-axis pane (left or right)
-            val fixedPaneWidth = if (isFixedYAxis) yAxisFixedWidth else 0.dp
-
-            // width available to the scrollable chart area (exclude axis pane + inner paddings)
-            val contentWidth = availableWidth - fixedPaneWidth - (startPad + endPad)
-
-            // in scroll mode, canvas spans per-window width * data size
             val canvasWidth = if (useScrolling) {
-                val pointWidth = contentWidth / windowSize!!
-                pointWidth * data.size
+                val chartWidth = availableWidth - (marginHorizontal * 2)
+                val sectionsCount = (data.size.toFloat() / windowSize!!.toFloat()).toInt()
+                chartWidth * sectionsCount
             } else null
 
             val xLabels = data.map { it.label ?: it.x.toString() }
@@ -173,7 +171,7 @@ fun LineChart(
             Row(Modifier.fillMaxSize()) {
 
                 // LEFT fixed Y-axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
                             .width(yAxisFixedWidth)
@@ -189,6 +187,10 @@ fun LineChart(
                         }
                     }
                 }
+
+                // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                val endPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
                 Box(
                     modifier = Modifier
@@ -216,8 +218,8 @@ fun LineChart(
                         )
                         chartMetrics = metrics
 
-                        ChartDraw.drawGrid(this, size, metrics, yAxisPosition, drawLabels = !isFixedYAxis)
-                        if (!isFixedYAxis) ChartDraw.drawYAxis(this, metrics, yAxisPosition)
+                        ChartDraw.drawGrid(this, size, metrics, yAxisPosition, drawLabels = showYAxis && !isFixedYAxis)
+                        if (showYAxis && !isFixedYAxis) ChartDraw.drawYAxis(this, metrics, yAxisPosition)
 
                         val points = ChartMath.Line.mapLineToCanvasPoints(data, size, metrics)
                         canvasPoints = points
@@ -368,7 +370,7 @@ fun LineChart(
                             val yClamped = yPlaced.coerceIn(0f, maxY.toFloat())
 
                             ChartTooltip(
-                                chartPoint = data[i],
+                                ChartMark = data[i],
                                 unit = unit,
                                 modifier = Modifier
                                     .offset { IntOffset(xClamped.toInt(), yClamped.toInt()) }
@@ -379,7 +381,7 @@ fun LineChart(
                 }
 
                 // RIGHT fixed Y-axis pane
-                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
                             .width(yAxisFixedWidth)
@@ -405,7 +407,7 @@ fun LineChart(
 @Composable
 private fun LineChartPagedInternal(
     modifier: Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     pageSize: Int,
     // visuals
     title: String,
@@ -417,45 +419,54 @@ private fun LineChartPagedInternal(
     tooltipTextSize: Float,
     interactionType: InteractionType.Line,
     yAxisPosition: YAxisPosition,
-    yAxisFixedWidth: Dp,
     showPoint: Boolean,
     showValue: Boolean,
-    onReferenceLineClick: (() -> Unit)?,
+    showYAxis: Boolean,
     // scale/paging
+    showTitle: Boolean,
     unifyYAxisAcrossPages: Boolean,
     yTickStep: Double?,
-    initialPage: Int?,
+    initialPageIndex: Int?,
     minY: Double?,
     maxY: Double?,
-    unit : String = "",
+    unit: String,
+    outerPadding: PaddingValues = PaddingValues(0.dp),
+    yAxisFixedWidth: Dp = 0.dp,
 ) {
-    // how many pages
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
     }
-    val firstPage = initialPage ?: (pageCount - 1).coerceAtLeast(0)
+    val firstPage = initialPageIndex ?: (pageCount - 1).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
 
-    // single fixed Y range for all pages (so the external axis matches)
-    val rawMax = if (unifyYAxisAcrossPages) data.maxOf { it.y } else data.maxOf { it.y }
-    val forcedMax = maxY ?: rawMax
-    val step = yTickStep ?: 0.0
-    val maxRounded = remember(forcedMax, step) {
-        if (step > 0.0) (kotlin.math.ceil(forcedMax / step) * step) else forcedMax
+    // Compute unified Y-axis range using the lighter function (no pixel calculations)
+    val yAxisRange = remember(data, minY, maxY, yTickStep) {
+        val yValues = data.map { it.y }
+        ChartMath.computeYAxisRange(
+            values = yValues,
+            chartType = ChartType.LINE,
+            minY = minY,
+            maxY = maxY,
+            fixedTickStep = yTickStep
+        )
     }
 
-    Column(modifier) {
-        // fixed title/header
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(12.dp))
+    val maxRounded = yAxisRange.maxY
+    val effectiveTickStep = yAxisRange.tickStep
 
-        Row(Modifier.fillMaxSize()) {
-            // left fixed axis (optional)
-            if (yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+    Column(modifier = modifier.padding(outerPadding)) {
+        if (showTitle) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(12.dp))
+        }
+
+        Row(Modifier.fillMaxWidth()) {
+            // LEFT fixed external Y-axis
+            if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 FixedPagerYAxisLine(
                     maxY = maxRounded,
                     yAxisPosition = yAxisPosition,
-                    step = yTickStep?.toFloat() ?: 10f,
+                    step = effectiveTickStep.toFloat(),
                     width = yAxisFixedWidth
                 )
             }
@@ -469,23 +480,18 @@ private fun LineChartPagedInternal(
                 val end = kotlin.math.min(start + pageSize, data.size)
                 val slice = data.subList(start, end)
 
-                // small visual padding so the line does not touch the external axis
-                val padStart = if (yAxisPosition == YAxisPosition.LEFT) 12.dp else 16.dp
-                val padEnd   = if (yAxisPosition == YAxisPosition.RIGHT) 12.dp else 16.dp
-
-                // render a normal LineChart for this page, but:
+                // Render a normal LineChart page:
                 // - no inner scroll (windowSize = null)
-                // - fixed external axis (fixedYAxis = true, width=0 inside)
-                // - unified maxY so scales match axis
+                // - maxY unified with the external axis
                 LineChart(
-                    modifier = Modifier.fillMaxWidth().height(250.dp),
+                    modifier = Modifier.fillMaxSize(),
                     data = slice,
                     xLabel = xLabel,
                     yLabel = yLabel,
                     title = title,
                     lineColor = lineColor,
                     strokeWidth = strokeWidth,
-                    minY = 0.0.takeIf { chartTypeForLineWantsZero() } ?: minY,
+                    minY = minY,
                     maxY = maxRounded,
                     xLabelTextSize = xLabelTextSize,
                     tooltipTextSize = tooltipTextSize,
@@ -493,31 +499,29 @@ private fun LineChartPagedInternal(
                     interactionType = interactionType,
                     showPoint = showPoint,
                     showValue = showValue,
-                    windowSize = null,                    // no inner scroll
                     maxXTicksLimit = slice.size,          // show all X labels of the slice
                     referenceLineType = ReferenceLineType.NONE,
-                    fixedYAxis = true,                    // suppress in-canvas axis
-                    yAxisFixedWidth = 0.dp,               // hide inner axis pane
-                    yTickStep = yTickStep,                // keep grid aligned with external axis
-                    showTitle = false,                    // title already fixed above
+                    showTitle = false,                    // external axis handles it
+                    showYAxis = false,                    // external axis handles it
+                    yTickStep = effectiveTickStep,        // keep grid aligned with external axis
+                    windowSize = null,                    // no inner scroll
                     contentPadding = PaddingValues(
-                        start = padStart,
-                        end = padEnd,
+                        start = if (yAxisPosition == YAxisPosition.LEFT) 0.dp else 0.dp,
+                        end = if (yAxisPosition == YAxisPosition.RIGHT) 0.dp else 0.dp,
                         top = 0.dp,
                         bottom = 0.dp
                     ),
-                    autoFixYAxisOnScroll = false,         // this page is not scrollable
-                    pagingEnabled = false,                  // do not recurse into pager
+                    pageSize = null,                      // don't recurse
                     unit = unit
                 )
             }
 
-            // right fixed axis (optional)
-            if (yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+            // RIGHT fixed external Y-axis
+            if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                 FixedPagerYAxisLine(
                     maxY = maxRounded,
                     yAxisPosition = yAxisPosition,
-                    step = yTickStep?.toFloat() ?: 10f,
+                    step = effectiveTickStep.toFloat(),
                     width = yAxisFixedWidth
                 )
             }

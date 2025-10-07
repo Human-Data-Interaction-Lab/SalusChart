@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
@@ -45,7 +45,7 @@ object RangeBarChartDraw {
 //     */
 //    fun drawRangeBars(
 //        drawScope: DrawScope,
-//        data: List<RangeChartPoint>,
+//        data: List<RangeChartMark>,
 //        metrics: ChartMath.ChartMetrics,
 //        color: Color,
 //        barWidthRatio: Float = 0.6f

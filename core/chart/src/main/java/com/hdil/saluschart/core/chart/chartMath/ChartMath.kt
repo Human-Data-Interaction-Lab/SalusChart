@@ -2,9 +2,9 @@ package com.hdil.saluschart.core.chart.chartMath
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.RangeChartMark
 import java.time.YearMonth
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -25,26 +25,45 @@ object ChartMath {
     val SleepStage = SleepStageChartMath
 
     /**
-     * 차트 그리기에 필요한 메트릭 정보를 담는 데이터 클래스
+     * Y축 범위 정보를 담는 데이터 클래스 (픽셀 계산 없이 순수한 데이터 범위만)
      *
-     * @param paddingLeftX 왼쪽 X축 패딩 값
-     * @param paddingRightX 오른쪽 X축 패딩 값
-     * @param paddingY Y축 패딩 값
-     * @param chartWidth 차트의 실제 너비
-     * @param chartHeight 차트의 실제 높이
      * @param minY Y축의 최소값
      * @param maxY Y축의 최대값
      * @param yTicks Y축에 표시할 눈금 값들
+     */
+    data class YAxisRange(
+        val minY: Double,
+        val maxY: Double,
+        val yTicks: List<Double>
+    ) {
+        /**
+         * Y축 눈금 간격을 계산합니다 (yTicks에서 추출)
+         * @return 눈금 간격, yTicks가 2개 미만이면 10.0 반환
+         */
+        val tickStep: Double
+            get() = if (yTicks.size >= 2) yTicks[1] - yTicks[0] else 10.0
+    }
+
+    /**
+     * 차트 그리기에 필요한 메트릭 정보를 담는 데이터 클래스
+     *
+     * @param paddingX X축 패딩 값
+     * @param paddingY Y축 패딩 값
+     * @param chartWidth 차트의 실제 너비
+     * @param chartHeight 차트의 실제 높이
+     * @param yAxisRange Y축 범위 정보 (minY, maxY, yTicks 포함)
      */
     data class ChartMetrics(
         val paddingX: Float,
         val paddingY: Float,
         val chartWidth: Float,
         val chartHeight: Float,
-        val minY: Double,
-        val maxY: Double,
-        val yTicks: List<Double>
-    )
+        val yAxisRange: YAxisRange
+    ) {
+        val minY: Double get() = yAxisRange.minY
+        val maxY: Double get() = yAxisRange.maxY
+        val yTicks: List<Double> get() = yAxisRange.yTicks
+    }
 
     /**
      * y-axis 눈금 값들을 계산합니다.
@@ -129,6 +148,69 @@ object ChartMath {
     }
 
     /**
+     * Y축 범위와 눈금을 계산합니다 (픽셀 계산 없이 순수한 데이터 범위만).
+     * 이 함수는 페이징 모드에서 통일된 Y축 범위를 미리 계산할 때 유용합니다.
+     *
+     * @param values 차트에 표시할 Y축 데이터 값 목록
+     * @param chartType 차트 타입 (BAR/STACKED_BAR 타입일 경우 기본적으로 minY를 0으로 설정)
+     * @param minY 사용자 지정 최소 Y값
+     * @param maxY 사용자 지정 최대 Y값
+     * @param fixedTickStep 고정 눈금 간격 (지정시 nice ticks 대신 사용)
+     * @param tickCount 원하는 Y축 눈금 개수 (fixedTickStep이 null일 때만 사용, 기본값: 5)
+     * @return Y축 범위 객체 (minY, maxY, yTicks)
+     */
+    fun computeYAxisRange(
+        values: List<Double>,
+        chartType: ChartType? = null,
+        minY: Double? = null,
+        maxY: Double? = null,
+        fixedTickStep: Double? = null,
+        tickCount: Int = 5
+    ): YAxisRange {
+        // data range
+        val dataMax = values.maxOrNull() ?: 1.0
+        val dataMin = values.minOrNull() ?: 0.0
+
+        // decide if we want zero-based min
+        val wantsZeroMin = (chartType == ChartType.BAR ||
+                chartType == ChartType.STACKED_BAR ||
+                chartType == ChartType.MINIMAL_BAR)
+
+        val baseMin = minY ?: if (wantsZeroMin) 0.0 else dataMin
+        val baseMax = maxY ?: dataMax
+
+        // compute ticks
+        val yTicks: List<Double>
+        val actualMinY: Double
+        val actualMaxY: Double
+
+        if (fixedTickStep != null && fixedTickStep > 0.0) {
+            val start = if (wantsZeroMin) 0.0 else kotlin.math.floor(baseMin / fixedTickStep) * fixedTickStep
+            val end = kotlin.math.ceil(baseMax / fixedTickStep) * fixedTickStep
+            val ticks = mutableListOf<Double>()
+            var t = start
+            while (t <= end + 1e-6) {
+                ticks.add(t)
+                t += fixedTickStep
+            }
+            yTicks = ticks
+            actualMinY = if (minY != null) minY else start
+            actualMaxY = if (maxY != null) maxY else end
+        } else {
+            val ticksNice = computeNiceTicks(dataMin, dataMax, tickCount, chartType, actualMin = minY, actualMax = maxY)
+            yTicks = ticksNice
+            actualMinY = minY ?: (ticksNice.minOrNull() ?: dataMin)
+            actualMaxY = maxY ?: (ticksNice.maxOrNull() ?: dataMax)
+        }
+
+        return YAxisRange(
+            minY = actualMinY,
+            maxY = actualMaxY,
+            yTicks = yTicks
+        )
+    }
+
+    /**
      * 차트 그리기에 필요한 메트릭 값을 계산합니다.
      *
      * @param size Canvas의 전체 크기
@@ -162,41 +244,15 @@ object ChartMath {
     ): ChartMetrics {
         val effectivePaddingX = if (includeYAxisPadding) yAxisPaddingPx else 0f
 
-        // data range
-        val dataMax = values.maxOrNull() ?: 1.0
-        val dataMin = values.minOrNull() ?: 0.0
-
-        // decide min/max used for ticks
-        val wantsZeroMin = (chartType == ChartType.BAR ||
-                chartType == ChartType.STACKED_BAR ||
-                chartType == ChartType.MINIMAL_BAR)
-
-        val baseMin = minY ?: if (wantsZeroMin) 0.0 else dataMin
-        val baseMax = maxY ?: dataMax
-
-        // ticks
-        val yTicks: List<Double>
-        val actualMinY: Double
-        val actualMaxY: Double
-
-        if (fixedTickStep != null && fixedTickStep > 0.0) {
-            val start = if (wantsZeroMin) 0.0 else kotlin.math.floor(baseMin / fixedTickStep) * fixedTickStep
-            val end = kotlin.math.ceil(baseMax / fixedTickStep) * fixedTickStep
-            val ticks = mutableListOf<Double>()
-            var t = start
-            while (t <= end + 1e-6) {
-                ticks.add(t)
-                t += fixedTickStep
-            }
-            yTicks = ticks
-            actualMinY = if (minY != null) minY else start
-            actualMaxY = if (maxY != null) maxY else end
-        } else {
-            val ticksNice = computeNiceTicks(dataMin, dataMax, tickCount, chartType, actualMin = minY, actualMax = maxY)
-            yTicks = ticksNice
-            actualMinY = minY ?: (ticksNice.minOrNull() ?: dataMin)
-            actualMaxY = maxY ?: (ticksNice.maxOrNull() ?: dataMax)
-        }
+        // Call computeYAxisRange to calculate Y-axis 
+        val yAxisRange = computeYAxisRange(
+            values = values,
+            chartType = chartType,
+            minY = minY,
+            maxY = maxY,
+            fixedTickStep = fixedTickStep,
+            tickCount = tickCount
+        )
 
         val chartWidth  = size.width  - effectivePaddingX * 2f
         val chartHeight = size.height - paddingY
@@ -206,9 +262,7 @@ object ChartMath {
             paddingY = paddingY,
             chartWidth = chartWidth,
             chartHeight = chartHeight,
-            minY = actualMinY,
-            maxY = actualMaxY,
-            yTicks = yTicks
+            yAxisRange = yAxisRange
         )
     }
 

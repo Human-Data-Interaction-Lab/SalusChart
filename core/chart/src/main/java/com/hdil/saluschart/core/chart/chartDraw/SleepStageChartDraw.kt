@@ -26,9 +26,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.BaseChartPoint
+import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.data.model.model.SleepStageType
 import java.time.Instant
@@ -57,7 +57,7 @@ object SleepStageChartDraw {
      */
     @Composable
     fun HorizontalBarMarker(
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         minValues: List<Double>,
         maxValues: List<Double>,
         metrics: ChartMath.ChartMetrics,
@@ -85,7 +85,7 @@ object SleepStageChartDraw {
 
         // 툴팁 정보 저장 변수
         var tooltipOffset: Offset? = null
-        var tooltipData: BaseChartPoint? = null
+        var tooltipData: BaseChartMark? = null
 
         (0 until dataSize).forEach { index ->
             // 값 추출
@@ -189,7 +189,7 @@ object SleepStageChartDraw {
             val yDp = with(density) { tooltipOffset.y.toDp() }
             
             // Generate custom tooltip text for sleep stage charts
-            val customTooltipText = if (tooltipData is RangeChartPoint) {
+            val customTooltipText = if (tooltipData is RangeChartMark) {
                 val sleepStageOrdinal = tooltipData.x.toInt()
                 val sleepStageName = when (sleepStageOrdinal) {
                     0 -> "Awake"
@@ -204,7 +204,7 @@ object SleepStageChartDraw {
             } else null
             
             ChartTooltip(
-                chartPoint = tooltipData,
+                ChartMark = tooltipData,
                 unit = unit,
                 customText = customTooltipText,
                 modifier = Modifier.offset(x = xDp, y = yDp - 80.dp)
@@ -357,7 +357,7 @@ object SleepStageChartDraw {
      * 수면 단계 차트의 바들 사이에 연결선을 그립니다.
      * 연속된 수면 단계들 사이에 수평선을 그려서 시간 연속성을 시각적으로 표현합니다.
      *
-     * @param data 차트 데이터 포인트 목록 (시간순으로 정렬된 RangeChartPoint)
+     * @param data 차트 데이터 포인트 목록 (시간순으로 정렬된 RangeChartMark)
      * @param metrics 차트 메트릭 정보
      * @param lineColor 연결선 색상 (기본값: 연한 회색)
      * @param lineWidth 연결선 두께 (기본값: 2f)
@@ -366,10 +366,10 @@ object SleepStageChartDraw {
      */
     fun drawSleepStageConnector(
         drawScope: DrawScope,
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
         lineColor: Color = Color(0xFFCCCCCC),
-        lineWidth: Float = 8f,
+        lineWidth: Float = 10f,
         totalSleepStages: Int = 4,
         barHeightRatio: Float = 0.5f
     ) {
@@ -385,13 +385,13 @@ object SleepStageChartDraw {
             val currentStage = data[i]
             val nextStage = data[i + 1]
 
-            val currentEndX = if (currentStage is RangeChartPoint) {
+            val currentEndX = if (currentStage is RangeChartMark) {
                 ((currentStage.maxPoint.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             } else {
                 ((currentStage.x - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             }
 
-            val nextStartX = if (nextStage is RangeChartPoint) {
+            val nextStartX = if (nextStage is RangeChartMark) {
                 ((nextStage.minPoint.y - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX
             } else {
                 ((nextStage.x - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth + metrics.paddingX

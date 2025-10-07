@@ -15,13 +15,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.BaseChartPoint
+import com.hdil.saluschart.core.chart.BaseChartMark
 import kotlin.math.roundToInt
 
 /**
  * 차트 툴팁을 표시하는 컴포저블
  *
- * @param chartPoint 표시할 데이터 포인트
+ * @param ChartMark 표시할 데이터 포인트
  * @param unit 데이터 단위 (예: "kg", "lb", "bpm" 등)
  * @param backgroundColor 툴팁 배경색
  * @param textColor 텍스트 색상
@@ -30,7 +30,7 @@ import kotlin.math.roundToInt
  */
 @Composable
 fun ChartTooltip(
-    chartPoint: BaseChartPoint,
+    ChartMark: BaseChartMark,
     unit: String = "",
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -61,7 +61,7 @@ fun ChartTooltip(
         Column(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            chartPoint.label?.let { label ->
+            ChartMark.label?.let { label ->
                 Text(
                     text = label,
                     fontSize = 13.sp,
@@ -93,8 +93,8 @@ fun ChartTooltip(
                     )
                 }
             } else {
-                when (chartPoint) {
-                    is com.hdil.saluschart.core.chart.RangeChartPoint -> {
+                when (ChartMark) {
+                    is com.hdil.saluschart.core.chart.RangeChartMark -> {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -108,7 +108,7 @@ fun ChartTooltip(
                                     )
                             )
                             Text(
-                                text = "${chartPoint.minPoint.y.roundToInt()}$unit ~ ${chartPoint.maxPoint.y.roundToInt()}$unit",
+                                text = "${ChartMark.minPoint.y.roundToInt()}$unit ~ ${ChartMark.maxPoint.y.roundToInt()}$unit",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = textColor.copy(alpha = 0.9f),
@@ -117,8 +117,8 @@ fun ChartTooltip(
                         }
                     }
 
-                    is com.hdil.saluschart.core.chart.StackedChartPoint -> {
-                        chartPoint.segments.asReversed().forEachIndexed { index, segment ->
+                    is com.hdil.saluschart.core.chart.StackedChartMark -> {
+                        ChartMark.segments.asReversed().forEachIndexed { index, segment ->
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -161,9 +161,9 @@ fun ChartTooltip(
                             )
                             Text(
                                 text = if (unit.isNotEmpty()) {
-                                    "${chartPoint.y.roundToInt()}$unit"
+                                    "${ChartMark.y.roundToInt()}$unit"
                                 } else {
-                                    chartPoint.y.roundToInt().toString()
+                                    ChartMark.y.roundToInt().toString()
                                 },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,

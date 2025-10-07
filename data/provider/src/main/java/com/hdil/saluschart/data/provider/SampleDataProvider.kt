@@ -1,7 +1,7 @@
 package com.hdil.saluschart.data.provider
 
-import com.hdil.saluschart.core.chart.ChartPoint
-import com.hdil.saluschart.core.chart.ProgressChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
@@ -603,138 +603,138 @@ object SampleDataProvider {
 
     /**
      * Sample heart rate range data for range bar charts
-     * Returns List<ChartPoint> where multiple points with same x-value represent min and max values
+     * Returns List<ChartMark> where multiple points with same x-value represent min and max values
      */
-    fun getHeartRateRangeData(): List<ChartPoint> = listOf(
+    fun getHeartRateRangeData(): List<ChartMark> = listOf(
         // Day 1
-        ChartPoint(x = 0.0, y = 55.0, label = "1일"),
-        ChartPoint(x = 0.0, y = 150.0, label = "1일"),
+        ChartMark(x = 0.0, y = 55.0, label = "1일"),
+        ChartMark(x = 0.0, y = 150.0, label = "1일"),
 
         // Day 2
-        ChartPoint(x = 1.0, y = 54.0, label = "2일"),
-        ChartPoint(x = 1.0, y = 160.0, label = "2일"),
+        ChartMark(x = 1.0, y = 54.0, label = "2일"),
+        ChartMark(x = 1.0, y = 160.0, label = "2일"),
 
         // Day 3
-        ChartPoint(x = 2.0, y = 65.0, label = "3일"),
-        ChartPoint(x = 2.0, y = 145.0, label = "3일"),
+        ChartMark(x = 2.0, y = 65.0, label = "3일"),
+        ChartMark(x = 2.0, y = 145.0, label = "3일"),
 
         // Day 4
-        ChartPoint(x = 3.0, y = 58.0, label = "4일"),
-        ChartPoint(x = 3.0, y = 125.0, label = "4일"),
+        ChartMark(x = 3.0, y = 58.0, label = "4일"),
+        ChartMark(x = 3.0, y = 125.0, label = "4일"),
 
         // Day 5
-        ChartPoint(x = 4.0, y = 70.0, label = "5일"),
-        ChartPoint(x = 4.0, y = 140.0, label = "5일"),
+        ChartMark(x = 4.0, y = 70.0, label = "5일"),
+        ChartMark(x = 4.0, y = 140.0, label = "5일"),
 
         // Day 6
-        ChartPoint(x = 5.0, y = 75.0, label = "6일"),
-        ChartPoint(x = 5.0, y = 110.0, label = "6일"),
+        ChartMark(x = 5.0, y = 75.0, label = "6일"),
+        ChartMark(x = 5.0, y = 110.0, label = "6일"),
 
         // Day 7
-        ChartPoint(x = 6.0, y = 68.0, label = "7일"),
-        ChartPoint(x = 6.0, y = 162.0, label = "7일"),
+        ChartMark(x = 6.0, y = 68.0, label = "7일"),
+        ChartMark(x = 6.0, y = 162.0, label = "7일"),
 
         // Day 8
-        ChartPoint(x = 7.0, y = 72.0, label = "8일"),
-        ChartPoint(x = 7.0, y = 168.0, label = "8일"),
+        ChartMark(x = 7.0, y = 72.0, label = "8일"),
+        ChartMark(x = 7.0, y = 168.0, label = "8일"),
 
         // Day 9
-        ChartPoint(x = 8.0, y = 65.0, label = "9일"),
-        ChartPoint(x = 8.0, y = 138.0, label = "9일"),
+        ChartMark(x = 8.0, y = 65.0, label = "9일"),
+        ChartMark(x = 8.0, y = 138.0, label = "9일"),
 
         // Day 10
-        ChartPoint(x = 9.0, y = 85.0, label = "10일"),
-        ChartPoint(x = 9.0, y = 105.0, label = "10일"),
+        ChartMark(x = 9.0, y = 85.0, label = "10일"),
+        ChartMark(x = 9.0, y = 105.0, label = "10일"),
 
         // Day 11
-        ChartPoint(x = 10.0, y = 62.0, label = "11일"),
-        ChartPoint(x = 10.0, y = 140.0, label = "11일"),
+        ChartMark(x = 10.0, y = 62.0, label = "11일"),
+        ChartMark(x = 10.0, y = 140.0, label = "11일"),
 
         // Day 12
-        ChartPoint(x = 11.0, y = 70.0, label = "12일"),
-        ChartPoint(x = 11.0, y = 155.0, label = "12일"),
+        ChartMark(x = 11.0, y = 70.0, label = "12일"),
+        ChartMark(x = 11.0, y = 155.0, label = "12일"),
 
         // Day 13
-        ChartPoint(x = 12.0, y = 60.0, label = "13일"),
-        ChartPoint(x = 12.0, y = 130.0, label = "13일"),
+        ChartMark(x = 12.0, y = 60.0, label = "13일"),
+        ChartMark(x = 12.0, y = 130.0, label = "13일"),
 
         // Day 14
-        ChartPoint(x = 13.0, y = 75.0, label = "14일"),
-        ChartPoint(x = 13.0, y = 150.0, label = "14일"),
+        ChartMark(x = 13.0, y = 75.0, label = "14일"),
+        ChartMark(x = 13.0, y = 150.0, label = "14일"),
 
         // Day 15
-        ChartPoint(x = 14.0, y = 66.0, label = "15일"),
-        ChartPoint(x = 14.0, y = 142.0, label = "15일"),
+        ChartMark(x = 14.0, y = 66.0, label = "15일"),
+        ChartMark(x = 14.0, y = 142.0, label = "15일"),
 
         // Day 16
-        ChartPoint(x = 15.0, y = 78.0, label = "16일"),
-        ChartPoint(x = 15.0, y = 160.0, label = "16일"),
+        ChartMark(x = 15.0, y = 78.0, label = "16일"),
+        ChartMark(x = 15.0, y = 160.0, label = "16일"),
 
         // Day 17
-        ChartPoint(x = 16.0, y = 64.0, label = "17일"),
-        ChartPoint(x = 16.0, y = 135.0, label = "17일"),
+        ChartMark(x = 16.0, y = 64.0, label = "17일"),
+        ChartMark(x = 16.0, y = 135.0, label = "17일"),
 
         // Day 18
-        ChartPoint(x = 17.0, y = 72.0, label = "18일"),
-        ChartPoint(x = 17.0, y = 150.0, label = "18일"),
+        ChartMark(x = 17.0, y = 72.0, label = "18일"),
+        ChartMark(x = 17.0, y = 150.0, label = "18일"),
 
         // Day 19
-        ChartPoint(x = 18.0, y = 70.0, label = "19일"),
-        ChartPoint(x = 18.0, y = 145.0, label = "19일"),
+        ChartMark(x = 18.0, y = 70.0, label = "19일"),
+        ChartMark(x = 18.0, y = 145.0, label = "19일"),
 
         // Day 20
-        ChartPoint(x = 19.0, y = 68.0, label = "20일"),
-        ChartPoint(x = 19.0, y = 155.0, label = "20일"),
+        ChartMark(x = 19.0, y = 68.0, label = "20일"),
+        ChartMark(x = 19.0, y = 155.0, label = "20일"),
     )
 
     /**
      * Sample nutrition data for stacked bar charts (protein, fat, carbs)
-     * Returns List<ChartPoint> where multiple points with same x-value represent different segments
+     * Returns List<ChartMark> where multiple points with same x-value represent different segments
      */
-    fun getNutritionStackedData(): List<ChartPoint> = listOf(
+    fun getNutritionStackedData(): List<ChartMark> = listOf(
         // Monday (x = 0)
-        ChartPoint(x = 0.0, y = 80.0, label = "월"),
-        ChartPoint(x = 0.0, y = 45.0, label = "월"),
-        ChartPoint(x = 0.0, y = 120.0, label = "월"),
+        ChartMark(x = 0.0, y = 80.0, label = "월"),
+        ChartMark(x = 0.0, y = 45.0, label = "월"),
+        ChartMark(x = 0.0, y = 120.0, label = "월"),
 
         // Tuesday (x = 1)
-        ChartPoint(x = 1.0, y = 75.0, label = "화"),
-        ChartPoint(x = 1.0, y = 38.0, label = "화"),
-        ChartPoint(x = 1.0, y = 110.0, label = "화"),
+        ChartMark(x = 1.0, y = 75.0, label = "화"),
+        ChartMark(x = 1.0, y = 38.0, label = "화"),
+        ChartMark(x = 1.0, y = 110.0, label = "화"),
 
         // Wednesday (x = 2)
-        ChartPoint(x = 2.0, y = 90.0, label = "수"),
-        ChartPoint(x = 2.0, y = 52.0, label = "수"),
-        ChartPoint(x = 2.0, y = 140.0, label = "수"),
+        ChartMark(x = 2.0, y = 90.0, label = "수"),
+        ChartMark(x = 2.0, y = 52.0, label = "수"),
+        ChartMark(x = 2.0, y = 140.0, label = "수"),
 
         // Thursday (x = 3)
-        ChartPoint(x = 3.0, y = 85.0, label = "목"),
-        ChartPoint(x = 3.0, y = 41.0, label = "목"),
-        ChartPoint(x = 3.0, y = 135.0, label = "목"),
+        ChartMark(x = 3.0, y = 85.0, label = "목"),
+        ChartMark(x = 3.0, y = 41.0, label = "목"),
+        ChartMark(x = 3.0, y = 135.0, label = "목"),
 
         // Friday (x = 4)
-        ChartPoint(x = 4.0, y = 95.0, label = "금"),
-        ChartPoint(x = 4.0, y = 58.0, label = "금"),
-        ChartPoint(x = 4.0, y = 150.0, label = "금"),
+        ChartMark(x = 4.0, y = 95.0, label = "금"),
+        ChartMark(x = 4.0, y = 58.0, label = "금"),
+        ChartMark(x = 4.0, y = 150.0, label = "금"),
 
         // Saturday (x = 5)
-        ChartPoint(x = 5.0, y = 70.0, label = "토"),
-        ChartPoint(x = 5.0, y = 35.0, label = "토"),
-        ChartPoint(x = 5.0, y = 100.0, label = "토"),
+        ChartMark(x = 5.0, y = 70.0, label = "토"),
+        ChartMark(x = 5.0, y = 35.0, label = "토"),
+        ChartMark(x = 5.0, y = 100.0, label = "토"),
 
         // Sunday (x = 6)
-        ChartPoint(x = 6.0, y = 88.0, label = "일"),
-        ChartPoint(x = 6.0, y = 48.0, label = "일"),
-        ChartPoint(x = 6.0, y = 125.0, label = "일")
+        ChartMark(x = 6.0, y = 88.0, label = "일"),
+        ChartMark(x = 6.0, y = 48.0, label = "일"),
+        ChartMark(x = 6.0, y = 125.0, label = "일")
     )
 
     /**
      * Sample progress data for Apple Watch-style activity rings
      */
-    fun getActivityProgressData(): List<ProgressChartPoint> = listOf(
-        ProgressChartPoint(x = 0.0, current = 2500.0, max = 2000.0, label = "Move", unit = "KJ"),
-        ProgressChartPoint(x = 1.0, current = 20.0, max = 60.0, label = "Exercise", unit = "min"),
-        ProgressChartPoint(x = 2.0, current = 7.0, max = 10.0, label = "Stand", unit = "h")
+    fun getActivityProgressData(): List<ProgressChartMark> = listOf(
+        ProgressChartMark(x = 0.0, current = 2500.0, max = 2000.0, label = "Move", unit = "KJ"),
+        ProgressChartMark(x = 1.0, current = 20.0, max = 60.0, label = "Exercise", unit = "min"),
+        ProgressChartMark(x = 2.0, current = 7.0, max = 10.0, label = "Stand", unit = "h")
     )
 
     /**
@@ -754,35 +754,35 @@ object SampleDataProvider {
     }
 
     /**
-     * Convert basic sample data to ChartPoint format
+     * Convert basic sample data to ChartMark format
      */
-    fun getBasicChartPoints(): List<ChartPoint> = sampleData.mapIndexed { index, value ->
-        ChartPoint(x = index.toDouble(), y = value, label = weekDays.getOrElse(index) { "" })
+    fun getBasicChartMarks(): List<ChartMark> = sampleData.mapIndexed { index, value ->
+        ChartMark(x = index.toDouble(), y = value, label = weekDays.getOrElse(index) { "" })
     }
 
     /**
-     * Convert extended sample data to ChartPoint format (for pagination demos)
+     * Convert extended sample data to ChartMark format (for pagination demos)
      */
-    fun getExtendedChartPoints(): List<ChartPoint> = sampleData4.mapIndexed { index, value ->
-        ChartPoint(x = index.toDouble(), y = value, label = weekDays[index % weekDays.size])
+    fun getExtendedChartMarks(): List<ChartMark> = sampleData4.mapIndexed { index, value ->
+        ChartMark(x = index.toDouble(), y = value, label = weekDays[index % weekDays.size])
     }
 
     /**
      * Generate dense chart points for tick reduction demos
      */
-    fun getDenseChartPoints(count: Int = 50): List<ChartPoint> {
+    fun getDenseChartMarks(count: Int = 50): List<ChartMark> {
         val labels = (1..count).map { "Day $it" }
         val values = (1..count).map { (20..80).random().toDouble() }
         return labels.mapIndexed { index, label ->
-            ChartPoint(x = index.toDouble(), y = values[index], label = label)
+            ChartMark(x = index.toDouble(), y = values[index], label = label)
         }
     }
 
     /**
-     * Get blood pressure data as separate ChartPoint lists for systolic and diastolic
+     * Get blood pressure data as separate ChartMark lists for systolic and diastolic
      * Uses the transform convenience function for proper time-based processing
      */
-    fun getBloodPressureChartPointsMap(): Map<String, List<ChartPoint>> {
+    fun getBloodPressureChartMarksMap(): Map<String, List<ChartMark>> {
         return getBloodPressureData().transform(
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.DAILY_AVERAGE

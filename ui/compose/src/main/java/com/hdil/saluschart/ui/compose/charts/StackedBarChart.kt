@@ -24,7 +24,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.transform.toStackedChartPoints
+import com.hdil.saluschart.core.chart.toStackedChartMarks
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -37,7 +37,7 @@ private fun ceilToStep(v: Double, step: Double): Double {
 @Composable
 fun StackedBarChart(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     segmentLabels: List<String> = emptyList(),
     xLabel: String = "Time",
     yLabel: String = "Value",
@@ -51,18 +51,12 @@ fun StackedBarChart(
         Color(0xFFFFEB3B),
     ),
     barWidthRatio: Float = 0.6f,
-    showLegend: Boolean = true,
+    showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
 
-    // free-scroll
-    windowSize: Int? = null,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
-
-    // interaction – choose one
     interactionType: InteractionType.StackedBar = InteractionType.StackedBar.TOUCH_AREA,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)? = null,
-    maxXTicksLimit: Int? = null,
-
     // reference line
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
@@ -72,36 +66,43 @@ fun StackedBarChart(
     referenceLineLabelFormat: String = "평균: %.0f",
     referenceLineInteractive: Boolean = false,
     onReferenceLineClick: (() -> Unit)? = null,
-    unit: String = "",
-
-    // fixed Y (free-scroll)
-    fixedYAxis: Boolean = false,
-    yTickStep: Double? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
+    // Display
     showTitle: Boolean = true,
-    autoFixYAxisOnScroll: Boolean = true,
-
-    // paged mode
+    showYAxis: Boolean = true,
+    maxXTicksLimit: Int? = null,
+    minY: Double? = null,
+    maxY: Double? = null,
+    yTickStep: Double? = null,
+    unit: String = "",
+    // Scroll/Page
+    windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
     pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
-    yTickStepDefaultForPaged: Double = 10.0,
-    initialPage: Int? = null,
-    yAxisFixedWidth: Dp = 2.dp,
-    outerPadding: PaddingValues = contentPadding,
-    axisToBarsGap: Dp = 0.dp,
-    tooltipSafePaddingEnd: Dp = 0.dp
+    initialPageIndex: Int? = null,
+    yAxisFixedWidth: Dp = 0.dp,
 ) {
     if (data.isEmpty()) return
+
+    // Validate that scrolling and paging modes are not both enabled
+    require(!(windowSize != null && pageSize != null)) {
+        "Cannot enable both scrolling mode (windowSize) and paging mode (pageSize) simultaneously"
+    }
+
     val chartType = ChartType.STACKED_BAR
 
     // transform to stacked points
-    val stackedData = data.toStackedChartPoints(
-        segmentOrdering = { group: List<ChartPoint> -> group.sortedByDescending { it.y } }
+    val stackedData = data.toStackedChartMarks(
+        segmentOrdering = { group: List<ChartMark> -> group.sortedByDescending { it.y } }
     )
     val totals: List<Double> = stackedData.map { it.y }
     val xLabels = stackedData.map { it.label ?: it.x.toString() }
-    val effectivePageSize = (pageSize ?: 0).coerceAtLeast(0)
-    val enablePaging = effectivePageSize > 0 && data.size > effectivePageSize
+
+    // compute effective page size (0 = off)
+    val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
+
+    // enable paging if pageSize is provided and data exceeds page size
+    val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
 
     if (enablePaging) {
         StackedBarChartPagedInternal(
@@ -117,27 +118,27 @@ fun StackedBarChart(
             legendPosition = legendPosition,
             interactionType = interactionType,
             onBarClick = onBarClick,
-            maxXTicksLimit = effectivePageSize, // show all labels in page
+            showTitle = showTitle,
+            showYAxis = showYAxis,
+            maxXTicksLimit = requestedPageSize,
             unit = unit,
-            pageSize = effectivePageSize,
+            // scale/paging
+            pageSize = requestedPageSize,
             unifyYAxisAcrossPages = unifyYAxisAcrossPages,
-            yTickStep = yTickStep ?: yTickStepDefaultForPaged,
-            initialPage = initialPage,
+            yTickStep = yTickStep,
+            initialPageIndex = initialPageIndex,
+            minY = minY,
+            maxY = maxY,
             yAxisPosition = yAxisPosition,
-            yAxisFixedWidth = yAxisFixedWidth,
-            axisToBarsGap = axisToBarsGap,
-            tooltipSafePaddingEnd = tooltipSafePaddingEnd,
-            outerPadding = outerPadding
+            outerPadding = contentPadding,
+            yAxisFixedWidth = yAxisFixedWidth
         )
         return
     }
 
-    // ─────────────────────────
-    // FREE-SCROLL MODE
-    // ─────────────────────────
-    val useScrolling  = windowSize != null && windowSize < stackedData.size
-    val isFixedYAxis  = if (autoFixYAxisOnScroll) (fixedYAxis || useScrolling) else fixedYAxis
-    val scrollState   = rememberScrollState()
+    val useScrolling = windowSize != null && windowSize < stackedData.size
+    val isFixedYAxis = showYAxis && useScrolling
+    val scrollState = rememberScrollState()
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 
@@ -161,7 +162,7 @@ fun StackedBarChart(
                     if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                         Canvas(
                             modifier = Modifier
-                                .width(0.dp)
+                                .width(yAxisFixedWidth)
                                 .fillMaxHeight()
                         ) {
                             chartMetrics?.let { m ->
@@ -175,8 +176,9 @@ fun StackedBarChart(
                         }
                     }
 
-                    val startPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) 0.dp else marginHorizontal
-                    val endPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) 0.dp else marginHorizontal
+                    // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                    val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                    val endPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
                     Box(
                         modifier = Modifier
@@ -195,16 +197,15 @@ fun StackedBarChart(
                                 size = size,
                                 values = totals,
                                 chartType = chartType,
-                                minY = 0.0,
-                                maxY = null,
+                                minY = minY ?: 0.0,
+                                maxY = maxY,
                                 includeYAxisPadding = !isFixedYAxis,
                                 fixedTickStep = yTickStep
                             )
                             chartMetrics = m
 
-                            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = !isFixedYAxis)
-                            if (!isFixedYAxis) ChartDraw.drawYAxis(this, m, yAxisPosition)
-                            ChartDraw.drawXAxis(this, m)
+                            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = showYAxis && !isFixedYAxis)
+                            if (showYAxis && !isFixedYAxis) ChartDraw.drawYAxis(this, m, yAxisPosition)
                             ChartDraw.Bar.drawBarXAxisLabels(
                                 ctx = drawContext,
                                 labels = xLabels,
@@ -303,7 +304,7 @@ fun StackedBarChart(
                     if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                         Canvas(
                             modifier = Modifier
-                                .width(0.dp)
+                                .width(yAxisFixedWidth)
                                 .fillMaxHeight()
                         ) {
                             chartMetrics?.let { m ->
@@ -357,6 +358,7 @@ fun StackedBarChart(
 
 @Composable
 private fun FixedPagerYAxisStacked(
+    totals: List<Double>,
     minY: Double,
     maxY: Double,
     yAxisPosition: YAxisPosition,
@@ -370,7 +372,7 @@ private fun FixedPagerYAxisStacked(
     ) {
         val m = ChartMath.computeMetrics(
             size = size,
-            values = listOf(minY, maxY),
+            values = totals,  // Use actual totals like the inner chart
             chartType = ChartType.STACKED_BAR,
             minY = minY,
             maxY = maxY,
@@ -407,7 +409,7 @@ private fun CenteredLegend(
 @Composable
 private fun StackedBarChartPagedInternal(
     modifier: Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     segmentLabels: List<String>,
     xLabel: String,
     yLabel: String,
@@ -418,51 +420,67 @@ private fun StackedBarChartPagedInternal(
     legendPosition: LegendPosition,
     interactionType: InteractionType.StackedBar,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)?,
+    showTitle: Boolean,
+    showYAxis: Boolean,
     maxXTicksLimit: Int?,
     unit: String,
-
-    // paging/scale
+    // scale/paging
     pageSize: Int,
     unifyYAxisAcrossPages: Boolean,
-    yTickStep: Double,
-    initialPage: Int?,
+    yTickStep: Double?,
+    initialPageIndex: Int?,
+    minY: Double?,
+    maxY: Double?,
     yAxisPosition: YAxisPosition,
-    yAxisFixedWidth: Dp,
-    axisToBarsGap: Dp,
-    tooltipSafePaddingEnd: Dp,
     outerPadding: PaddingValues,
+    yAxisFixedWidth: Dp = 0.dp,
 ) {
     // transform once
     val stackedData = remember(data) {
-        data.toStackedChartPoints(segmentOrdering = { group -> group.sortedByDescending { it.y } })
+        data.toStackedChartMarks(segmentOrdering = { group -> group.sortedByDescending { it.y } })
     }
     if (stackedData.isEmpty()) return
 
     val pageCount = remember(stackedData.size, pageSize) {
         ceil(stackedData.size / pageSize.toDouble()).toInt()
     }
-    val firstPage = initialPage ?: (pageCount - 1).coerceAtLeast(0)
+    val firstPage = initialPageIndex ?: (pageCount - 1).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
 
-    val globalMax = remember(stackedData) { stackedData.maxOf { it.y } }
-    val minRounded = 0.0
-    val maxRounded = remember(globalMax, yTickStep) {
-        ceilToStep(globalMax, yTickStep).coerceAtLeast(yTickStep)
+    // Extract totals for use in both Y-axis range calculation and FixedPagerYAxis
+    val totals = remember(stackedData) { stackedData.map { it.y } }
+    
+    // Compute unified Y-axis range using the lighter function (no pixel calculations)
+    val yAxisRange = remember(totals, minY, maxY, yTickStep) {
+        ChartMath.computeYAxisRange(
+            values = totals,
+            chartType = ChartType.STACKED_BAR,
+            minY = minY ?: 0.0,
+            maxY = maxY,
+            fixedTickStep = yTickStep
+        )
     }
 
+    val minRounded = yAxisRange.minY
+    val maxRounded = yAxisRange.maxY
+    val effectiveTickStep = yAxisRange.tickStep
+
     Column(modifier = modifier.padding(outerPadding)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(12.dp))
+        if (showTitle) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(12.dp))
+        }
 
         val chartArea: @Composable () -> Unit = {
-            Row(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxSize()) {
                 // LEFT fixed external Y-axis
-                if (yAxisPosition == YAxisPosition.LEFT && yAxisFixedWidth > 0.dp) {
+                if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     FixedPagerYAxisStacked(
+                        totals = totals,
                         minY = minRounded,
-                        maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                        maxY = maxRounded,
                         yAxisPosition = YAxisPosition.LEFT,
-                        step = yTickStep,
+                        step = effectiveTickStep,
                         width = yAxisFixedWidth
                     )
                 }
@@ -470,121 +488,57 @@ private fun StackedBarChartPagedInternal(
                 // Pages (no inner Y-axis)
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).fillMaxHeight()
                 ) { page ->
                     val start = page * pageSize
                     val end = min(start + pageSize, stackedData.size)
                     val slice = stackedData.subList(start, end)
 
-                    val labels = slice.map { it.label ?: it.x.toString() }
-                    val totals = slice.map { it.y }
-                    val fixedMaxForPage = if (unifyYAxisAcrossPages) maxRounded
-                    else (slice.maxOfOrNull { it.y } ?: maxRounded)
+                    // Convert StackedChartMark back to ChartMark for the function call
+                    val sliceAsChartMarks = slice.flatMap { it.segments }
 
-                    val padStart = if (yAxisPosition == YAxisPosition.LEFT) axisToBarsGap else 0.dp
-                    val baseEnd  = if (yAxisPosition == YAxisPosition.RIGHT) axisToBarsGap else 0.dp
-                    val padEnd   = baseEnd + tooltipSafePaddingEnd
-
-                    var metrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
-
-                    Box(Modifier.fillMaxWidth().padding(PaddingValues(start = padStart, end = padEnd))) {
-                        // canvas (grid + x labels; NO y-axis)
-                        Canvas(Modifier.fillMaxSize()) {
-                            val m = ChartMath.computeMetrics(
-                                size = size,
-                                values = totals,
-                                chartType = ChartType.STACKED_BAR,
-                                minY = 0.0,
-                                maxY = fixedMaxForPage,
-                                includeYAxisPadding = false,
-                                fixedTickStep = yTickStep
-                            )
-                            metrics = m
-
-                            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = false)
-                            ChartDraw.drawXAxis(this, m)
-                            ChartDraw.Bar.drawBarXAxisLabels(
-                                ctx = drawContext,
-                                labels = labels,
-                                metrics = m,
-                                maxXTicksLimit = maxXTicksLimit
-                            )
-                        }
-
-                        metrics?.let { m ->
-                            val segCount = slice.firstOrNull()?.segments?.size ?: 0
-                            for (segIndex in 0 until segCount) {
-                                val mins = MutableList(slice.size) { 0.0 }
-                                val maxs = MutableList(slice.size) { 0.0 }
-                                for (i in slice.indices) {
-                                    var cum = 0.0
-                                    for (j in 0 until segIndex) {
-                                        cum += slice[i].segments.getOrNull(j)?.y ?: 0.0
-                                    }
-                                    val seg = slice[i].segments.getOrNull(segIndex)?.y ?: 0.0
-                                    mins[i] = cum
-                                    maxs[i] = cum + seg
-                                }
-                                if (maxs.zip(mins).any { (mx, mn) -> mx > mn }) {
-                                    val c = colors.getOrNull(segIndex) ?: Color.Gray
-                                    ChartDraw.Bar.BarMarker(
-                                        data = slice,
-                                        minValues = mins,
-                                        maxValues = maxs,
-                                        metrics = m,
-                                        color = c,
-                                        barWidthRatio = barWidthRatio,
-                                        interactive = false,
-                                        chartType = ChartType.STACKED_BAR,
-                                        unit = unit
-                                    )
-                                }
-                            }
-
-                            when (interactionType) {
-                                InteractionType.StackedBar.TOUCH_AREA -> {
-                                    ChartDraw.Bar.BarMarker(
-                                        data = slice,
-                                        minValues = List(slice.size) { m.minY },
-                                        maxValues = totals,
-                                        metrics = m,
-                                        chartType = ChartType.STACKED_BAR,
-                                        isTouchArea = true,
-                                        unit = unit,
-                                        onBarClick = { localIndex, _ ->
-                                            val globalIndex = start + localIndex
-                                            onBarClick?.invoke(globalIndex, null, totals[localIndex].toFloat())
-                                        }
-                                    )
-                                }
-                                InteractionType.StackedBar.BAR -> {
-                                    ChartDraw.Bar.BarMarker(
-                                        data = slice,
-                                        minValues = List(slice.size) { m.minY },
-                                        maxValues = totals,
-                                        metrics = m,
-                                        chartType = ChartType.STACKED_BAR,
-                                        interactive = true,
-                                        color = Color.Transparent,
-                                        unit = unit,
-                                        onBarClick = { localIndex, _ ->
-                                            val globalIndex = start + localIndex
-                                            onBarClick?.invoke(globalIndex, null, totals[localIndex].toFloat())
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    // Render a normal StackedBarChart page:
+                    // - no inner scroll (windowSize = null)
+                    // - unified scale with the external axis
+                    StackedBarChart(
+                        modifier = Modifier.fillMaxSize(),
+                        data = sliceAsChartMarks,
+                        segmentLabels = segmentLabels,
+                        title = title,
+                        colors = colors,
+                        barWidthRatio = barWidthRatio,
+                        showLegend = false,                   // legend is shown outside
+                        yAxisPosition = yAxisPosition,
+                        interactionType = interactionType,
+                        onBarClick = onBarClick?.let { cb ->
+                            { barIdx, segIdx, value -> cb(start + barIdx, segIdx, value) }
+                        },
+                        showTitle = false,
+                        showYAxis = false,                    // external axis handles it
+                        maxXTicksLimit = maxXTicksLimit,
+                        yTickStep = effectiveTickStep,
+                        minY = minRounded,                    // ✅ Unify scale with external axis
+                        maxY = maxRounded,                    // ✅ Unify scale with external axis
+                        windowSize = null,                    // no inner scroll
+                        contentPadding = PaddingValues(
+                            start = if (yAxisPosition == YAxisPosition.LEFT) 0.dp else 0.dp,
+                            end = if (yAxisPosition == YAxisPosition.RIGHT) 0.dp else 0.dp,
+                            top = 0.dp,
+                            bottom = 0.dp
+                        ),
+                        pageSize = null,                      // don't recurse
+                        unit = unit
+                    )
                 }
 
                 // RIGHT fixed external Y-axis
-                if (yAxisPosition == YAxisPosition.RIGHT && yAxisFixedWidth > 0.dp) {
+                if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     FixedPagerYAxisStacked(
+                        totals = totals,
                         minY = minRounded,
-                        maxY = if (unifyYAxisAcrossPages) maxRounded else globalMax,
+                        maxY = maxRounded,
                         yAxisPosition = YAxisPosition.RIGHT,
-                        step = yTickStep,
+                        step = effectiveTickStep,
                         width = yAxisFixedWidth
                     )
                 }
@@ -608,7 +562,7 @@ private fun StackedBarChartPagedInternal(
                 }
             }
             LegendPosition.TOP -> {
-                Column(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxSize()) {
                     if (showLegend && segmentLabels.isNotEmpty()) {
                         CenteredLegend(segmentLabels, colors, LegendPosition.TOP)
                         Spacer(Modifier.height(40.dp))
@@ -617,7 +571,7 @@ private fun StackedBarChartPagedInternal(
                 }
             }
             LegendPosition.BOTTOM -> {
-                Column(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxSize()) {
                     Box(Modifier.weight(1f, fill = true)) { chartArea() }
                     if (showLegend && segmentLabels.isNotEmpty()) {
                         Spacer(Modifier.height(40.dp))

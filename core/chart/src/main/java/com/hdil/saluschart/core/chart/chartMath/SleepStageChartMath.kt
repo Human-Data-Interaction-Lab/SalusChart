@@ -2,8 +2,8 @@ package com.hdil.saluschart.core.chart.chartMath
 
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import com.hdil.saluschart.core.chart.ChartPoint
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath.ChartMetrics
 import com.hdil.saluschart.data.model.model.SleepSession
 import com.hdil.saluschart.data.model.model.SleepStage
@@ -82,14 +82,19 @@ object SleepStageChartMath {
         val startTimeMs = sleepSession.startTime.toEpochMilli().toDouble()
         val endTimeMs = sleepSession.endTime.toEpochMilli().toDouble()
 
+        // Y축 범위 생성 (수면 단계 차트는 틱이 필요 없음)
+        val yAxisRange = ChartMath.YAxisRange(
+            minY = startTimeMs,    // X축 시간 범위의 시작
+            maxY = endTimeMs,      // X축 시간 범위의 끝
+            yTicks = emptyList()   // 수면 단계 차트는 틱이 필요 없음
+        )
+
         return ChartMetrics(
             paddingX = paddingX,
             paddingY = paddingY,
             chartWidth = chartWidth,
             chartHeight = chartHeight,
-            minY = startTimeMs, // X축 시간 범위의 시작
-            maxY = endTimeMs,   // X축 시간 범위의 끝
-            yTicks = emptyList() // 수면 단계 차트는 틱이 필요 없음
+            yAxisRange = yAxisRange
         )
     }
 
@@ -139,32 +144,32 @@ object SleepStageChartMath {
     }
 
     /**
-     * Sleep stage specific transformation: converts SleepStage objects to RangeChartPoints
-     * Each SleepStage becomes a RangeChartPoint where:
+     * Sleep stage specific transformation: converts SleepStage objects to RangeChartMarks
+     * Each SleepStage becomes a RangeChartMark where:
      * - x = sleep stage type ordinal (for Y-axis positioning)
-     * - minPoint = start time ChartPoint (x = stage ordinal, y = start time)
-     * - maxPoint = end time ChartPoint (x = stage ordinal, y = end time)
+     * - minPoint = start time ChartMark (x = stage ordinal, y = start time)
+     * - maxPoint = end time ChartMark (x = stage ordinal, y = end time)
      * 
      * The x value and y value for minPoint/maxPoint are switched when inputted into HorizontalBarMarker
      * 
      * @param List<SleepStage> List of SleepStage objects
-     * @return List of RangeChartPoints for sleep stage chart
+     * @return List of RangeChartMarks for sleep stage chart
      */
-    fun List<SleepStage>.toSleepStageRangeChartPoints(): List<RangeChartPoint> {
+    fun List<SleepStage>.toSleepStageRangeChartMarks(): List<RangeChartMark> {
         return mapIndexed { index, stage ->
             val stageOrdinal = stage.stage.ordinal.toDouble()
             // Use Double to preserve precision throughout the conversion
             val startTimeMs = stage.startTime.toEpochMilli().toDouble()
             val endTimeMs = stage.endTime.toEpochMilli().toDouble()
             
-            RangeChartPoint(
+            RangeChartMark(
                 x = stageOrdinal, // Sleep stage type for Y-axis positioning
-                minPoint = ChartPoint(
+                minPoint = ChartMark(
                     x = stageOrdinal, 
                     y = startTimeMs, 
                     label = "Stage ${index + 1}"
                 ),
-                maxPoint = ChartPoint(
+                maxPoint = ChartMark(
                     x = stageOrdinal, 
                     y = endTimeMs, 
                     label = "Stage ${index + 1}"

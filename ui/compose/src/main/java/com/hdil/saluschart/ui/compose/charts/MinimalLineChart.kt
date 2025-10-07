@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartDraw.LineChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
@@ -38,7 +38,7 @@ import androidx.compose.runtime.setValue
 @Composable
 fun MinimalLineChart(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     color: Color = Color.Blue,
     strokeWidth: Float = 2f,
     padding: Float = 4f,

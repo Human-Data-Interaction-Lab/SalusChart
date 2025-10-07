@@ -2,7 +2,7 @@ package com.hdil.saluschart.core.chart.chartMath
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 
 object ScatterPlotMath {
     
@@ -15,7 +15,7 @@ object ScatterPlotMath {
      * @param metrics 차트 메트릭 정보
      * @return 화면 좌표로 변환된 Offset 목록
      */
-    fun mapScatterToCanvasPoints(data: List<ChartPoint>, size: Size, metrics: ChartMath.ChartMetrics): List<Offset> {
+    fun mapScatterToCanvasPoints(data: List<ChartMark>, size: Size, metrics: ChartMath.ChartMetrics): List<Offset> {
         if (data.isEmpty()) return emptyList()
         
         // X축 범위 계산

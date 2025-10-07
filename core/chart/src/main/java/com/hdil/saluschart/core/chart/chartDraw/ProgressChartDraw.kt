@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import com.hdil.saluschart.core.chart.ProgressChartPoint
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
 object ProgressChartDraw {
@@ -28,7 +28,7 @@ object ProgressChartDraw {
      */
     fun drawProgressMarks(
         drawScope: DrawScope,
-        data: List<ProgressChartPoint>,
+        data: List<ProgressChartMark>,
         size: Size,
         colors: List<Color>,
         isDonut: Boolean,
@@ -141,7 +141,7 @@ object ProgressChartDraw {
      */
     fun drawProgressLabels(
         drawScope: DrawScope,
-        data: List<ProgressChartPoint>,
+        data: List<ProgressChartMark>,
         size: Size,
         isDonut: Boolean,
         strokeWidth: Float = 40f,
@@ -216,7 +216,7 @@ object ProgressChartDraw {
      */
     fun drawProgressValues(
         drawScope: DrawScope,
-        data: List<ProgressChartPoint>,
+        data: List<ProgressChartMark>,
         size: Size,
         isDonut: Boolean,
         strokeWidth: Float = 40f,

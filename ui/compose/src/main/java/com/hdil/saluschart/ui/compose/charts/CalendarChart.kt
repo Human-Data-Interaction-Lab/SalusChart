@@ -118,7 +118,7 @@ fun SingleMonthCalendarChart(
 
     // Tooltip state
     var chartRootBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
-    var tooltipPoint by remember { mutableStateOf<com.hdil.saluschart.core.chart.BaseChartPoint?>(null) }
+    var tooltipPoint by remember { mutableStateOf<com.hdil.saluschart.core.chart.BaseChartMark?>(null) }
     var tooltipAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var tooltipSize by remember { mutableStateOf<IntSize?>(null) }
 
@@ -189,7 +189,7 @@ fun SingleMonthCalendarChart(
                                         tooltipAnchor = null
 
                                         val rounded = tappedEntry.value.roundToInt().toDouble()
-                                        tooltipPoint = com.hdil.saluschart.core.chart.ChartPoint(
+                                        tooltipPoint = com.hdil.saluschart.core.chart.ChartMark(
                                             x = date.dayOfMonth.toDouble(),
                                             y = rounded,
                                             label = date.toString()
@@ -233,7 +233,7 @@ fun SingleMonthCalendarChart(
                     .offset { IntOffset(clampedX.roundToInt(), clampedY.roundToInt()) }
                     .onGloballyPositioned { tooltipSize = it.size }
             ) {
-                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(chartPoint = tip)
+                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(ChartMark = tip)
             }
         }
     }

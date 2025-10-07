@@ -29,7 +29,7 @@ import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.chart.chartMath.SleepStageChartMath.toSleepStageRangeChartPoints
+import com.hdil.saluschart.core.chart.chartMath.SleepStageChartMath.toSleepStageRangeChartMarks
 import com.hdil.saluschart.data.model.model.SleepSession
 
 @Composable
@@ -41,19 +41,17 @@ fun SleepStageChart(
     showXAxis: Boolean = false,
     onStageClick: ((Int, String) -> Unit)? = null,
     barHeightRatio: Float = 0.5f,
-    fixedYAxis: Boolean = false,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     windowSize: Int? = null,
     contentPadding: PaddingValues = PaddingValues(24.dp),
     showTitle: Boolean = true,
-    autoFixYAxisOnScroll: Boolean = true
+    showYAxis: Boolean = true
 ) {
     if (sleepSession.stages.isEmpty()) return
     val chartType = ChartType.SLEEP_STAGE
 
-    // windowSize 기반 스크롤 여부 결정
     val useScrolling = windowSize != null && windowSize < sleepSession.stages.size
-    val isFixedYAxis = if (autoFixYAxisOnScroll) (fixedYAxis || useScrolling) else fixedYAxis
+    val isFixedYAxis = showYAxis && useScrolling
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier.padding(contentPadding)) {
@@ -67,8 +65,9 @@ fun SleepStageChart(
             val marginHorizontal = 16.dp
 
             // Use the same simple padding logic as BarChart
-            val startPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) 0.dp else marginHorizontal
-            val endPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) 0.dp else marginHorizontal
+            // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+            val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+            val endPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
             // width taken by the fixed Y-axis pane (left or right)
             val fixedPaneWidth = 4.dp
@@ -141,7 +140,7 @@ fun SleepStageChart(
                         // Draw connecting lines between sleep stages for timeline continuity (Canvas-based)
                         ChartDraw.SleepStage.drawSleepStageConnector(
                             drawScope = this,
-                            data = sleepSession.stages.toSleepStageRangeChartPoints(),
+                            data = sleepSession.stages.toSleepStageRangeChartMarks(),
                             metrics = metrics,
                             lineColor = Color(0xFFCCCCCC),
                             totalSleepStages = 4,
@@ -151,8 +150,8 @@ fun SleepStageChart(
 
                     // Draw horizontal bars for all sleep stages
                     chartMetrics?.let { metrics ->
-                        // Convert SleepStages to RangeChartPoints using sleep stage specific transformation
-                        val rangeData = sleepSession.stages.toSleepStageRangeChartPoints()
+                        // Convert SleepStages to RangeChartMarks using sleep stage specific transformation
+                        val rangeData = sleepSession.stages.toSleepStageRangeChartMarks()
                         
                         // Draw all horizontal bars with automatic color assignment
                         ChartDraw.SleepStage.HorizontalBarMarker(

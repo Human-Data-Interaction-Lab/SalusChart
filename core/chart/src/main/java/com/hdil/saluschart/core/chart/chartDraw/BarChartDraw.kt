@@ -38,11 +38,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
-import com.hdil.saluschart.core.chart.BaseChartPoint
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.BaseChartMark
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.StackedChartPoint
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.StackedChartMark
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw.formatTickLabel
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import kotlin.Boolean
@@ -117,7 +117,7 @@ object BarChartDraw {
      */
     @Composable
     fun BarMarker(
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         minValues: List<Double>,
         maxValues: List<Double>,
         metrics: ChartMath.ChartMetrics,
@@ -147,7 +147,7 @@ object BarChartDraw {
 
         // 툴팁 정보 저장 변수
         var tooltipOffset: Offset? = null
-        var tooltipData: BaseChartPoint? = null
+        var tooltipData: BaseChartMark? = null
 
         (0 until dataSize).forEach { index ->
             // 값 추출
@@ -296,7 +296,7 @@ object BarChartDraw {
             val xDp = with(density) { tooltipOffset.x.toDp() }
             val yDp = with(density) { tooltipOffset.y.toDp() }
             ChartTooltip(
-                chartPoint = tooltipData,
+                ChartMark = tooltipData,
                 unit = unit,
                 modifier = Modifier.offset(x = xDp, y = yDp - 80.dp)
             )

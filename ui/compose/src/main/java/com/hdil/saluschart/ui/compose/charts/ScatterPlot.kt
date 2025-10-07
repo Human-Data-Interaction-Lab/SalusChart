@@ -1,17 +1,22 @@
 package com.hdil.saluschart.ui.compose.charts
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,34 +29,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
+import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
-import androidx.compose.ui.unit.Dp
+import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
 @Composable
 fun ScatterPlot(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     xLabel: String = "X Axis",
     yLabel: String = "Y Axis",
     title: String = "Scatter Plot Example",
     pointColor: Color = com.hdil.saluschart.ui.theme.ChartColor.Default,
-    pointType: PointType = PointType.Circle, // 포인트 타입 (Circle, Square, Triangle 등)
-    pointSize: Dp = 8.dp, // 포인트 크기 (반지름)
-    tooltipTextSize: Float = 32f,        // 툴팁 텍스트 크기
-    yAxisPosition: YAxisPosition = YAxisPosition.LEFT, // Y축 위치
+    pointType: PointType = PointType.Circle,
+    pointSize: Dp = 8.dp,
+    minY: Double? = null,
+    maxY: Double? = null,
+    tooltipTextSize: Float = 32f,
+    yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Scatter = InteractionType.Scatter.POINT,
-    windowSize: Int? = null,             // 윈도우 크기 (null이면 전체 화면)
-    maxXTicksLimit: Int? = null,             // X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+    // reference line
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 2.dp,
@@ -60,20 +66,67 @@ fun ScatterPlot(
     referenceLineLabelFormat: String = "평균: %.0f",
     referenceLineInteractive: Boolean = false,
     onReferenceLineClick: (() -> Unit)? = null,
-
-    // Fixed y-axis parameters (same as BarChart)
-    fixedYAxis: Boolean = false,
-    autoFixYAxisOnScroll: Boolean = true,
-    minY: Double? = null,
-    maxY: Double? = null,
+    // Display
+    showTitle: Boolean = true,
+    showYAxis: Boolean = true,
+    maxXTicksLimit: Int? = null,
+    yTickStep: Double? = null,
     unit: String = "",
+    // Scroll/Page
+    windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    pageSize: Int? = null,
+    unifyYAxisAcrossPages: Boolean = true,
+    initialPageIndex: Int? = null,
+    yAxisFixedWidth: Dp = 0.dp,
 ) {
     if (data.isEmpty()) return
+
+    // Validate that scrolling and paging modes are not both enabled
+    require(!(windowSize != null && pageSize != null)) {
+        "Cannot enable both scrolling mode (windowSize) and paging mode (pageSize) simultaneously"
+    }
+
     val chartType = ChartType.SCATTERPLOT
 
-    // windowSize 기반 스크롤 여부 결정
+    // compute effective page size (0 = off)
+    val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
+
+    // enable paging if pageSize is provided and data exceeds page size
+    val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
+
+    if (enablePaging) {
+        ScatterPlotPagedInternal(
+            modifier = modifier,
+            data = data,
+            pageSize = requestedPageSize,
+            // visuals
+            title = title,
+            xLabel = xLabel,
+            yLabel = yLabel,
+            pointColor = pointColor,
+            pointType = pointType,
+            pointSize = pointSize,
+            tooltipTextSize = tooltipTextSize,
+            interactionType = interactionType,
+            yAxisPosition = yAxisPosition,
+            showYAxis = showYAxis,
+            // scale/paging
+            showTitle = showTitle,
+            outerPadding = contentPadding,
+            unifyYAxisAcrossPages = unifyYAxisAcrossPages,
+            yTickStep = yTickStep,
+            initialPageIndex = initialPageIndex,
+            minY = minY,
+            maxY = maxY,
+            unit = unit,
+            yAxisFixedWidth = yAxisFixedWidth
+        )
+        return
+    }
+
     val useScrolling = windowSize != null && windowSize < data.size
-    val isFixedYAxis = if (autoFixYAxisOnScroll) (fixedYAxis || useScrolling) else fixedYAxis
+    val isFixedYAxis = showYAxis && useScrolling
     val scrollState = rememberScrollState()
 
     // Use the same approach as BarChart and LineChart for x-axis labels
@@ -87,9 +140,11 @@ fun ScatterPlot(
     
     var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
 
-    Column(modifier = modifier.padding(16.dp)) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = modifier.padding(contentPadding)) {
+        if (showTitle) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         BoxWithConstraints {
             val availableWidth = maxWidth
@@ -107,7 +162,7 @@ fun ScatterPlot(
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
-                            .width(0.dp)
+                            .width(yAxisFixedWidth)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -122,8 +177,9 @@ fun ScatterPlot(
                 }
 
                 // Chart area
-                val startPad = if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) 0.dp else marginHorizontal
-                val endPad   = if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) 0.dp else marginHorizontal
+                // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
                 Box(
                     modifier = Modifier
@@ -144,7 +200,8 @@ fun ScatterPlot(
                             chartType = chartType,
                             minY = minY,
                             maxY = maxY,
-                            includeYAxisPadding = !isFixedYAxis
+                            includeYAxisPadding = !isFixedYAxis,
+                            fixedTickStep = yTickStep
                         )
                         val points = ChartMath.Scatter.mapScatterToCanvasPoints(data, size, metrics)
 
@@ -157,9 +214,9 @@ fun ScatterPlot(
                             size = size,
                             metrics = metrics,
                             yAxisPosition = yAxisPosition,
-                            drawLabels = !isFixedYAxis
+                            drawLabels = showYAxis && !isFixedYAxis
                         )
-                        if (!isFixedYAxis) {
+                        if (showYAxis && !isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
                         ChartDraw.Line.drawLineXAxisLabels(drawContext, xLabels, metrics, maxXTicksLimit = maxXTicksLimit)
@@ -249,7 +306,7 @@ fun ScatterPlot(
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
-                            .width(0.dp)
+                            .width(yAxisFixedWidth)
                             .fillMaxHeight()
                     ) {
                         chartMetrics?.let { m ->
@@ -266,5 +323,156 @@ fun ScatterPlot(
         }
 
         Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ScatterPlotPagedInternal(
+    modifier: Modifier,
+    data: List<ChartMark>,
+    pageSize: Int,
+    // visuals
+    title: String,
+    xLabel: String,
+    yLabel: String,
+    pointColor: Color,
+    pointType: PointType,
+    pointSize: Dp,
+    tooltipTextSize: Float,
+    interactionType: InteractionType.Scatter,
+    yAxisPosition: YAxisPosition,
+    showYAxis: Boolean,
+    // scale/paging
+    showTitle: Boolean,
+    unifyYAxisAcrossPages: Boolean,
+    yTickStep: Double?,
+    initialPageIndex: Int?,
+    minY: Double?,
+    maxY: Double?,
+    unit: String,
+    outerPadding: PaddingValues = PaddingValues(0.dp),
+    yAxisFixedWidth: Dp = 0.dp,
+) {
+    val pageCount = remember(data.size, pageSize) {
+        kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
+    }
+    val firstPage = initialPageIndex ?: (pageCount - 1).coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
+
+    // Compute unified Y-axis range using the lighter function (no pixel calculations)
+    val yAxisRange = remember(data, minY, maxY, yTickStep) {
+        val yValues = data.map { it.y }
+        ChartMath.computeYAxisRange(
+            values = yValues,
+            chartType = ChartType.SCATTERPLOT,
+            minY = minY,
+            maxY = maxY,
+            fixedTickStep = yTickStep
+        )
+    }
+
+    val maxRounded = yAxisRange.maxY
+    val effectiveTickStep = yAxisRange.tickStep
+
+    Column(modifier = modifier.padding(outerPadding)) {
+        if (showTitle) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(12.dp))
+        }
+
+        Row(Modifier.fillMaxWidth()) {
+            // LEFT fixed external Y-axis
+            if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                FixedPagerYAxisScatter(
+                    maxY = maxRounded,
+                    yAxisPosition = yAxisPosition,
+                    step = effectiveTickStep,
+                    width = yAxisFixedWidth
+                )
+            }
+
+            // pages area
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { page ->
+                val start = page * pageSize
+                val end = kotlin.math.min(start + pageSize, data.size)
+                val slice = data.subList(start, end)
+
+                // Render a normal ScatterPlot page:
+                // - no inner scroll (windowSize = null)
+                // - maxY unified with the external axis
+                ScatterPlot(
+                    modifier = Modifier.fillMaxSize(),
+                    data = slice,
+                    xLabel = xLabel,
+                    yLabel = yLabel,
+                    title = title,
+                    pointColor = pointColor,
+                    pointType = pointType,
+                    pointSize = pointSize,
+                    minY = minY,
+                    maxY = maxRounded,
+                    tooltipTextSize = tooltipTextSize,
+                    yAxisPosition = yAxisPosition,
+                    interactionType = interactionType,
+                    showTitle = false,                    // external axis handles it
+                    showYAxis = false,                    // external axis handles it
+                    maxXTicksLimit = slice.size,          // show all X labels of the slice
+                    yTickStep = effectiveTickStep,        // keep grid aligned with external axis
+                    windowSize = null,                    // no inner scroll
+                    contentPadding = PaddingValues(
+                        start = if (yAxisPosition == YAxisPosition.LEFT) 0.dp else 0.dp,
+                        end = if (yAxisPosition == YAxisPosition.RIGHT) 0.dp else 0.dp,
+                        top = 0.dp,
+                        bottom = 0.dp
+                    ),
+                    pageSize = null,                      // don't recurse
+                    unit = unit
+                )
+            }
+
+            // RIGHT fixed external Y-axis
+            if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                FixedPagerYAxisScatter(
+                    maxY = maxRounded,
+                    yAxisPosition = yAxisPosition,
+                    step = effectiveTickStep,
+                    width = yAxisFixedWidth
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FixedPagerYAxisScatter(
+    maxY: Double,
+    yAxisPosition: YAxisPosition,
+    step: Double,
+    width: Dp
+) {
+    Canvas(
+        modifier = Modifier
+            .width(width)
+            .fillMaxHeight()
+    ) {
+        val m = ChartMath.computeMetrics(
+            size = size,
+            values = listOf(0.0, maxY),
+            chartType = ChartType.SCATTERPLOT,
+            minY = 0.0,
+            maxY = maxY,
+            includeYAxisPadding = false,
+            fixedTickStep = step
+        )
+        ChartDraw.drawYAxisStandalone(
+            drawScope = this,
+            metrics = m,
+            yAxisPosition = yAxisPosition,
+            paneWidthPx = size.width
+        )
     }
 }

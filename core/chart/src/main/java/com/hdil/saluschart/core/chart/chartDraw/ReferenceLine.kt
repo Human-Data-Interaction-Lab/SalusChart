@@ -30,9 +30,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.BaseChartPoint
+import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.StackedChartPoint
+import com.hdil.saluschart.core.chart.StackedChartMark
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import kotlin.math.abs
@@ -73,17 +73,17 @@ object ReferenceLine {
      * @param chartType 차트 타입 (스택 바 차트의 경우 총합의 평균을 계산)
      * @return 계산된 평균값 (정수로 반올림됨)
      */
-    fun calculateAverage(data: List<BaseChartPoint>, chartType: ChartType): Float {
+    fun calculateAverage(data: List<BaseChartMark>, chartType: ChartType): Float {
         if (data.isEmpty()) return 0f
 
         return when (chartType) {
             ChartType.STACKED_BAR -> {
                 // 스택 바 차트: 각 스택의 총합의 평균
-                val stackedData = data.filterIsInstance<StackedChartPoint>()
+                val stackedData = data.filterIsInstance<StackedChartMark>()
                 if (stackedData.isEmpty()) {
                     data.map { it.y }.average().roundToInt().toFloat()
                 } else {
-                    stackedData.map { it.y }.average().roundToInt().toFloat() // StackedChartPoint의 y값은 각 세그먼트의 총합
+                    stackedData.map { it.y }.average().roundToInt().toFloat() // StackedChartMark의 y값은 각 세그먼트의 총합
                 }
             }
             else -> {
@@ -99,7 +99,7 @@ object ReferenceLine {
      * @param data 차트 데이터 포인트 목록
      * @return 추세선의 기울기와 y절편을 포함한 Pair (slope, intercept)
      */
-    private fun calculateTrendLine(data: List<BaseChartPoint>): Pair<Float, Float> {
+    private fun calculateTrendLine(data: List<BaseChartMark>): Pair<Float, Float> {
         if (data.size < 2) return Pair(0f, 0f)
 
         // 선형 회귀를 이용한 추세선 계산
@@ -135,7 +135,7 @@ object ReferenceLine {
     @Composable
     fun ReferenceLine(
         modifier: Modifier = Modifier,
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
         chartType: ChartType,
         referenceLineType: ReferenceLineType,
@@ -192,7 +192,7 @@ object ReferenceLine {
      */
     @Composable
     private fun AverageLine(
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
         chartType: ChartType,
         color: Color,
@@ -298,7 +298,7 @@ object ReferenceLine {
      */
     @Composable
     private fun TrendLine(
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
         color: Color,
         strokeWidth: Dp,

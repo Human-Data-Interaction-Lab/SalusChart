@@ -1,49 +1,49 @@
 package com.hdil.saluschart.core.chart
 
-interface BaseChartPoint {
+interface BaseChartMark {
     val x: Double
     val y: Double
     val label: String?
 }
 
-data class ChartPoint(
+data class ChartMark(
     override val x: Double,
     override val y: Double,
     override val label: String? = null,
     val color: Int? = null,
     val isSelected: Boolean = false
-) : BaseChartPoint {
+) : BaseChartMark {
     override fun toString(): String {
-        return "ChartPoint(x=$x, y=$y, label=$label, color=$color, isSelected=$isSelected)"
+        return "ChartMark(x=$x, y=$y, label=$label, color=$color, isSelected=$isSelected)"
     }
 }
 
 /**
  * 범위 바 차트를 위한 데이터 포인트 클래스
  */
-data class RangeChartPoint(
+data class RangeChartMark(
     override val x: Double,
-    val minPoint: ChartPoint,
-    val maxPoint: ChartPoint,
+    val minPoint: ChartMark,
+    val maxPoint: ChartMark,
     override val label: String? = null
-) : BaseChartPoint {
+) : BaseChartMark {
     override val y: Double get() = maxPoint.y - minPoint.y
     override fun toString(): String {
-        return "RangeChartPoint(x=$x, minPoint=$minPoint, maxPoint=$maxPoint, label=$label)"
+        return "RangeChartMark(x=$x, minPoint=$minPoint, maxPoint=$maxPoint, label=$label)"
     }
 }
 
 /**
  * 스택 바 차트를 위한 데이터 포인트 클래스
  */
-data class StackedChartPoint(
+data class StackedChartMark(
     override val x: Double,
-    val segments: List<ChartPoint>,
+    val segments: List<ChartMark>,
     override val label: String? = null
-) : BaseChartPoint {
+) : BaseChartMark {
     override val y: Double get() = segments.sumOf { it.y }
     override fun toString(): String {
-        return "StackedChartPoint(x=$x, segments=$segments, label=$label)"
+        return "StackedChartMark(x=$x, segments=$segments, label=$label)"
     }
 }
 
@@ -58,7 +58,7 @@ data class StackedChartPoint(
  * @param color 색상 (null인 경우 기본 색상 팔레트 사용)
  * @param isSelected 선택 상태 여부
  */
-data class ProgressChartPoint(
+data class ProgressChartMark(
     override val x: Double,
     val current: Double,
     val max: Double,
@@ -66,12 +66,12 @@ data class ProgressChartPoint(
     val unit: String? = null,
     val color: Int? = null,
     val isSelected: Boolean = false
-) : BaseChartPoint {
+) : BaseChartMark {
     val progress: Double = if (max > 0.0) (current / max).coerceIn(0.0, 1.0) else 0.0
     val percentage: Double = progress * 100.0
     override val y: Double get() = progress
 
     override fun toString(): String {
-        return "ProgressChartPoint(x=$x, current=$current, max=$max, progress=$progress, label=$label, unit=$unit)"
+        return "ProgressChartMark(x=$x, current=$current, max=$max, progress=$progress, label=$label, unit=$unit)"
     }
 }

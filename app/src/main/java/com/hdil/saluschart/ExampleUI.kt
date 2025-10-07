@@ -31,12 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
@@ -78,8 +79,8 @@ private val bodyFatHealthData = SampleDataProvider.getBodyFatData()
 private val rangeData = SampleDataProvider.getHeartRateRangeData()
 private val stackedData = SampleDataProvider.getNutritionStackedData()
 private val segmentLabels = SampleDataProvider.segmentLabels
-private val chartPoints = SampleDataProvider.getBasicChartPoints()
-private val chartPoints4 = SampleDataProvider.getExtendedChartPoints()
+private val ChartMarks = SampleDataProvider.getBasicChartMarks()
+private val ChartMarks4 = SampleDataProvider.getExtendedChartMarks()
 
 
 private val yearMonth = YearMonth.now()
@@ -88,30 +89,29 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
+        "Standard Bar Chart",
+        "Step Count - Bar Chart",
+        "BarChart with Paging",
+        "Weight - Line Chart",
+        "Body Fat - Line Chart",
+        "LineChart with Paging",
+        "Blood Pressure - Scatter Plot",
+        "Diet - Stacked Bar Chart FreeScroll",
+        "Diet - Stacked Bar Chart Paged",
         "Heart Rate - Range Bar Basic Chart",
         "Heart Rate - Range Bar FreeScroll Fixed Axis",
         "Heart Rate - Range Bar Paged (Left Fixed)",
-        "Diet - Stacked Bar Chart FreeScroll",
-        "Diet - Stacked Bar Chart Paged",
-        "Sleep Stage Chart",
-        "Sleep Stage Chart - FreeScroll Fixed Axis",
-        "Progress Bar Chart",
-        "Progress Ring Chart",
-        "Standard Bar Chart",
-        "BarChart with Paging",
-        "Standard Line Chart",
-        "LineChart with Paging",
+        "Heart Rate - Range Bar Paged (Right Fixed)",
         "CalendarChart 1",
         "CalendarChart 2",
-        "Heart Rate - Range Bar Paged (Right Fixed)",
-        "Step Count - Bar Chart",
-        "Weight - Line Chart",
-        "Body Fat - Line Chart",
-        "Blood Pressure - Scatter Plot",
         "CalendarChart with Paging",
         "Minimal Charts",
         "PieChart 1",
         "DonutChart 1",
+        "Progress Bar Chart",
+        "Progress Ring Chart",
+        "Sleep Stage Chart",
+        "Sleep Stage Chart - FreeScroll Fixed Axis"
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }
@@ -152,10 +152,9 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Standard Bar Chart" -> BarChart_1()
                 "Step Count - Bar Chart" -> BarChart_2()
                 "BarChart with Paging" -> BarChart_3()
-                "LineChart with Paging" -> LineChart_3()
-                "Standard Line Chart" -> LineChart_3()
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
+                "LineChart with Paging" -> LineChart_3()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
                 "Diet - Stacked Bar Chart FreeScroll" -> StackedBarChart_1()
                 "Diet - Stacked Bar Chart Paged" -> StackedBarChart_Paged_LeftAxis()
@@ -181,10 +180,10 @@ fun ExampleUI(modifier: Modifier = Modifier) {
 
 @Composable
 fun BarChart_1() {
-    val avgY = if (chartPoints.isNotEmpty()) chartPoints.map { it.y }.average().toFloat() else 0f
+    val avgY = if (ChartMarks.isNotEmpty()) ChartMarks.map { it.y }.average().toFloat() else 0f
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints,
+        data = ChartMarks,
         xLabel = "Week",
         yLabel = "Value",
         title = "요일별 데이터",
@@ -308,7 +307,7 @@ fun BarChart_2() {
                 else -> 12
             },
             unifyYAxisAcrossPages = true,
-            yTickStepDefaultForPaged = when (selectedTimeUnit) {
+            yTickStep = when (selectedTimeUnit) {
                 "Hour" -> 400.0
                 "Day" -> 4000.0
                 "Week" -> 10000.0
@@ -333,15 +332,14 @@ fun BarChart_2() {
 fun BarChart_3() {
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints4,
+        data = ChartMarks4,
         title = "Weekly Data",
         barColor = Primary_Purple,
-        yAxisPosition = YAxisPosition.RIGHT,
+        yAxisPosition = YAxisPosition.LEFT,
         showLabel = true,
         // paged mode:
         pageSize = 7,
-        unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10.0
+        yTickStep = 10.0,
     )
 }
 
@@ -349,7 +347,7 @@ fun BarChart_3() {
 fun DonutChart_1() {
     PieChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints.subList(0, 4),
+        data = ChartMarks.subList(0, 4),
         title = "요일별 활동량",
         isDonut = true,
         colors = listOf(Primary_Purple, Teel, Orange, Yellow),
@@ -483,8 +481,7 @@ fun LineChart_2() {
         yAxisPosition = YAxisPosition.RIGHT,
         referenceLineType = ReferenceLineType.TREND,
         referenceLineStyle = LineStyle.DASHDOT,
-        windowSize = 8,
-        autoFixYAxisOnScroll = true
+        windowSize = 8
     )
 }
 
@@ -492,7 +489,7 @@ fun LineChart_2() {
 fun LineChart_3() {
     LineChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = chartPoints4,
+        data = ChartMarks4,
         title = "요일별 활동량",
         lineColor = Primary_Purple,
         strokeWidth = 12f,
@@ -500,18 +497,17 @@ fun LineChart_3() {
         showValue = true,
         yAxisPosition = YAxisPosition.RIGHT,
         // paging:
-        pagingEnabled = true,
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStep = 10.0
-    )
+        yTickStep = 10.0,
+        )
 }
 
 @Composable
 fun PieChart_1() {
     PieChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
-        data = chartPoints.subList(0, 4),
+        data = ChartMarks.subList(0, 4),
         title = "요일별 활동량",
         isDonut = false,
         colors = listOf(Primary_Purple, Teel, Orange, Yellow),
@@ -574,14 +570,14 @@ fun ScatterPlot_1() {
         aggregationType = AggregationType.DAILY_AVERAGE
     )
 
-    // Flatten the map into a single list of ChartPoints
+    // Flatten the map into a single list of ChartMarks
     // This allows multiple points (systolic + diastolic) at the same x-axis
-    val allBloodPressurePoints = bloodPressureMap.flatMap { (property, chartPoints) ->
-        chartPoints.map { chartPoint ->
-            ChartPoint(
-                x = chartPoint.x,
-                y = chartPoint.y,
-                label = "${chartPoint.label}"
+    val allBloodPressurePoints = bloodPressureMap.flatMap { (property, ChartMarks) ->
+        ChartMarks.map { ChartMark ->
+            ChartMark(
+                x = ChartMark.x,
+                y = ChartMark.y,
+                label = "${ChartMark.label}"
             )
         }
     }
@@ -645,7 +641,7 @@ fun Minimal_Chart() {
                     .align(androidx.compose.ui.Alignment.CenterVertically)
             ) {
                 MinimalBarChart(
-                    data = chartPoints,
+                    data = ChartMarks,
                     color = Primary_Purple,
                     referenceLineType = ReferenceLineType.AVERAGE
                 )
@@ -693,7 +689,7 @@ fun Minimal_Chart() {
                     .align(androidx.compose.ui.Alignment.CenterVertically)
             ) {
                 MinimalLineChart(
-                    data = chartPoints,
+                    data = ChartMarks,
                     color = Primary_Purple,
                     referenceLineType = ReferenceLineType.TREND
                 )
@@ -787,10 +783,10 @@ fun Minimal_Chart() {
                     .height(52.dp)
                     .align(androidx.compose.ui.Alignment.CenterVertically)
             ) {
-                val singleRangeData = RangeChartPoint(
+                val singleRangeData = RangeChartMark(
                     x = 0.0,
-                    minPoint = ChartPoint(x = 0.0, y = 78.0),
-                    maxPoint = ChartPoint(x = 0.0, y = 104.0),
+                    minPoint = ChartMark(x = 0.0, y = 78.0),
+                    maxPoint = ChartMark(x = 0.0, y = 104.0),
                     label = "Heart Rate"
                 )
                 MinimalGaugeChart(
@@ -820,6 +816,7 @@ fun StackedBarChart_1() {
         legendPosition = LegendPosition.BOTTOM,
         yAxisPosition = YAxisPosition.RIGHT,
         interactionType = InteractionType.StackedBar.TOUCH_AREA,
+        yAxisFixedWidth = 10.dp,
         colors = listOf(
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
@@ -843,7 +840,7 @@ fun StackedBarChart_Paged_LeftAxis() {
         barWidthRatio = 0.8f,
         pageSize = 4,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 20.0,
+        yTickStep = 20.0,
         yAxisPosition = YAxisPosition.LEFT,
         interactionType = InteractionType.StackedBar.BAR,
         colors = listOf(
@@ -875,7 +872,6 @@ fun RangeBarChart_FreeScroll_FixedAxis() {
         data = rangeData,
         title = "Free-scroll + Fixed Y-Axis",
         windowSize = 7,
-        fixedYAxis = true,
         yTickStep = 10.0,
         barWidthRatio = 0.7f,
         interactionType = InteractionType.RangeBar.BAR, // bars themselves are tappable
@@ -891,7 +887,7 @@ fun RangeBarChart_Paged_LeftAxis() {
         title = "Paged + Fixed Left Y-Axis",
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10.0,
+        yTickStep = 10.0,
         barWidthRatio = 0.75f,
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "bpm"
@@ -906,7 +902,7 @@ fun RangeBarChart_Paged_RightAxis() {
         title = "Paged + Fixed Right Y-Axis",
         pageSize = 7,
         unifyYAxisAcrossPages = true,
-        yTickStepDefaultForPaged = 10.0,
+        yTickStep = 10.0,
         yAxisPosition = YAxisPosition.RIGHT,
         barWidthRatio = 0.75f,
         interactionType = InteractionType.RangeBar.BAR,
@@ -962,7 +958,7 @@ fun XAxisTickReductionDemo() {
         )
 
         // Create dense data with many labels (50 points)
-        val denseChartPoints = SampleDataProvider.getDenseChartPoints(50)
+        val denseChartMarks = SampleDataProvider.getDenseChartMarks(50)
 
         Text(
             text = "Without Tick Reduction (50 labels)",
@@ -971,7 +967,7 @@ fun XAxisTickReductionDemo() {
         )
         BarChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
-            data = denseChartPoints,
+            data = denseChartMarks,
             title = "Dense Data - All Labels (Overlapping)",
             barColor = Color.Red,
             barWidthRatio = 0.8f,
@@ -988,7 +984,7 @@ fun XAxisTickReductionDemo() {
         )
         BarChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
-            data = denseChartPoints,
+            data = denseChartMarks,
             title = "Dense Data - Reduced Labels (Clean)",
             barColor = Primary_Purple,
             barWidthRatio = 0.8f,
@@ -1088,11 +1084,11 @@ fun SleepStageChart_1() {
         title = "Sleep Stage Analysis",
         showLabels = true,
         showXAxis = false,
+        showYAxis = true,
         onStageClick = { index, tooltipText ->
             // Handle stage click if needed
         },
         barHeightRatio = 0.6f,
-        fixedYAxis = true,
         yAxisPosition = YAxisPosition.LEFT
     )
 }
@@ -1109,9 +1105,13 @@ fun SleepStageChart_2() {
             // Handle stage click if needed
         },
         barHeightRatio = 0.8f,
-        fixedYAxis = true,
         yAxisPosition = YAxisPosition.LEFT,
-        windowSize = 8,
-        autoFixYAxisOnScroll = true
+        windowSize = 8
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BarChartPreview() {
+    StackedBarChart_1()
 }

@@ -57,6 +57,7 @@ object BarChartDraw {
      * @param centered 텍스트를 중앙 정렬할지 여부 (기본값: true)
      * @param textSize 레이블 텍스트 크기 (기본값: 28f)
      * @param maxXTicksLimit X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+     * @param xLabelAutoSkip 라벨 자동 스킵 활성화 여부 (true이면 텍스트 너비 기반 자동 계산)
      */
     fun drawBarXAxisLabels(
         ctx: DrawContext,
@@ -64,12 +65,20 @@ object BarChartDraw {
         metrics: ChartMath.ChartMetrics,
         centered: Boolean = true,
         textSize: Float = 28f,
-        maxXTicksLimit: Int? = null
+        maxXTicksLimit: Int? = null,
+        xLabelAutoSkip: Boolean = false
     ) {
-        // 틱 개수 제한이 설정된 경우 라벨을 줄임
-        val (displayLabels, displayIndices) = if (maxXTicksLimit != null) {
-            ChartMath.reduceXAxisTicks(labels, maxXTicksLimit)
+        // 라벨 감소 로직
+        val (displayLabels, displayIndices) = if (xLabelAutoSkip) {
+            // 자동 스킵: 텍스트 너비 기반으로 계산
+            ChartMath.computeAutoSkipLabels(
+                labels = labels,
+                textSize = textSize,
+                chartWidth = metrics.chartWidth,
+                maxXTicksLimit = maxXTicksLimit
+            )
         } else {
+            // 모든 라벨 표시
             Pair(labels, labels.indices.toList())
         }
         

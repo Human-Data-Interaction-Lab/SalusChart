@@ -303,7 +303,7 @@ fun BarChart_2() {
             title = "걸음수 데이터 ($selectedTimeUnit 단위)",
             barColor = Primary_Purple,
             barWidthRatio = 0.8f,
-            xLabelTextSize = 15f,
+            xLabelTextSize = 28f,
             tooltipTextSize = 32f,
             interactionType = InteractionType.Bar.TOUCH_AREA,
             pageSize  = when (selectedTimeUnit) {
@@ -326,6 +326,7 @@ fun BarChart_2() {
                 else -> null
             }, // 임시 (tooltip 잘 보이기 위해)
             showLabel = false,
+            xLabelAutoSkip = true,
             yAxisPosition = YAxisPosition.RIGHT,
             referenceLineType = ReferenceLineType.AVERAGE,
             referenceLineStyle = LineStyle.DASHED,
@@ -1033,87 +1034,24 @@ fun XAxisTickReductionDemo() {
             xLabelTextSize = 20f,
             maxXTicksLimit = 10 // Limit to 10 labels
         )
-    }
-}
 
-@Composable
-fun TimeStepBarChart() {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf("30분대별") }
+        Spacer(modifier = Modifier.height(24.dp))
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "실제 걸음 수 데이터 (5/4-5/5)",
-                modifier = Modifier.weight(1f),
-                fontSize = 20.sp,
-                color = Color.Black
-            )
-            IconButton(
-                onClick = { expanded = !expanded },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown",
-                    tint = Color.Black
-                )
-            }
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            DropdownMenuItem(
-                text = { Text("시간대별") },
-                onClick = {
-                    selectedOption = "시간대별"
-                    expanded = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            DropdownMenuItem(
-                text = { Text("일별") },
-                onClick = {
-                    selectedOption = "일별"
-                    expanded = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
+        // Test 3: Auto-skip feature
+        Text(
+            text = "With Auto-Skip (Automatic Width-Based)",
+            fontSize = 16.sp,
+            color = Color.Blue,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         BarChart(
-            modifier = Modifier.fillMaxWidth().height(500.dp),
-            data = when (selectedOption) {
-                "시간대별" -> stepCountHealthData.transform(
-                    timeUnit = TimeUnitGroup.HOUR,
-                    aggregationType = AggregationType.SUM
-                )
-                "일별" -> stepCountHealthData.transform(
-                    timeUnit = TimeUnitGroup.DAY,
-                    aggregationType = AggregationType.SUM
-                )
-                else -> stepCountHealthData.transform(
-                    timeUnit = TimeUnitGroup.HOUR,
-                    aggregationType = AggregationType.SUM
-                )
-            },
-            title = "걸음 수 (${selectedOption}) - ${if (selectedOption == "30분대별") "Raw Data" else "Aggregated"}",
-            barColor = Primary_Purple,
-            barWidthRatio = 0.5f,
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = denseChartMarks,
+            title = "Dense Data - Auto-Skip (Width-Based)",
+            barColor = Color.Blue,
+            barWidthRatio = 0.8f,
             xLabelTextSize = 20f,
-            // 30분대별과 시간대별일 때는 windowSize로 스크롤링 활성화
-            windowSize = when (selectedOption) {
-                "30분대별" -> 10
-                "시간대별" -> 8
-                else -> null
-            }
+            xLabelAutoSkip = true // Enable auto-skip based on text width
         )
     }
 }

@@ -62,6 +62,7 @@ fun RangeBarChart(
     onBarClick: ((Int, RangeChartMark) -> Unit)? = null,
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
+    xLabelAutoSkip: Boolean = true,
     maxXTicksLimit: Int? = null,
     yTickStep: Double? = null,
     unit: String = "",
@@ -121,7 +122,6 @@ fun RangeBarChart(
             onBarClick = onBarClick,
             showTitle = showTitle,
             showYAxis = showYAxis,
-            maxXTicksLimit = requestedPageSize,
             unit = unit,
             // scale/paging
             pageSize = requestedPageSize,
@@ -129,7 +129,9 @@ fun RangeBarChart(
             yTickStep = yTickStep,
             initialPageIndex = initialPageIndex,
             outerPadding = contentPadding,
-            yAxisFixedWidth = yAxisFixedWidth
+            yAxisFixedWidth = yAxisFixedWidth,
+            maxXTicksLimit = maxXTicksLimit,
+            xLabelAutoSkip = xLabelAutoSkip
         )
         return
     }
@@ -229,7 +231,8 @@ fun RangeBarChart(
                             ctx = drawContext,
                             labels = labels,
                             metrics = metrics,
-                            maxXTicksLimit = maxXTicksLimit
+                            maxXTicksLimit = maxXTicksLimit,
+                            xLabelAutoSkip = xLabelAutoSkip
                         )
                     }
 
@@ -355,7 +358,8 @@ private fun RangeBarChartPagedInternal(
     onBarClick: ((Int, RangeChartMark) -> Unit)?,
     showTitle: Boolean,
     showYAxis: Boolean,
-    maxXTicksLimit: Int?,
+    maxXTicksLimit: Int? = null,
+    xLabelAutoSkip: Boolean,
     unit: String,
     // scale/paging
     pageSize: Int,
@@ -437,6 +441,7 @@ private fun RangeBarChartPagedInternal(
                     showTitle = false,
                     showYAxis = false,                    // external axis handles it
                     maxXTicksLimit = maxXTicksLimit,
+                    xLabelAutoSkip = xLabelAutoSkip,
                     yTickStep = effectiveTickStep,
                     windowSize = null,                    // no inner scroll
                     contentPadding = PaddingValues(

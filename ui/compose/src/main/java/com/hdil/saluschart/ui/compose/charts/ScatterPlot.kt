@@ -69,6 +69,7 @@ fun ScatterPlot(
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
+    xLabelAutoSkip: Boolean = true,
     maxXTicksLimit: Int? = null,
     yTickStep: Double? = null,
     unit: String = "",
@@ -120,7 +121,9 @@ fun ScatterPlot(
             minY = minY,
             maxY = maxY,
             unit = unit,
-            yAxisFixedWidth = yAxisFixedWidth
+            yAxisFixedWidth = yAxisFixedWidth,
+            maxXTicksLimit = maxXTicksLimit,
+            xLabelAutoSkip = xLabelAutoSkip
         )
         return
     }
@@ -219,7 +222,13 @@ fun ScatterPlot(
                         if (showYAxis && !isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
-                        ChartDraw.Line.drawLineXAxisLabels(drawContext, xLabels, metrics, maxXTicksLimit = maxXTicksLimit)
+                        ChartDraw.Line.drawLineXAxisLabels(
+                            ctx = drawContext,
+                            labels = xLabels,
+                            metrics = metrics,
+                            maxXTicksLimit = maxXTicksLimit,
+                            xLabelAutoSkip = xLabelAutoSkip
+                        )
                     }
 
                     ChartDraw.Scatter.PointMarker(
@@ -353,6 +362,8 @@ private fun ScatterPlotPagedInternal(
     unit: String,
     outerPadding: PaddingValues = PaddingValues(0.dp),
     yAxisFixedWidth: Dp = 0.dp,
+    maxXTicksLimit: Int? = null,
+    xLabelAutoSkip: Boolean
 ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
@@ -420,7 +431,8 @@ private fun ScatterPlotPagedInternal(
                     interactionType = interactionType,
                     showTitle = false,                    // external axis handles it
                     showYAxis = false,                    // external axis handles it
-                    maxXTicksLimit = slice.size,          // show all X labels of the slice
+                    maxXTicksLimit = maxXTicksLimit,
+                    xLabelAutoSkip = xLabelAutoSkip,
                     yTickStep = effectiveTickStep,        // keep grid aligned with external axis
                     windowSize = null,                    // no inner scroll
                     contentPadding = PaddingValues(

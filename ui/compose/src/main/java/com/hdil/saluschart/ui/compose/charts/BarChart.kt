@@ -62,6 +62,7 @@ fun BarChart(
     showTitle: Boolean = false,
     showYAxis: Boolean = true,
     showLabel: Boolean = false,
+    xLabelAutoSkip: Boolean = true,
     maxXTicksLimit: Int? = null,
     yTickStep: Double? = null,    // Grid tick step (both modes)
     unit: String = "",
@@ -122,7 +123,9 @@ fun BarChart(
             minY = minY,
             maxY = maxY,
             unit = unit,
-            yAxisFixedWidth = yAxisFixedWidth
+            yAxisFixedWidth = yAxisFixedWidth,
+            maxXTicksLimit = maxXTicksLimit,
+            xLabelAutoSkip = xLabelAutoSkip
         )
         return
     }
@@ -217,7 +220,8 @@ fun BarChart(
                             labels = xLabels,
                             metrics = metrics,
                             textSize = xLabelTextSize,
-                            maxXTicksLimit = maxXTicksLimit
+                            maxXTicksLimit = maxXTicksLimit,
+                            xLabelAutoSkip = xLabelAutoSkip
                         )
                     }
 
@@ -350,6 +354,8 @@ private fun BarChartPagedInternal(
     unit: String,
     outerPadding: PaddingValues = PaddingValues(0.dp),
     yAxisFixedWidth: Dp = 0.dp,
+    maxXTicksLimit: Int? = null,
+    xLabelAutoSkip: Boolean
 ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
@@ -420,7 +426,8 @@ private fun BarChartPagedInternal(
                     },
                     showLabel = showLabel,
                     windowSize = null,                 // no inner scroll
-                    maxXTicksLimit = slice.size,       // show all labels in page
+                    maxXTicksLimit = maxXTicksLimit,
+                    xLabelAutoSkip = xLabelAutoSkip,
                     referenceLineType = ReferenceLineType.NONE,
                     showYAxis = false,                 // external axis handles it
                     yTickStep = effectiveTickStep,

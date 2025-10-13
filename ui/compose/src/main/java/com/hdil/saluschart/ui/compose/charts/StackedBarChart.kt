@@ -69,6 +69,7 @@ fun StackedBarChart(
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
+    xLabelAutoSkip: Boolean = true,
     maxXTicksLimit: Int? = null,
     minY: Double? = null,
     maxY: Double? = null,
@@ -120,7 +121,6 @@ fun StackedBarChart(
             onBarClick = onBarClick,
             showTitle = showTitle,
             showYAxis = showYAxis,
-            maxXTicksLimit = requestedPageSize,
             unit = unit,
             // scale/paging
             pageSize = requestedPageSize,
@@ -131,7 +131,9 @@ fun StackedBarChart(
             maxY = maxY,
             yAxisPosition = yAxisPosition,
             outerPadding = contentPadding,
-            yAxisFixedWidth = yAxisFixedWidth
+            yAxisFixedWidth = yAxisFixedWidth,
+            xLabelAutoSkip = xLabelAutoSkip,
+            maxXTicksLimit = maxXTicksLimit,
         )
         return
     }
@@ -210,7 +212,8 @@ fun StackedBarChart(
                                 ctx = drawContext,
                                 labels = xLabels,
                                 metrics = m,
-                                maxXTicksLimit = maxXTicksLimit
+                                maxXTicksLimit = maxXTicksLimit,
+                                xLabelAutoSkip = xLabelAutoSkip
                             )
                         }
 
@@ -422,7 +425,6 @@ private fun StackedBarChartPagedInternal(
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)?,
     showTitle: Boolean,
     showYAxis: Boolean,
-    maxXTicksLimit: Int?,
     unit: String,
     // scale/paging
     pageSize: Int,
@@ -434,6 +436,8 @@ private fun StackedBarChartPagedInternal(
     yAxisPosition: YAxisPosition,
     outerPadding: PaddingValues,
     yAxisFixedWidth: Dp = 0.dp,
+    xLabelAutoSkip: Boolean,
+    maxXTicksLimit: Int? = null,
 ) {
     // transform once
     val stackedData = remember(data) {
@@ -516,6 +520,7 @@ private fun StackedBarChartPagedInternal(
                         showTitle = false,
                         showYAxis = false,                    // external axis handles it
                         maxXTicksLimit = maxXTicksLimit,
+                        xLabelAutoSkip = xLabelAutoSkip,
                         yTickStep = effectiveTickStep,
                         minY = minRounded,                    // ✅ Unify scale with external axis
                         maxY = maxRounded,                    // ✅ Unify scale with external axis

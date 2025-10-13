@@ -69,6 +69,7 @@ fun LineChart(
     pointRadius: Pair<Dp, Dp> = Pair(4.dp, 2.dp),
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    xLabelAutoSkip: Boolean = true,
     maxXTicksLimit: Int? = null,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
@@ -134,7 +135,9 @@ fun LineChart(
             minY = minY,
             maxY = maxY,
             unit = unit,
-            yAxisFixedWidth = yAxisFixedWidth
+            yAxisFixedWidth = yAxisFixedWidth,
+            maxXTicksLimit = maxXTicksLimit,
+            xLabelAutoSkip = xLabelAutoSkip
         )
         return
     }
@@ -229,7 +232,8 @@ fun LineChart(
                             labels = xLabels,
                             metrics = metrics,
                             textSize = xLabelTextSize,
-                            maxXTicksLimit = maxXTicksLimit
+                            maxXTicksLimit = maxXTicksLimit,
+                            xLabelAutoSkip = xLabelAutoSkip
                         )
 
                         val canvasForLabels = Size(
@@ -432,6 +436,8 @@ private fun LineChartPagedInternal(
     unit: String,
     outerPadding: PaddingValues = PaddingValues(0.dp),
     yAxisFixedWidth: Dp = 0.dp,
+    maxXTicksLimit: Int? = null,
+    xLabelAutoSkip: Boolean
 ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
@@ -499,7 +505,8 @@ private fun LineChartPagedInternal(
                     interactionType = interactionType,
                     showPoint = showPoint,
                     showValue = showValue,
-                    maxXTicksLimit = slice.size,          // show all X labels of the slice
+                    maxXTicksLimit = maxXTicksLimit,
+                    xLabelAutoSkip = xLabelAutoSkip,
                     referenceLineType = ReferenceLineType.NONE,
                     showTitle = false,                    // external axis handles it
                     showYAxis = false,                    // external axis handles it

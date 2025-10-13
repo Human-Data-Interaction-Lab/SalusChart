@@ -87,59 +87,31 @@ fun List<Diet>.toDietTemporalDataSet(): TemporalDataSet {
 
 /**
  * HeartRate 리스트를 TemporalDataSet로 변환
- * 시간 간격 데이터를 분별로 집계하여 단일 시점 데이터로 변환
- * 각 HeartRate의 샘플들의 평균 BPM을 해당 측정 기간에 걸쳐 분별로 분산
+ * 
+ * 모든 HeartRateSample을 추출하여 각 샘플을 독립적인 데이터 포인트로 변환합니다.
+ * HeartRate의 startTime/endTime는 무시되며, 각 샘플의 time만 사용됩니다.
+ * 
  */
 fun List<HeartRate>.toHeartRateTemporalDataSet(): TemporalDataSet {
-    val aggregatedData = aggregateActivityDataTime(
-        activities = this,
-        getStartTime = { it.startTime },
-        getEndTime = { it.endTime },
-        extractValues = { heartRate ->
-            // 해당 HeartRate의 평균 BPM 계산
-            val avgBpm = if (heartRate.samples.isNotEmpty()) {
-                heartRate.samples.map { it.beatsPerMinute.toDouble() }.average()
-            } else {
-                0.0
-            }
-            mapOf("bpm" to avgBpm)
-        }
-    )
+    // 모든 HeartRate의 샘플을 추출 (각 샘플 = 독립적인 데이터 포인트)
+    val allSamples = this.flatMap { heartRate ->
+        heartRate.samples
+    }
     
-    val sortedTimes = aggregatedData.keys.sorted()
+    if (allSamples.isEmpty()) {
+        return TemporalDataSet(
+            x = emptyList(),
+            y = emptyList(),
+            timeUnit = TimeUnitGroup.MINUTE
+        )
+    }
+    
+    // 시간순 정렬 (같은 시간에 여러 샘플이 있을 수 있으므로 그대로 유지)
+    val sortedSamples = allSamples.sortedBy { it.time }
+    
     return TemporalDataSet(
-        x = sortedTimes,
-        y = sortedTimes.map { aggregatedData[it]?.get("bpm") ?: 0.0 },
-        timeUnit = TimeUnitGroup.MINUTE
-    )
-}
-
-/**
- * HeartRate 리스트를 범위 기반 TemporalDataSet로 변환 (최소/최대값)
- * 범위 차트에 유용함
- */
-fun List<HeartRate>.toRangeTemporalDataSet(): TemporalDataSet {
-    val times = this.map { it.startTime }
-    val yMultiple = mapOf(
-        "min" to this.map { heartRate ->
-            if (heartRate.samples.isNotEmpty()) {
-                heartRate.samples.minOf { it.beatsPerMinute }.toDouble()
-            } else {
-                0.0
-            }
-        },
-        "max" to this.map { heartRate ->
-            if (heartRate.samples.isNotEmpty()) {
-                heartRate.samples.maxOf { it.beatsPerMinute }.toDouble()
-            } else {
-                0.0
-            }
-        }
-    )
-
-    return TemporalDataSet(
-        x = times,
-        yMultiple = yMultiple,
+        x = sortedSamples.map { it.time },
+        y = sortedSamples.map { it.beatsPerMinute.toDouble() },
         timeUnit = TimeUnitGroup.MINUTE
     )
 }
@@ -337,124 +309,6 @@ fun List<HealthData>.toTemporalDataSet(): TemporalDataSet? {
     }
 }
 
-
-// TODO: HealthData 여러 타입이 하나의 리스트에 섞여있는 경우
-///**
-// * 여러 datatype이 혼합된 HealthData 리스트를 타입별로 분리된 TemporalDataSet 맵으로 변환
-// *
-// * @return 데이터 타입명을 키로 하고 해당 TemporalDataSet를 값으로 하는 맵
-// */
-//fun List<HealthData>.toTemporalDataSetsByType(): Map<String, TemporalDataSet> {
-//    val result = mutableMapOf<String, TemporalDataSet>()
-//
-//    // 타입별로 그룹핑
-//    val stepCounts = filterIsInstance<StepCount>()
-//    val exercises = filterIsInstance<Exercise>()
-//    val diets = filterIsInstance<Diet>()
-//    val heartRates = filterIsInstance<HeartRate>()
-//    val sleepSessions = filterIsInstance<SleepSession>()
-//    val bloodPressures = filterIsInstance<BloodPressure>()
-//    val bloodGlucoses = filterIsInstance<BloodGlucose>()
-//    val weights = filterIsInstance<Weight>()
-//    val bodyFats = filterIsInstance<BodyFat>()
-//    val skeletalMuscleMasses = filterIsInstance<SkeletalMuscleMass>()
-//
-//    // 각 타입별로 TemporalDataSet 생성
-//    if (stepCounts.isNotEmpty()) {
-//        result["StepCount"] = stepCounts.toStepCountTemporalDataSet()
-//    }
-//    if (exercises.isNotEmpty()) {
-//        result["Exercise"] = exercises.toExerciseTemporalDataSet()
-//    }
-//    if (diets.isNotEmpty()) {
-//        result["Diet"] = diets.toDietTemporalDataSet()
-//    }
-//    if (heartRates.isNotEmpty()) {
-//        result["HeartRate"] = heartRates.toHeartRateTemporalDataSet()
-//    }
-//    if (sleepSessions.isNotEmpty()) {
-//        result["SleepSession"] = sleepSessions.toSleepSessionTemporalDataSet()
-//    }
-//    if (bloodPressures.isNotEmpty()) {
-//        result["BloodPressure"] = bloodPressures.toBloodPressureTemporalDataSet()
-//    }
-//    if (bloodGlucoses.isNotEmpty()) {
-//        result["BloodGlucose"] = bloodGlucoses.toBloodGlucoseTemporalDataSet()
-//    }
-//    if (weights.isNotEmpty()) {
-//        result["Weight"] = weights.toWeightTemporalDataSet()
-//    }
-//    if (bodyFats.isNotEmpty()) {
-//        result["BodyFat"] = bodyFats.toBodyFatTemporalDataSet()
-//    }
-//    if (skeletalMuscleMasses.isNotEmpty()) {
-//        result["SkeletalMuscleMass"] = skeletalMuscleMasses.toSkeletalMuscleMassTemporalDataSet()
-//    }
-//
-//    return result
-//}
-
-// TODO: HealthData 여러 타입이 하나의 리스트에 섞여있는 경우
-///**
-// * 혼합 HealthData 리스트를 타입별로 변환하여 ChartMark 맵으로 반환하는 편의 함수
-// *
-// * @param timeUnit 변환할 시간 단위
-// * @param aggregationType 집계 방법
-// * @return 타입명을 키로 하고 ChartMark 리스트를 값으로 하는 맵
-// */
-//fun List<HealthData>.transformByType(
-//    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-//    aggregationType: AggregationType = AggregationType.SUM
-//): Map<String, List<ChartMark>> {
-//    val result = mutableMapOf<String, List<ChartMark>>()
-//
-//    // 타입별로 그룹핑
-//    val stepCounts = filterIsInstance<StepCount>()
-//    val exercises = filterIsInstance<Exercise>()
-//    val diets = filterIsInstance<Diet>()
-//    val heartRates = filterIsInstance<HeartRate>()
-//    val sleepSessions = filterIsInstance<SleepSession>()
-//    val bloodPressures = filterIsInstance<BloodPressure>()
-//    val bloodGlucoses = filterIsInstance<BloodGlucose>()
-//    val weights = filterIsInstance<Weight>()
-//    val bodyFats = filterIsInstance<BodyFat>()
-//    val skeletalMuscleMasses = filterIsInstance<SkeletalMuscleMass>()
-//
-//    // 각 타입별로 ChartMark로 직접 변환
-//    if (stepCounts.isNotEmpty()) {
-//        result["StepCount"] = stepCounts.transform(timeUnit, aggregationType)
-//    }
-//    if (exercises.isNotEmpty()) {
-//        result["Exercise"] = exercises.transform(timeUnit, aggregationType)
-//    }
-//    if (diets.isNotEmpty()) {
-//        result["Diet"] = diets.transform(timeUnit, aggregationType) // 기본적으로 calories
-//    }
-//    if (heartRates.isNotEmpty()) {
-//        result["HeartRate"] = heartRates.toTemporalDataSet().transform(timeUnit, aggregationType).toChartMarks()
-//    }
-//    if (sleepSessions.isNotEmpty()) {
-//        result["SleepSession"] = sleepSessions.toTemporalDataSet().transform(timeUnit, aggregationType).toChartMarks()
-//    }
-//    if (bloodPressures.isNotEmpty()) {
-//        result["BloodPressure"] = bloodPressures.transform(timeUnit, aggregationType) // 기본적으로 systolic
-//    }
-//    if (bloodGlucoses.isNotEmpty()) {
-//        result["BloodGlucose"] = bloodGlucoses.transform(timeUnit, aggregationType)
-//    }
-//    if (weights.isNotEmpty()) {
-//        result["Weight"] = weights.transform(timeUnit, aggregationType)
-//    }
-//    if (bodyFats.isNotEmpty()) {
-//        result["BodyFat"] = bodyFats.transform(timeUnit, aggregationType)
-//    }
-//    if (skeletalMuscleMasses.isNotEmpty()) {
-//        result["SkeletalMuscleMass"] = skeletalMuscleMasses.transform(timeUnit, aggregationType)
-//    }
-//
-//    return result
-//}
-
 /**
  * 시간 간격 기반 활동 데이터를 분별로 집계
  * 
@@ -494,7 +348,7 @@ private fun <T> aggregateActivityDataTime(
         } else {
             // 여러 분에 걸친 활동 - 분별로 비례 분할
             var currentMinute = startMinute
-            while (!currentMinute.isAfter(endMinute)) {
+            while (currentMinute.isBefore(endMinute)) {
                 val minuteStart = currentMinute
                 val minuteEnd = currentMinute.atZone(ZoneId.systemDefault()).plusMinutes(1).toInstant()
                 
@@ -510,10 +364,13 @@ private fun <T> aggregateActivityDataTime(
                     0.0
                 }
                 
-                val minuteMap = minuteValues.getOrPut(currentMinute) { mutableMapOf() }
-                activityValues.forEach { (property, value) ->
-                    val proportionalValue = value * proportion
-                    minuteMap[property] = minuteMap.getOrDefault(property, 0.0) + proportionalValue
+                // 실제로 활동이 있는 분만 추가 (proportion > 0)
+                if (proportion > 0) {
+                    val minuteMap = minuteValues.getOrPut(currentMinute) { mutableMapOf() }
+                    activityValues.forEach { (property, value) ->
+                        val proportionalValue = value * proportion
+                        minuteMap[property] = minuteMap.getOrDefault(property, 0.0) + proportionalValue
+                    }
                 }
                 
                 currentMinute = currentMinute.atZone(ZoneId.systemDefault()).plusMinutes(1).toInstant()
@@ -523,42 +380,3 @@ private fun <T> aggregateActivityDataTime(
     
     return minuteValues
 }
-
-// TODO: HealthData 여러 타입이 하나의 리스트에 섞여있는 경우, 굳이 필요할까
-///**
-// * 혼합 HealthData 리스트에서 다중 값 타입의 특정 속성들을 선택하여 변환하는 편의 함수
-// *
-// * @param propertySelections 타입별 속성 선택 맵 (예: "Diet" to "calories", "BloodPressure" to "systolic")
-// * @param timeUnit 변환할 시간 단위
-// * @param aggregationType 집계 방법
-// * @return 타입명을 키로 하고 ChartMark 리스트를 값으로 하는 맵
-// */
-//fun List<HealthData>.transformByTypeWithProperties(
-//    propertySelections: Map<String, String>,
-//    timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
-//    aggregationType: AggregationType = AggregationType.SUM
-//): Map<String, List<ChartMark>> {
-//    val result = mutableMapOf<String, List<ChartMark>>()
-//
-//    // 타입별로 그룹핑
-//    val diets = filterIsInstance<Diet>()
-//    val bloodPressures = filterIsInstance<BloodPressure>()
-//
-//    // Diet 타입 처리
-//    if (diets.isNotEmpty()) {
-//        val dietProperty = propertySelections["Diet"] ?: "calories"
-//        result["Diet"] = diets.transformByProperty(dietProperty, timeUnit, aggregationType)
-//    }
-//
-//    // BloodPressure 타입 처리
-//    if (bloodPressures.isNotEmpty()) {
-//        val bpProperty = propertySelections["BloodPressure"] ?: "systolic"
-//        result["BloodPressure"] = bloodPressures.transformByProperty(bpProperty, timeUnit, aggregationType)
-//    }
-//
-//    // 단일 값 타입들은 기본 transform 함수 사용
-//    val basicResult = this.transformByType(timeUnit, aggregationType)
-//    result.putAll(basicResult.filterKeys { it !in listOf("Diet", "BloodPressure") })
-//
-//    return result
-//}

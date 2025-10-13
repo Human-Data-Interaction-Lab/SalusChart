@@ -42,6 +42,8 @@ import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import com.hdil.saluschart.core.transform.toHeartRateTemporalDataSet
+import com.hdil.saluschart.core.transform.toRangeChartMarks
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
@@ -72,9 +74,12 @@ import java.time.YearMonth
 
 // Sample data references - now organized in SampleDataProvider
 private val stepCountHealthData = SampleDataProvider.getStepCountData()
+private val exerciseHealthData = SampleDataProvider.getExerciseHealthData()
+private val heartRateHealthData = SampleDataProvider.getHeartRateData()
 private val singleSleepSessionData = SampleDataProvider.getSingleSleepSessionData()
 private val weightHealthData = SampleDataProvider.getWeightData()
 private val bloodPressureHealthData = SampleDataProvider.getBloodPressureData()
+private val bloodGlucoseHealthData = SampleDataProvider.getBloodGlucoseData()
 private val bodyFatHealthData = SampleDataProvider.getBodyFatData()
 private val rangeData = SampleDataProvider.getHeartRateRangeData()
 private val stackedData = SampleDataProvider.getNutritionStackedData()
@@ -89,13 +94,13 @@ private val entries = SampleDataProvider.getCalendarEntries(yearMonth)
 @Composable
 fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
-        "Standard Bar Chart",
         "Step Count - Bar Chart",
-        "BarChart with Paging",
+        "Exercise - Bar Chart",
+        "Heart Rate - Range Bar Chart",
         "Weight - Line Chart",
         "Body Fat - Line Chart",
-        "LineChart with Paging",
         "Blood Pressure - Scatter Plot",
+        "Blood Glucose - Range Bar Chart",
         "Diet - Stacked Bar Chart FreeScroll",
         "Diet - Stacked Bar Chart Paged",
         "Heart Rate - Range Bar Basic Chart",
@@ -111,10 +116,9 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Progress Bar Chart",
         "Progress Ring Chart",
         "Sleep Stage Chart",
-        "Sleep Stage Chart - FreeScroll Fixed Axis"
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Sleep Stage Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Exercise - Bar Chart") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -151,7 +155,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "Standard Bar Chart" -> BarChart_1()
                 "Step Count - Bar Chart" -> BarChart_2()
-                "BarChart with Paging" -> BarChart_3()
+                "Exercise - Bar Chart" -> BarChart_3()
                 "Weight - Line Chart" -> LineChart_1()
                 "Body Fat - Line Chart" -> LineChart_2()
                 "LineChart with Paging" -> LineChart_3()
@@ -159,6 +163,8 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Diet - Stacked Bar Chart FreeScroll" -> StackedBarChart_1()
                 "Diet - Stacked Bar Chart Paged" -> StackedBarChart_Paged_LeftAxis()
                 "Heart Rate - Range Bar Basic Chart" -> RangeBarChart_1()
+                "Heart Rate - Range Bar Chart" -> RangeBarChart_2()
+                "Blood Glucose - Range Bar Chart" -> RangeBarChart_3()
                 "Heart Rate - Range Bar FreeScroll Fixed Axis" -> RangeBarChart_FreeScroll_FixedAxis()
                 "Heart Rate - Range Bar Paged (Left Fixed)", -> RangeBarChart_Paged_LeftAxis()
                 "Heart Rate - Range Bar Paged (Right Fixed)", -> RangeBarChart_Paged_RightAxis()
@@ -332,14 +338,16 @@ fun BarChart_2() {
 fun BarChart_3() {
     BarChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = ChartMarks4,
-        title = "Weekly Data",
+        data = exerciseHealthData.transform(
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.DURATION_SUM
+        ),
+        title = "일별 운동 시간",
         barColor = Primary_Purple,
         yAxisPosition = YAxisPosition.LEFT,
         showLabel = true,
-        // paged mode:
         pageSize = 7,
-        yTickStep = 10.0,
+        interactionType = InteractionType.Bar.TOUCH_AREA,
     )
 }
 
@@ -862,6 +870,40 @@ fun RangeBarChart_1() {
         barColor = Color(0xFFFF9800),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "bpm"
+    )
+}
+@Composable
+fun RangeBarChart_2() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = heartRateHealthData.transform(
+            timeUnit = TimeUnitGroup.HOUR,
+            aggregationType = AggregationType.MIN_MAX
+        ),
+        title = "시간별 심박수 범위",
+        yLabel = "심박수 (bpm)",
+        xLabel = "시간",
+        barWidthRatio = 0.8f,
+        barColor = Color(0xFFE91E63), // Pink color to distinguish from other charts
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "bpm"
+    )
+}
+@Composable
+fun RangeBarChart_3() {
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = bloodGlucoseHealthData.transform(
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.MIN_MAX
+        ),
+        title = "일별 혈당 범위",
+        yLabel = "혈당 (mg/dL)",
+        xLabel = "날짜",
+        barWidthRatio = 0.8f,
+        barColor = Color(0xFF4CAF50), // Green color for blood glucose
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "mg/dL"
     )
 }
 

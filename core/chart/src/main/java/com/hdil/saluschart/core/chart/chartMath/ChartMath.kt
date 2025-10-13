@@ -197,10 +197,11 @@ object ChartMath {
             actualMinY = if (minY != null) minY else start
             actualMaxY = if (maxY != null) maxY else end
         } else {
-            val ticksNice = computeNiceTicks(dataMin, dataMax, tickCount, chartType, actualMin = minY, actualMax = maxY)
+            // Use baseMin/baseMax instead of dataMin/dataMax to respect chart type requirements
+            val ticksNice = computeNiceTicks(baseMin, baseMax, tickCount, chartType, actualMin = minY, actualMax = maxY)
             yTicks = ticksNice
-            actualMinY = minY ?: (ticksNice.minOrNull() ?: dataMin)
-            actualMaxY = maxY ?: (ticksNice.maxOrNull() ?: dataMax)
+            actualMinY = minY ?: (ticksNice.minOrNull() ?: baseMin)
+            actualMaxY = maxY ?: (ticksNice.maxOrNull() ?: baseMax)
         }
 
         return YAxisRange(

@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
@@ -50,7 +51,7 @@ private fun Float.roundUpToStep(step: Float): Float =
 @Composable
 fun RangeBarChart(
     modifier: Modifier = Modifier,
-    data: List<ChartMark>,
+    data: List<BaseChartMark>,
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Range Bar Chart",
@@ -81,14 +82,26 @@ fun RangeBarChart(
 
     val chartType = ChartType.RANGE_BAR
 
-    // transform once
+    // Convert data to RangeChartMark if needed
     val rangeData = remember(data) {
-        data.toRangeChartMarks(
-            minValueSelector = { g -> g.minByOrNull { it.y } ?: g.first() },
-            maxValueSelector = { g -> g.maxByOrNull { it.y } ?: g.first() }
-        )
+        when {
+            data.all { it is RangeChartMark } -> {
+                // Data is already RangeChartMark, cast directly
+                data.map { it as RangeChartMark }
+            }
+            data.all { it is ChartMark } -> {
+                // Data is ChartMark, convert using toRangeChartMarks
+                (data as List<ChartMark>).toRangeChartMarks(
+                    minValueSelector = { g -> g.minByOrNull { it.y } ?: g.first() },
+                    maxValueSelector = { g -> g.maxByOrNull { it.y } ?: g.first() }
+                )
+            }
+            else -> {
+                require (false) { "Data must be either all ChartMark or all RangeChartMark" }
+                emptyList<RangeChartMark>() // Unreachable, but required for compilation
+            }
+        }
     }
-    if (rangeData.isEmpty()) return
 
     // compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)

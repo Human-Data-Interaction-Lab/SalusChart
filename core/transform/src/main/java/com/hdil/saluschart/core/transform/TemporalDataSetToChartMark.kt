@@ -1,6 +1,7 @@
 package com.hdil.saluschart.core.transform
 
 import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -78,6 +79,53 @@ fun TemporalDataSet.toChartMarksMap(): Map<String, List<ChartMark>> {
                 label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
             )
         }
+    }
+}
+
+/**
+ * MIN_MAX 집계된 TemporalDataSet을 RangeChartMark 리스트로 변환하는 확장 함수
+ * 
+ * MIN_MAX aggregation으로 생성된 다중 값 TemporalDataSet (min, max 속성 포함)을
+ * RangeChartMark 리스트로 변환합니다.
+ * 
+ * @return RangeChartMark 리스트
+ * @throws IllegalArgumentException 단일 값 데이터이거나 min/max 속성이 없는 경우
+ * 
+ * 사용 예:
+ * ```
+ * val heartRateRange = heartRates.toHeartRateTemporalDataSet()
+ *     .transform(timeUnit = TimeUnitGroup.DAY, aggregationType = AggregationType.MIN_MAX)
+ *     .toRangeChartMarks()
+ * RangeBarChart(data = heartRateRange, ...)
+ * ```
+ */
+fun TemporalDataSet.toRangeChartMarks(): List<RangeChartMark> {
+    require(isMultiValue) { "toRangeChartMarks() requires multi-value TemporalDataSet from MIN_MAX aggregation" }
+    require(propertyNames.contains("min") && propertyNames.contains("max")) {
+        "TemporalDataSet must contain 'min' and 'max' properties. " +
+        "Available properties: ${propertyNames.joinToString()}. " +
+        "Use transform(aggregationType = AggregationType.MIN_MAX) to create min/max data."
+    }
+    
+    val minValues = getValues("min")!!
+    val maxValues = getValues("max")!!
+    val labels = generateTimeLabels()
+    
+    return x.indices.map { index ->
+        RangeChartMark(
+            x = index.toDouble(),
+            minPoint = ChartMark(
+                x = index.toDouble(),
+                y = minValues[index],
+                label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+            ),
+            maxPoint = ChartMark(
+                x = index.toDouble(),
+                y = maxValues[index],
+                label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+            ),
+            label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+        )
     }
 }
 

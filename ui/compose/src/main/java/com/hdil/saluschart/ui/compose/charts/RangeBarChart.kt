@@ -104,22 +104,6 @@ fun RangeBarChart(
         }
     }
 
-    // Compute grouping information for multiple bars per x-value
-    // Map each bar index to its x-group index
-    val xGroupIndices = remember(rangeData) {
-        val uniqueXValues = rangeData.map { it.x }.distinct().sorted()
-        rangeData.map { mark ->
-            uniqueXValues.indexOf(mark.x)
-        }
-    }
-
-    // Get unique labels for x-axis (one per x-group, not one per bar)
-    val uniqueLabels = remember(rangeData) {
-        rangeData.groupBy { it.x }
-            .toSortedMap()
-            .map { (_, group) -> group.first().label ?: group.first().x.toString() }
-    }
-
     // compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
 
@@ -168,11 +152,11 @@ fun RangeBarChart(
 
             val canvasWidth = if (useScrolling) {
                 val chartWidth = availableWidth - (marginHorizontal * 2)
-                // For scrolling, use unique x-groups, not total bars
-                val uniqueXCount = uniqueLabels.size
-                val sectionsCount = (uniqueXCount.toFloat() / windowSize!!.toFloat()).toInt().coerceAtLeast(1)
+                val sectionsCount = (rangeData.size.toFloat() / windowSize!!.toFloat()).toInt()
                 chartWidth * sectionsCount
             } else null
+
+            val labels = rangeData.map { it.label ?: it.x.toString() }
 
             var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
             var selectedIndex by remember { mutableStateOf<Int?>(null) }
@@ -245,7 +229,7 @@ fun RangeBarChart(
                         }
                         ChartDraw.Bar.drawBarXAxisLabels(
                             ctx = drawContext,
-                            labels = uniqueLabels,
+                            labels = labels,
                             metrics = metrics,
                             maxXTicksLimit = maxXTicksLimit,
                             xLabelAutoSkip = xLabelAutoSkip
@@ -269,8 +253,7 @@ fun RangeBarChart(
                                     interactive = false,
                                     chartType = chartType,
                                     showTooltipForIndex = selectedIndex,
-                                    unit = unit,
-                                    xGroupIndices = xGroupIndices
+                                    unit = unit
                                 )
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
@@ -283,8 +266,7 @@ fun RangeBarChart(
                                     },
                                     chartType = chartType,
                                     isTouchArea = true,
-                                    unit = unit,
-                                    xGroupIndices = xGroupIndices
+                                    unit = unit
                                 )
                             }
                         }
@@ -302,8 +284,7 @@ fun RangeBarChart(
                                         onBarClick?.invoke(idx, rangeData[idx])
                                     },
                                     chartType = chartType,
-                                    unit = unit,
-                                    xGroupIndices = xGroupIndices
+                                    unit = unit
                                 )
                             }
                         }
@@ -442,10 +423,6 @@ private fun RangeBarChartPagedInternal(
                 val sliceAsChartMarks = slice.flatMap { rangePoint ->
                     listOf(rangePoint.minPoint, rangePoint.maxPoint)
                 }
-
-                // Compute grouping for this page slice
-                // Note: We need to preserve the x-values within the slice
-                // so multiple sessions per day are maintained
 
                 // Render a normal RangeBarChart page:
                 // - no inner scroll (windowSize = null)

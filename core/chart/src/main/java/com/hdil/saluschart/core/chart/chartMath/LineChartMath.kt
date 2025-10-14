@@ -8,7 +8,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sign
 import androidx.compose.ui.geometry.Size
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import kotlin.math.sqrt
 
 object LineChartMath {
@@ -284,7 +284,7 @@ object LineChartMath {
      * @param metrics 차트 메트릭 정보
      * @return 화면 좌표로 변환된 Offset 목록
      */
-    fun mapLineToCanvasPoints(data: List<ChartPoint>, size: Size, metrics: ChartMath.ChartMetrics): List<Offset> {
+    fun mapLineToCanvasPoints(data: List<ChartMark>, size: Size, metrics: ChartMath.ChartMetrics): List<Offset> {
         val spacing = metrics.chartWidth / (data.size - 1)
         return data.mapIndexed { i, point ->
             val x = metrics.paddingX + i * spacing

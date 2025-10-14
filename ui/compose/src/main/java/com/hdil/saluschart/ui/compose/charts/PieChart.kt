@@ -28,7 +28,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
@@ -54,7 +54,7 @@ import com.hdil.saluschart.ui.theme.ColorUtils
 @Composable
 fun PieChart(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     title: String = "Pie Chart Example",
     isDonut: Boolean = true,
     colors: List<androidx.compose.ui.graphics.Color> = ColorUtils.ColorUtils(data.size.coerceAtLeast(1)),
@@ -185,7 +185,7 @@ fun PieChart(
                     // 툴팁 표시
                     if (showTooltip && selectedSectionIndex >= 0 && selectedSectionIndex < data.size) {
                         ChartTooltip(
-                            chartPoint = data[selectedSectionIndex],
+                            ChartMark = data[selectedSectionIndex],
                             modifier = Modifier.offset {
                                 tooltipPosition
                             }
@@ -304,7 +304,7 @@ fun PieChart(
                     // 툴팁 표시
                     if (showTooltip && selectedSectionIndex >= 0 && selectedSectionIndex < data.size) {
                         ChartTooltip(
-                            chartPoint = data[selectedSectionIndex],
+                            ChartMark = data[selectedSectionIndex],
                             modifier = Modifier.offset {
                                 tooltipPosition
                             }

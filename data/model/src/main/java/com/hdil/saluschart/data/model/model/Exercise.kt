@@ -7,7 +7,7 @@ data class Exercise(
     val startTime: Instant,
     val endTime: Instant,
     val caloriesBurned: Double,
-    val exerciseType: String,
+//    val exerciseType: String,
 ) : HealthData()
 
 // exerciseType : unknown, running, walking, cycling, swimming, other

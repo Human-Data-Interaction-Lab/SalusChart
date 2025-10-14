@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.PointType
@@ -57,7 +57,7 @@ object ScatterPlotDraw {
      */
     @Composable
     fun PointMarker(
-        data: List<ChartPoint>,
+        data: List<ChartMark>,
         points: List<Offset>,
         values: List<Double>,
         color: Color = Color.Black,
@@ -79,7 +79,7 @@ object ScatterPlotDraw {
 
         // 툴팁 정보 저장 변수
         var tooltipOffset: Offset? = null
-        var tooltipData: ChartPoint? = null
+        var tooltipData: ChartMark? = null
 
 
         points.forEachIndexed { index, center ->
@@ -204,7 +204,7 @@ object ScatterPlotDraw {
             val xDp = with(density) { tooltipOffset!!.x.toDp() }
             val yDp = with(density) { tooltipOffset!!.y.toDp() }
             ChartTooltip(
-                chartPoint = tooltipData!!,
+                ChartMark = tooltipData!!,
                 modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius),
                 unit = unit,
             )

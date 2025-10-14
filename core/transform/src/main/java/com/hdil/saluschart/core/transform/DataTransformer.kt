@@ -17,19 +17,44 @@ class DataTransformer {
      * 시간 기반 데이터를 차트 포인트로 변환
      * @param data 원시 시간 데이터 리스트
      * @param transformTimeUnit 그룹핑할 시간 단위
-     * @param aggregationType 집계 방법 (합계 또는 평균)
+     * @param aggregationType 집계 방법 (합계, 평균, 지속 시간, 최소/최대)
+     * 
+     * 사용 예시:
+     * - SUM: 값 합계 (예: 총 칼로리, 총 걸음 수)
+     * - DAILY_AVERAGE: 일일 평균 (예: 평균 일일 걸음 수)
+     * - DURATION_SUM: 활동 시간 합계 (예: 운동 시간, 수면 시간)
+     *   DURATION_SUM은 분 단위 TemporalDataSet (timeUnit=MINUTE)에서만 사용 가능
+     * - MIN_MAX: 최소값과 최대값 (예: 일일 심박수 범위)
+     *   단일 값 데이터를 다중 값 데이터(min, max)로 변환
      */
     fun transform(
-        data: TimeDataPoint,
+        data: TemporalDataSet,
         transformTimeUnit: TimeUnitGroup,
         aggregationType: AggregationType = AggregationType.SUM
-    ): TimeDataPoint {
+    ): TemporalDataSet {
 
         // 평균 계산 시 유효성 검증
         if (aggregationType == AggregationType.DAILY_AVERAGE) {
             // 원본 시간 단위가 변환 시간 단위보다 작거나 같아야 함
             require(TimeUnitGroup.DAY.isSmallerThanOrEqual(transformTimeUnit)) {
                 "평균 계산을 위해서는 변환 시간 단위($transformTimeUnit)가 일 단위보다 크거나 같아야 합니다."
+            }
+        }
+        
+        // 지속 시간 합계 계산 시 유효성 검증
+        if (aggregationType == AggregationType.DURATION_SUM) {
+            // 원본 데이터가 분 단위여야 함 (aggregateActivityDataTime으로 생성된 데이터)
+            require(data.timeUnit == TimeUnitGroup.MINUTE) {
+                "DURATION_SUM 집계는 분 단위(MINUTE) TemporalDataSet에서만 사용 가능합니다. " +
+                "현재 데이터의 시간 단위: ${data.timeUnit}"
+            }
+        }
+        
+        // MIN_MAX 계산 시 유효성 검증
+        if (aggregationType == AggregationType.MIN_MAX) {
+            // 단일 값 데이터만 MIN_MAX로 변환 가능
+            require(data.isSingleValue) {
+                "MIN_MAX 집계는 단일 값 TemporalDataSet에서만 사용 가능합니다."
             }
         }
 
@@ -46,10 +71,10 @@ class DataTransformer {
      * 시간 단위별 그룹핑
      */
     private fun groupByTimeUnit(
-        data: TimeDataPoint,
+        data: TemporalDataSet,
         targetTimeUnit: TimeUnitGroup,
         aggregationType: AggregationType
-    ): TimeDataPoint {
+    ): TemporalDataSet {
 
         // Instant를 LocalDateTime으로 변환
         val parsedTimes = data.x.map { instant ->
@@ -57,20 +82,38 @@ class DataTransformer {
         }
 
         return if (data.isSingleValue) {
-            // 단일 값 처리
-            val timeValuePairs = parsedTimes.zip(data.y!!)
-            val aggregatedData = processAggregation(timeValuePairs, targetTimeUnit, aggregationType)
-            
-            val newXValues = aggregatedData.map { (time, _) ->
-                time.atZone(ZoneId.systemDefault()).toInstant()
-            }
-            val newYValues = aggregatedData.map { it.second }
+            // MIN_MAX는 단일 값을 다중 값으로 변환
+            if (aggregationType == AggregationType.MIN_MAX) {
+                val timeValuePairs = parsedTimes.zip(data.y!!)
+                val minMaxData = processMinMaxAggregation(timeValuePairs, targetTimeUnit)
+                
+                val newXValues = minMaxData.map { (time, _) ->
+                    time.atZone(ZoneId.systemDefault()).toInstant()
+                }
+                val minValues = minMaxData.map { it.second.first }
+                val maxValues = minMaxData.map { it.second.second }
+                
+                TemporalDataSet(
+                    x = newXValues,
+                    yMultiple = mapOf("min" to minValues, "max" to maxValues),
+                    timeUnit = targetTimeUnit
+                )
+            } else {
+                // 단일 값 처리 (SUM, DAILY_AVERAGE, DURATION_SUM)
+                val timeValuePairs = parsedTimes.zip(data.y!!)
+                val aggregatedData = processAggregation(timeValuePairs, targetTimeUnit, aggregationType)
+                
+                val newXValues = aggregatedData.map { (time, _) ->
+                    time.atZone(ZoneId.systemDefault()).toInstant()
+                }
+                val newYValues = aggregatedData.map { it.second }
 
-            TimeDataPoint(
-                x = newXValues,
-                y = newYValues,
-                timeUnit = targetTimeUnit
-            )
+                TemporalDataSet(
+                    x = newXValues,
+                    y = newYValues,
+                    timeUnit = targetTimeUnit
+                )
+            }
         } else {
             // 다중 값 처리
             val aggregatedMultipleData = mutableMapOf<String, List<Pair<LocalDateTime, Double>>>()
@@ -92,10 +135,10 @@ class DataTransformer {
                 timeValueList.map { it.second }
             }
 
-            TimeDataPoint(
+            TemporalDataSet(
                 x = newXValues,
                 yMultiple = newYMultiple,
-                timeUnit = targetTimeUnit,
+                timeUnit = targetTimeUnit
             )
         }
     }
@@ -126,7 +169,50 @@ class DataTransformer {
             AggregationType.DAILY_AVERAGE -> {
                 calculateIntervalAverages(timeValuePairs, targetTimeUnit)
             }
+            AggregationType.DURATION_SUM -> {
+                val groupedData = when (targetTimeUnit) {
+                    TimeUnitGroup.MINUTE -> timeValuePairs.map { it.first to listOf(it.second) }.toMap()
+                    TimeUnitGroup.HOUR -> groupByHour(timeValuePairs)
+                    TimeUnitGroup.DAY -> groupByDay(timeValuePairs)
+                    TimeUnitGroup.WEEK -> groupByWeek(timeValuePairs)
+                    TimeUnitGroup.MONTH -> groupByMonth(timeValuePairs)
+                    TimeUnitGroup.YEAR -> groupByYear(timeValuePairs)
+                }
+                
+                // 값을 합산하는 대신 데이터 포인트의 개수를 카운트
+                // 각 데이터 포인트는 1분을 나타내므로 개수 = 분 단위 지속 시간
+                groupedData.map { (time, values) ->
+                    time to values.size.toDouble()
+                }.sortedBy { it.first }
+            }
+            AggregationType.MIN_MAX -> {
+                throw IllegalArgumentException("MIN_MAX 집계는 단일 값 TemporalDataSet에서만 사용 가능합니다.")
+            }
         }
+    }
+    
+    /**
+     * MIN_MAX 집계 처리
+     * 각 시간 단위별로 최소값과 최대값을 계산
+     */
+    private fun processMinMaxAggregation(
+        timeValuePairs: List<Pair<LocalDateTime, Double>>,
+        targetTimeUnit: TimeUnitGroup
+    ): List<Pair<LocalDateTime, Pair<Double, Double>>> {
+        val groupedData = when (targetTimeUnit) {
+            TimeUnitGroup.MINUTE -> timeValuePairs.map { it.first to listOf(it.second) }.toMap()
+            TimeUnitGroup.HOUR -> groupByHour(timeValuePairs)
+            TimeUnitGroup.DAY -> groupByDay(timeValuePairs)
+            TimeUnitGroup.WEEK -> groupByWeek(timeValuePairs)
+            TimeUnitGroup.MONTH -> groupByMonth(timeValuePairs)
+            TimeUnitGroup.YEAR -> groupByYear(timeValuePairs)
+        }
+        
+        return groupedData.map { (time, values) ->
+            val minValue = values.minOrNull() ?: 0.0
+            val maxValue = values.maxOrNull() ?: 0.0
+            time to (minValue to maxValue)
+        }.sortedBy { it.first }
     }
 
     /**

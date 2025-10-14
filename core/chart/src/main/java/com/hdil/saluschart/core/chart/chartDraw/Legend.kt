@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 
@@ -34,7 +34,7 @@ import androidx.compose.foundation.lazy.items
 fun ChartLegend(
     modifier: Modifier = Modifier,
     labels: List<String>? = null,
-    chartData: List<ChartPoint>? = null,
+    chartData: List<ChartMark>? = null,
     position: LegendPosition = LegendPosition.BOTTOM,
     colors: List<Color>,
     title: String? = null,

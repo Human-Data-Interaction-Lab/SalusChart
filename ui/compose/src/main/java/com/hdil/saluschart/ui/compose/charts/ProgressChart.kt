@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.ProgressChartPoint
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
@@ -60,7 +60,7 @@ import kotlin.math.hypot
 @Composable
 fun ProgressChart(
     modifier: Modifier = Modifier,
-    data: List<ProgressChartPoint>,
+    data: List<ProgressChartMark>,
     title: String = "Progress Chart",
     isDonut: Boolean = true,
     isPercentage: Boolean = true,
@@ -310,15 +310,15 @@ fun ProgressChart(
                         point.unit?.let { append(" ").append(it) }   // " 2000 KJ"
                     }
 
-                    // Use a proxy ChartPoint so tooltip shows 'current' (not ratio)
-                    val tooltipPoint = com.hdil.saluschart.core.chart.ChartPoint(
+                    // Use a proxy ChartMark so tooltip shows 'current' (not ratio)
+                    val tooltipPoint = com.hdil.saluschart.core.chart.ChartMark(
                         x = i.toDouble(),
                         y = point.current,
                         label = point.label
                     )
 
                     ChartTooltip(
-                        chartPoint = tooltipPoint,
+                        ChartMark = tooltipPoint,
                         unit = unitSuffix,
                         modifier = Modifier.offset(x = xDp, y = yDp),
                         color = colors[i]

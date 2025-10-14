@@ -1,64 +1,19 @@
 package com.hdil.saluschart.core.transform
 
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.util.TimeUnitGroup
-import com.hdil.saluschart.core.util.AggregationType
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import java.time.DayOfWeek
 
-
 /**
- * 시간 기반 원시 데이터 포인트
- * ChartPoint로 변환해서 사용
- * @param x 시간 데이터 (Instant 타입)
- * @param y 측정값 리스트 (단일 값용)
- * @param yMultiple 다중 측정값 맵 (다중 값용) - 키는 속성명, 값은 해당 속성의 값 리스트
- * @param timeUnit 시간 단위
- */
-data class TimeDataPoint(
-    val x : List<Instant>,
-    val y : List<Double>? = null,
-    val yMultiple : Map<String, List<Double>>? = null,
-    val timeUnit : TimeUnitGroup = TimeUnitGroup.HOUR
-) {
-    init {
-        require((y != null) xor (yMultiple != null)) {
-            "Either y or yMultiple must be provided, but not both"
-        }
-        
-        if (y != null) {
-            require(x.size == y.size) {
-                "x and y lists must have the same size"
-            }
-        }
-        
-        if (yMultiple != null) {
-            require(yMultiple.isNotEmpty()) {
-                "yMultiple cannot be empty"
-            }
-            yMultiple.values.forEach { valueList ->
-                require(x.size == valueList.size) {
-                    "All value lists in yMultiple must have the same size as x"
-                }
-            }
-        }
-    }
-    
-    val isSingleValue: Boolean get() = y != null     // 단일 값 여부 확인
-    val isMultiValue: Boolean get() = yMultiple != null    // 다중 값 여부 확인
-    fun getValues(property: String): List<Double>? = yMultiple?.get(property)    // 다중 값에서 특정 속성의 값 가져오기
-    val propertyNames: Set<String> get() = yMultiple?.keys ?: emptySet()    // 다중 값의 속성명 목록 가져오기
-}
-
-/**
- * TimeDataPoint를 ChartPoint 리스트로 변환하는 확장 함수
+ * TemporalDataSet를 ChartMark 리스트로 변환하는 확장 함수
  * 단일 값 데이터용
  *
- * @return ChartPoint 리스트
+ * @return ChartMark 리스트
  *
  * 각 시간 단위에 따라 레이블이 생성됩니다:
  * HOUR: "14시" (for 2 PM)
@@ -67,13 +22,13 @@ data class TimeDataPoint(
  * MONTH: "2025년 5월" (for May 2025)
  * YEAR: "2025년" (for year 2025)
  */
-fun TimeDataPoint.toChartPoints(): List<ChartPoint> {
-    require(isSingleValue) { "Use toChartPointsByProperty() for multi-value TimeDataPoint" }
+fun TemporalDataSet.toChartMarks(): List<ChartMark> {
+    require(isSingleValue) { "Use toChartMarksByProperty() for multi-value TemporalDataSet" }
     
     val labels = generateTimeLabels()
 
     return x.indices.map { index ->
-        ChartPoint(
+        ChartMark(
             x = index.toDouble(),
             y = y!![index],
             label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
@@ -82,13 +37,13 @@ fun TimeDataPoint.toChartPoints(): List<ChartPoint> {
 }
 
 /**
- * 다중 값 TimeDataPoint에서 특정 속성을 추출하여 ChartPoint 리스트로 변환하는 확장 함수
+ * 다중 값 TemporalDataSet에서 특정 속성을 추출하여 ChartMark 리스트로 변환하는 확장 함수
  *
  * @param property 추출할 속성명 (예: "systolic", "diastolic", "calories", "protein" 등)
- * @return 해당 속성의 ChartPoint 리스트
+ * @return 해당 속성의 ChartMark 리스트
  */
-fun TimeDataPoint.toChartPointsByProperty(property: String): List<ChartPoint> {
-    require(isMultiValue) { "Use toChartPoints() for single-value TimeDataPoint" }
+fun TemporalDataSet.toChartMarksByProperty(property: String): List<ChartMark> {
+    require(isMultiValue) { "Use toChartMarks() for single-value TemporalDataSet" }
     require(propertyNames.contains(property)) { 
         "Property '$property' not found. Available properties: ${propertyNames.joinToString()}" 
     }
@@ -97,7 +52,7 @@ fun TimeDataPoint.toChartPointsByProperty(property: String): List<ChartPoint> {
     val labels = generateTimeLabels()
 
     return x.indices.map { index ->
-        ChartPoint(
+        ChartMark(
             x = index.toDouble(),
             y = values[index],
             label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
@@ -106,19 +61,19 @@ fun TimeDataPoint.toChartPointsByProperty(property: String): List<ChartPoint> {
 }
 
 /**
- * 다중 값 TimeDataPoint를 모든 속성별로 분리된 ChartPoint 맵으로 변환하는 확장 함수
+ * 다중 값 TemporalDataSet를 모든 속성별로 분리된 ChartMark 맵으로 변환하는 확장 함수
  *
- * @return 속성명을 키로 하고 해당 속성의 ChartPoint 리스트를 값으로 하는 맵
+ * @return 속성명을 키로 하고 해당 속성의 ChartMark 리스트를 값으로 하는 맵
  */
-fun TimeDataPoint.toChartPointsMap(): Map<String, List<ChartPoint>> {
-    require(isMultiValue) { "Use toChartPoints() for single-value TimeDataPoint" }
+fun TemporalDataSet.toChartMarksMap(): Map<String, List<ChartMark>> {
+    require(isMultiValue) { "Use toChartMarks() for single-value TemporalDataSet" }
     
     val labels = generateTimeLabels()
     
     return propertyNames.associateWith { property ->
         val values = getValues(property)!!
         x.indices.map { index ->
-            ChartPoint(
+            ChartMark(
                 x = index.toDouble(),
                 y = values[index],
                 label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
@@ -128,9 +83,56 @@ fun TimeDataPoint.toChartPointsMap(): Map<String, List<ChartPoint>> {
 }
 
 /**
+ * MIN_MAX 집계된 TemporalDataSet을 RangeChartMark 리스트로 변환하는 확장 함수
+ * 
+ * MIN_MAX aggregation으로 생성된 다중 값 TemporalDataSet (min, max 속성 포함)을
+ * RangeChartMark 리스트로 변환합니다.
+ * 
+ * @return RangeChartMark 리스트
+ * @throws IllegalArgumentException 단일 값 데이터이거나 min/max 속성이 없는 경우
+ * 
+ * 사용 예:
+ * ```
+ * val heartRateRange = heartRates.toHeartRateTemporalDataSet()
+ *     .transform(timeUnit = TimeUnitGroup.DAY, aggregationType = AggregationType.MIN_MAX)
+ *     .toRangeChartMarks()
+ * RangeBarChart(data = heartRateRange, ...)
+ * ```
+ */
+fun TemporalDataSet.toRangeChartMarks(): List<RangeChartMark> {
+    require(isMultiValue) { "toRangeChartMarks() requires multi-value TemporalDataSet from MIN_MAX aggregation" }
+    require(propertyNames.contains("min") && propertyNames.contains("max")) {
+        "TemporalDataSet must contain 'min' and 'max' properties. " +
+        "Available properties: ${propertyNames.joinToString()}. " +
+        "Use transform(aggregationType = AggregationType.MIN_MAX) to create min/max data."
+    }
+    
+    val minValues = getValues("min")!!
+    val maxValues = getValues("max")!!
+    val labels = generateTimeLabels()
+    
+    return x.indices.map { index ->
+        RangeChartMark(
+            x = index.toDouble(),
+            minPoint = ChartMark(
+                x = index.toDouble(),
+                y = minValues[index],
+                label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+            ),
+            maxPoint = ChartMark(
+                x = index.toDouble(),
+                y = maxValues[index],
+                label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+            ),
+            label = labels.getOrNull(index) ?: x.getOrNull(index)?.toString()
+        )
+    }
+}
+
+/**
  * 시간 단위에 따른 레이블 생성 (공통 로직)
  */
-private fun TimeDataPoint.generateTimeLabels(): List<String> {
+fun TemporalDataSet.generateTimeLabels(): List<String> {
     return when (timeUnit) {
         TimeUnitGroup.MINUTE -> {
             x.map { instant ->

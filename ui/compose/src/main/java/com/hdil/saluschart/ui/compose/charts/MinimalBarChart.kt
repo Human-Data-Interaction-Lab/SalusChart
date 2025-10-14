@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.chartDraw.BarChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
@@ -37,7 +37,7 @@ import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 @Composable
 fun MinimalBarChart(
     modifier: Modifier = Modifier,
-    data: List<ChartPoint>,
+    data: List<ChartMark>,
     color: Color = Color.Blue,
     padding: Float = 4f,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,

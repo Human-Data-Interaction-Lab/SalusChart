@@ -2,7 +2,7 @@ package com.hdil.saluschart.core.chart.chartMath
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import com.hdil.saluschart.core.chart.ProgressChartPoint
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -20,7 +20,7 @@ object ProgressChartMath {
      */
     fun computeProgressDonutMetrics(
         size: Size, 
-        data: List<ProgressChartPoint>,
+        data: List<ProgressChartMark>,
         padding: Float = 32f,
         strokeWidth: Float = 40f,
         ringSpacing: Float = 8f
@@ -54,7 +54,7 @@ object ProgressChartMath {
      */
     fun computeProgressBarMetrics(
         size: Size,
-        data: List<ProgressChartPoint>,
+        data: List<ProgressChartMark>,
         padding: Float = 40f,
         barHeight: Float = 30f,
         barSpacing: Float = 20f
@@ -86,7 +86,7 @@ object ProgressChartMath {
      * @param data 프로그레스 차트 데이터 리스트
      * @return List<Pair<시작 각도, 스윕 각도>>
      */
-    fun computeProgressAngles(data: List<ProgressChartPoint>): List<Pair<Float, Float>> {
+    fun computeProgressAngles(data: List<ProgressChartMark>): List<Pair<Float, Float>> {
         return data.map { point ->
             val startAngle = -90f // 12시 방향에서 시작
             val sweepAngle = (point.progress * 360.0).toFloat()
@@ -110,7 +110,7 @@ object ProgressChartMath {
         center: Offset,
         radius: Float = 0f,
         isDonut: Boolean,
-        point: ProgressChartPoint,
+        point: ProgressChartMark,
         strokeWidth: Float = 40f,
         barY: Float = 0f,
         barWidth: Float = 0f
@@ -145,7 +145,7 @@ object ProgressChartMath {
         center: Offset,
         radius: Float = 0f,
         isDonut: Boolean,
-        point: ProgressChartPoint,
+        point: ProgressChartMark,
         barY: Float = 0f,
         barWidth: Float = 0f
     ): Offset {

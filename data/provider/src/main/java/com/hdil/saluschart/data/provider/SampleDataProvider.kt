@@ -1,12 +1,16 @@
 package com.hdil.saluschart.data.provider
 
-import com.hdil.saluschart.core.chart.ChartPoint
-import com.hdil.saluschart.core.chart.ProgressChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
+import com.hdil.saluschart.data.model.model.HeartRate
+import com.hdil.saluschart.data.model.model.HeartRateSample
 import com.hdil.saluschart.data.model.model.BloodPressure
+import com.hdil.saluschart.data.model.model.BloodGlucose
 import com.hdil.saluschart.data.model.model.BodyFat
+import com.hdil.saluschart.data.model.model.Exercise
 import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.SleepSession
 import com.hdil.saluschart.data.model.model.SleepStage
@@ -133,6 +137,294 @@ object SampleDataProvider {
         endExclusive = Instant.parse("2025-05-11T14:00:00Z"),
         intervalMinutes = 30,
         zoneId = ZoneId.of("Asia/Seoul"),
+    )
+
+    fun getExerciseHealthData(): List<Exercise> = listOf(
+        Exercise(Instant.parse("2025-04-19T20:04:00Z"), Instant.parse("2025-04-19T20:46:00Z"), 370.0),
+        Exercise(Instant.parse("2025-04-20T08:02:00Z"), Instant.parse("2025-04-20T08:46:00Z"), 450.0),
+        Exercise(Instant.parse("2025-04-20T20:00:00Z"), Instant.parse("2025-04-20T20:47:00Z"), 390.0),
+        Exercise(Instant.parse("2025-04-21T07:59:00Z"), Instant.parse("2025-04-21T08:45:00Z"), 271.0),
+        Exercise(Instant.parse("2025-04-21T19:58:00Z"), Instant.parse("2025-04-21T20:44:00Z"), 432.0),
+        Exercise(Instant.parse("2025-04-22T08:03:00Z"), Instant.parse("2025-04-22T08:31:00Z"), 210.0),
+        Exercise(Instant.parse("2025-04-22T19:56:00Z"), Instant.parse("2025-04-22T20:41:00Z"), 342.0),
+        Exercise(Instant.parse("2025-04-23T08:01:00Z"), Instant.parse("2025-04-23T08:36:00Z"), 221.0),
+        Exercise(Instant.parse("2025-04-23T20:02:00Z"), Instant.parse("2025-04-23T20:47:00Z"), 329.0),
+        Exercise(Instant.parse("2025-04-24T07:56:00Z"), Instant.parse("2025-04-24T08:43:00Z"), 390.0),
+        Exercise(Instant.parse("2025-04-24T19:59:00Z"), Instant.parse("2025-04-24T20:47:00Z"), 398.0),
+        Exercise(Instant.parse("2025-04-25T07:58:00Z"), Instant.parse("2025-04-25T08:46:00Z"), 408.0),
+        Exercise(Instant.parse("2025-04-25T20:01:00Z"), Instant.parse("2025-04-25T20:44:00Z"), 349.0),
+        Exercise(Instant.parse("2025-04-26T07:59:00Z"), Instant.parse("2025-04-26T08:29:00Z"), 231.0),
+        Exercise(Instant.parse("2025-04-26T19:57:00Z"), Instant.parse("2025-04-26T20:38:00Z"), 246.0),
+        Exercise(Instant.parse("2025-04-27T07:45:00Z"), Instant.parse("2025-04-27T08:30:00Z"), 270.0),
+        Exercise(Instant.parse("2025-04-27T20:05:00Z"), Instant.parse("2025-04-27T20:51:00Z"), 281.0),
+        Exercise(Instant.parse("2025-04-28T08:04:00Z"), Instant.parse("2025-04-28T08:37:00Z"), 215.0),
+        Exercise(Instant.parse("2025-04-29T08:02:00Z"), Instant.parse("2025-04-29T08:47:00Z"), 306.0),
+        Exercise(Instant.parse("2025-04-29T20:06:00Z"), Instant.parse("2025-04-29T20:52:00Z"), 419.0),
+        Exercise(Instant.parse("2025-04-30T06:58:00Z"), Instant.parse("2025-04-30T07:40:00Z"), 252.0),
+        Exercise(Instant.parse("2025-04-30T19:58:00Z"), Instant.parse("2025-04-30T20:40:00Z"), 231.0),
+        Exercise(Instant.parse("2025-05-01T07:49:00Z"), Instant.parse("2025-05-01T08:33:00Z"), 268.0),
+        Exercise(Instant.parse("2025-05-01T20:11:00Z"), Instant.parse("2025-05-01T21:00:00Z"), 353.0),
+        Exercise(Instant.parse("2025-05-02T19:55:00Z"), Instant.parse("2025-05-02T20:46:00Z"), 383.0),
+        Exercise(Instant.parse("2025-05-03T20:03:00Z"), Instant.parse("2025-05-03T20:44:00Z"), 299.0),
+        Exercise(Instant.parse("2025-05-04T08:10:00Z"), Instant.parse("2025-05-04T08:53:00Z"), 310.0),
+        Exercise(Instant.parse("2025-05-05T07:12:00Z"), Instant.parse("2025-05-05T07:56:00Z"), 304.0),
+        Exercise(Instant.parse("2025-05-05T17:59:00Z"), Instant.parse("2025-05-05T19:03:00Z"), 582.0),
+        Exercise(Instant.parse("2025-05-06T08:21:00Z"), Instant.parse("2025-05-06T09:12:00Z"), 362.0),
+        // 2025-05-07 (0) — rest day
+        Exercise(Instant.parse("2025-05-08T06:45:00Z"), Instant.parse("2025-05-08T07:22:00Z"), 222.0), Exercise(Instant.parse("2025-05-09T19:07:00Z"), Instant.parse("2025-05-09T19:50:00Z"), 353.0),
+        Exercise(Instant.parse("2025-05-10T09:02:00Z"), Instant.parse("2025-05-10T09:34:00Z"), 208.0),
+        Exercise(Instant.parse("2025-05-10T18:30:00Z"), Instant.parse("2025-05-10T19:41:00Z"), 625.0),
+        Exercise(Instant.parse("2025-05-11T07:53:00Z"), Instant.parse("2025-05-11T08:48:00Z"), 440.0),
+        Exercise(Instant.parse("2025-05-12T08:05:00Z"), Instant.parse("2025-05-12T08:54:00Z"), 343.0),
+        Exercise(Instant.parse("2025-05-12T17:52:00Z"), Instant.parse("2025-05-12T18:33:00Z"), 328.0),
+        // 2025-05-13 (0) — rest day
+        Exercise(Instant.parse("2025-05-14T19:20:00Z"), Instant.parse("2025-05-14T20:26:00Z"), 561.0),
+        Exercise(Instant.parse("2025-05-15T20:12:00Z"), Instant.parse("2025-05-15T21:03:00Z"), 408.0),
+        Exercise(Instant.parse("2025-05-16T07:18:00Z"), Instant.parse("2025-05-16T08:02:00Z"), 308.0),
+        Exercise(Instant.parse("2025-05-16T18:47:00Z"), Instant.parse("2025-05-16T19:35:00Z"), 432.0)
+    )
+
+    fun getHeartRateData(): List<HeartRate> = listOf(
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T08:00:00Z"),
+            endTime = Instant.parse("2025-05-04T08:10:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T08:00:00Z"), 83),
+                HeartRateSample(Instant.parse("2025-05-04T08:01:00Z"), 61)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T07:50:00Z"),
+            endTime = Instant.parse("2025-05-04T08:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T07:50:00Z"), 76),
+                HeartRateSample(Instant.parse("2025-05-04T07:51:00Z"), 83)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T07:40:00Z"),
+            endTime = Instant.parse("2025-05-04T07:50:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T07:40:00Z"), 62),
+                HeartRateSample(Instant.parse("2025-05-04T07:41:00Z"), 85)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T07:30:00Z"),
+            endTime = Instant.parse("2025-05-04T07:40:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T07:30:00Z"), 85),
+                HeartRateSample(Instant.parse("2025-05-04T07:31:00Z"), 88)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T07:20:00Z"),
+            endTime = Instant.parse("2025-05-04T07:30:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T07:20:00Z"), 81),
+                HeartRateSample(Instant.parse("2025-05-04T07:21:00Z"), 64)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T07:10:00Z"),
+            endTime = Instant.parse("2025-05-04T07:20:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T07:10:00Z"), 81),
+                HeartRateSample(Instant.parse("2025-05-04T07:11:00Z"), 88)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T07:00:00Z"),
+            endTime = Instant.parse("2025-05-04T07:10:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T07:00:00Z"), 75),
+                HeartRateSample(Instant.parse("2025-05-04T07:01:00Z"), 97)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T06:50:00Z"),
+            endTime = Instant.parse("2025-05-04T07:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T06:50:00Z"), 95),
+                HeartRateSample(Instant.parse("2025-05-04T06:51:00Z"), 97)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T06:40:00Z"),
+            endTime = Instant.parse("2025-05-04T06:50:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T06:40:00Z"), 97),
+                HeartRateSample(Instant.parse("2025-05-04T06:41:00Z"), 67)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T06:30:00Z"),
+            endTime = Instant.parse("2025-05-04T06:40:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T06:30:00Z"), 67),
+                HeartRateSample(Instant.parse("2025-05-04T06:31:00Z"), 73)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T06:20:00Z"),
+            endTime = Instant.parse("2025-05-04T06:30:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T06:20:00Z"), 93),
+                HeartRateSample(Instant.parse("2025-05-04T06:21:00Z"), 83)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T06:10:00Z"),
+            endTime = Instant.parse("2025-05-04T06:20:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T06:10:00Z"), 98),
+                HeartRateSample(Instant.parse("2025-05-04T06:11:00Z"), 77)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T06:00:00Z"),
+            endTime = Instant.parse("2025-05-04T06:10:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T06:00:00Z"), 64),
+                HeartRateSample(Instant.parse("2025-05-04T06:01:00Z"), 76)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T05:50:00Z"),
+            endTime = Instant.parse("2025-05-04T06:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T05:50:00Z"), 80),
+                HeartRateSample(Instant.parse("2025-05-04T05:51:00Z"), 93)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T05:40:00Z"),
+            endTime = Instant.parse("2025-05-04T05:50:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T05:40:00Z"), 78),
+                HeartRateSample(Instant.parse("2025-05-04T05:41:00Z"), 61)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T05:30:00Z"),
+            endTime = Instant.parse("2025-05-04T05:40:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T05:30:00Z"), 90),
+                HeartRateSample(Instant.parse("2025-05-04T05:31:00Z"), 80)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T05:20:00Z"),
+            endTime = Instant.parse("2025-05-04T05:30:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T05:20:00Z"), 62),
+                HeartRateSample(Instant.parse("2025-05-04T05:21:00Z"), 84)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T05:10:00Z"),
+            endTime = Instant.parse("2025-05-04T05:20:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T05:10:00Z"), 67),
+                HeartRateSample(Instant.parse("2025-05-04T05:11:00Z"), 96)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T05:00:00Z"),
+            endTime = Instant.parse("2025-05-04T05:10:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T05:00:00Z"), 62),
+                HeartRateSample(Instant.parse("2025-05-04T05:01:00Z"), 64)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T04:50:00Z"),
+            endTime = Instant.parse("2025-05-04T05:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T04:50:00Z"), 63),
+                HeartRateSample(Instant.parse("2025-05-04T04:51:00Z"), 88)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T04:40:00Z"),
+            endTime = Instant.parse("2025-05-04T04:50:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T04:40:00Z"), 72),
+                HeartRateSample(Instant.parse("2025-05-04T04:41:00Z"), 72)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T04:30:00Z"),
+            endTime = Instant.parse("2025-05-04T04:40:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T04:30:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-04T04:31:00Z"), 85)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T04:20:00Z"),
+            endTime = Instant.parse("2025-05-04T04:30:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T04:20:00Z"), 80),
+                HeartRateSample(Instant.parse("2025-05-04T04:21:00Z"), 93)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T04:10:00Z"),
+            endTime = Instant.parse("2025-05-04T04:20:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T04:10:00Z"), 71),
+                HeartRateSample(Instant.parse("2025-05-04T04:11:00Z"), 64)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T04:00:00Z"),
+            endTime = Instant.parse("2025-05-04T04:10:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T04:00:00Z"), 64),
+                HeartRateSample(Instant.parse("2025-05-04T04:01:00Z"), 93)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T03:50:00Z"),
+            endTime = Instant.parse("2025-05-04T04:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T03:50:00Z"), 73),
+                HeartRateSample(Instant.parse("2025-05-04T03:51:00Z"), 74)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T03:40:00Z"),
+            endTime = Instant.parse("2025-05-04T03:50:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T03:40:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-04T03:41:00Z"), 77)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T03:30:00Z"),
+            endTime = Instant.parse("2025-05-04T03:40:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T03:30:00Z"), 65),
+                HeartRateSample(Instant.parse("2025-05-04T03:31:00Z"), 64)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T03:20:00Z"),
+            endTime = Instant.parse("2025-05-04T03:30:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T03:20:00Z"), 95),
+                HeartRateSample(Instant.parse("2025-05-04T03:21:00Z"), 97)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-04T03:10:00Z"),
+            endTime = Instant.parse("2025-05-04T03:20:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-04T03:10:00Z"), 93),
+                HeartRateSample(Instant.parse("2025-05-04T03:11:00Z"), 98)
+            )
+        )
     )
 
     fun getSingleSleepSessionData(): SleepSession = SleepSession(
@@ -601,140 +893,173 @@ object SampleDataProvider {
         BloodPressure(Instant.parse("2025-04-05T08:00:00Z"), 111.5, 84.7)
     )
 
+    fun getBloodGlucoseData(): List<BloodGlucose> = listOf(
+        BloodGlucose(Instant.parse("2025-05-04T08:00:00Z"), 64.0),
+        BloodGlucose(Instant.parse("2025-05-03T20:00:00Z"), 70.0),
+        BloodGlucose(Instant.parse("2025-05-03T08:00:00Z"), 58.0),
+        BloodGlucose(Instant.parse("2025-05-02T20:00:00Z"), 65.0),
+        BloodGlucose(Instant.parse("2025-05-02T08:00:00Z"), 49.0),
+        BloodGlucose(Instant.parse("2025-05-01T20:00:00Z"), 49.0),
+        BloodGlucose(Instant.parse("2025-05-01T08:00:00Z"), 57.0),
+        BloodGlucose(Instant.parse("2025-04-30T20:00:00Z"), 55.0),
+        BloodGlucose(Instant.parse("2025-04-30T08:00:00Z"), 53.0),
+        BloodGlucose(Instant.parse("2025-04-29T20:00:00Z"), 64.0),
+        BloodGlucose(Instant.parse("2025-04-29T08:00:00Z"), 68.0),
+        BloodGlucose(Instant.parse("2025-04-28T20:00:00Z"), 52.0),
+        BloodGlucose(Instant.parse("2025-04-28T08:00:00Z"), 53.0),
+        BloodGlucose(Instant.parse("2025-04-27T20:00:00Z"), 65.0),
+        BloodGlucose(Instant.parse("2025-04-27T08:00:00Z"), 65.0),
+        BloodGlucose(Instant.parse("2025-04-26T20:00:00Z"), 40.0),
+        BloodGlucose(Instant.parse("2025-04-26T08:00:00Z"), 62.0),
+        BloodGlucose(Instant.parse("2025-04-25T20:00:00Z"), 44.0),
+        BloodGlucose(Instant.parse("2025-04-25T08:00:00Z"), 55.0),
+        BloodGlucose(Instant.parse("2025-04-24T20:00:00Z"), 46.0),
+        BloodGlucose(Instant.parse("2025-04-24T08:00:00Z"), 51.0),
+        BloodGlucose(Instant.parse("2025-04-23T20:00:00Z"), 46.0),
+        BloodGlucose(Instant.parse("2025-04-23T08:00:00Z"), 57.0),
+        BloodGlucose(Instant.parse("2025-04-22T20:00:00Z"), 54.0),
+        BloodGlucose(Instant.parse("2025-04-22T08:00:00Z"), 51.0),
+        BloodGlucose(Instant.parse("2025-04-21T20:00:00Z"), 48.0),
+        BloodGlucose(Instant.parse("2025-04-21T08:00:00Z"), 55.0),
+        BloodGlucose(Instant.parse("2025-04-20T20:00:00Z"), 46.0),
+        BloodGlucose(Instant.parse("2025-04-20T08:00:00Z"), 64.0),
+        BloodGlucose(Instant.parse("2025-04-19T20:00:00Z"), 43.0)
+    )
+
     /**
      * Sample heart rate range data for range bar charts
-     * Returns List<ChartPoint> where multiple points with same x-value represent min and max values
+     * Returns List<ChartMark> where multiple points with same x-value represent min and max values
      */
-    fun getHeartRateRangeData(): List<ChartPoint> = listOf(
+    fun getHeartRateRangeData(): List<ChartMark> = listOf(
         // Day 1
-        ChartPoint(x = 0.0, y = 55.0, label = "1일"),
-        ChartPoint(x = 0.0, y = 150.0, label = "1일"),
+        ChartMark(x = 0.0, y = 55.0, label = "1일"),
+        ChartMark(x = 0.0, y = 150.0, label = "1일"),
 
         // Day 2
-        ChartPoint(x = 1.0, y = 54.0, label = "2일"),
-        ChartPoint(x = 1.0, y = 160.0, label = "2일"),
+        ChartMark(x = 1.0, y = 54.0, label = "2일"),
+        ChartMark(x = 1.0, y = 160.0, label = "2일"),
 
         // Day 3
-        ChartPoint(x = 2.0, y = 65.0, label = "3일"),
-        ChartPoint(x = 2.0, y = 145.0, label = "3일"),
+        ChartMark(x = 2.0, y = 65.0, label = "3일"),
+        ChartMark(x = 2.0, y = 145.0, label = "3일"),
 
         // Day 4
-        ChartPoint(x = 3.0, y = 58.0, label = "4일"),
-        ChartPoint(x = 3.0, y = 125.0, label = "4일"),
+        ChartMark(x = 3.0, y = 58.0, label = "4일"),
+        ChartMark(x = 3.0, y = 125.0, label = "4일"),
 
         // Day 5
-        ChartPoint(x = 4.0, y = 70.0, label = "5일"),
-        ChartPoint(x = 4.0, y = 140.0, label = "5일"),
+        ChartMark(x = 4.0, y = 70.0, label = "5일"),
+        ChartMark(x = 4.0, y = 140.0, label = "5일"),
 
         // Day 6
-        ChartPoint(x = 5.0, y = 75.0, label = "6일"),
-        ChartPoint(x = 5.0, y = 110.0, label = "6일"),
+        ChartMark(x = 5.0, y = 75.0, label = "6일"),
+        ChartMark(x = 5.0, y = 110.0, label = "6일"),
 
         // Day 7
-        ChartPoint(x = 6.0, y = 68.0, label = "7일"),
-        ChartPoint(x = 6.0, y = 162.0, label = "7일"),
+        ChartMark(x = 6.0, y = 68.0, label = "7일"),
+        ChartMark(x = 6.0, y = 162.0, label = "7일"),
 
         // Day 8
-        ChartPoint(x = 7.0, y = 72.0, label = "8일"),
-        ChartPoint(x = 7.0, y = 168.0, label = "8일"),
+        ChartMark(x = 7.0, y = 72.0, label = "8일"),
+        ChartMark(x = 7.0, y = 168.0, label = "8일"),
 
         // Day 9
-        ChartPoint(x = 8.0, y = 65.0, label = "9일"),
-        ChartPoint(x = 8.0, y = 138.0, label = "9일"),
+        ChartMark(x = 8.0, y = 65.0, label = "9일"),
+        ChartMark(x = 8.0, y = 138.0, label = "9일"),
 
         // Day 10
-        ChartPoint(x = 9.0, y = 85.0, label = "10일"),
-        ChartPoint(x = 9.0, y = 105.0, label = "10일"),
+        ChartMark(x = 9.0, y = 85.0, label = "10일"),
+        ChartMark(x = 9.0, y = 105.0, label = "10일"),
 
         // Day 11
-        ChartPoint(x = 10.0, y = 62.0, label = "11일"),
-        ChartPoint(x = 10.0, y = 140.0, label = "11일"),
+        ChartMark(x = 10.0, y = 62.0, label = "11일"),
+        ChartMark(x = 10.0, y = 140.0, label = "11일"),
 
         // Day 12
-        ChartPoint(x = 11.0, y = 70.0, label = "12일"),
-        ChartPoint(x = 11.0, y = 155.0, label = "12일"),
+        ChartMark(x = 11.0, y = 70.0, label = "12일"),
+        ChartMark(x = 11.0, y = 155.0, label = "12일"),
 
         // Day 13
-        ChartPoint(x = 12.0, y = 60.0, label = "13일"),
-        ChartPoint(x = 12.0, y = 130.0, label = "13일"),
+        ChartMark(x = 12.0, y = 60.0, label = "13일"),
+        ChartMark(x = 12.0, y = 130.0, label = "13일"),
 
         // Day 14
-        ChartPoint(x = 13.0, y = 75.0, label = "14일"),
-        ChartPoint(x = 13.0, y = 150.0, label = "14일"),
+        ChartMark(x = 13.0, y = 75.0, label = "14일"),
+        ChartMark(x = 13.0, y = 150.0, label = "14일"),
 
         // Day 15
-        ChartPoint(x = 14.0, y = 66.0, label = "15일"),
-        ChartPoint(x = 14.0, y = 142.0, label = "15일"),
+        ChartMark(x = 14.0, y = 66.0, label = "15일"),
+        ChartMark(x = 14.0, y = 142.0, label = "15일"),
 
         // Day 16
-        ChartPoint(x = 15.0, y = 78.0, label = "16일"),
-        ChartPoint(x = 15.0, y = 160.0, label = "16일"),
+        ChartMark(x = 15.0, y = 78.0, label = "16일"),
+        ChartMark(x = 15.0, y = 160.0, label = "16일"),
 
         // Day 17
-        ChartPoint(x = 16.0, y = 64.0, label = "17일"),
-        ChartPoint(x = 16.0, y = 135.0, label = "17일"),
+        ChartMark(x = 16.0, y = 64.0, label = "17일"),
+        ChartMark(x = 16.0, y = 135.0, label = "17일"),
 
         // Day 18
-        ChartPoint(x = 17.0, y = 72.0, label = "18일"),
-        ChartPoint(x = 17.0, y = 150.0, label = "18일"),
+        ChartMark(x = 17.0, y = 72.0, label = "18일"),
+        ChartMark(x = 17.0, y = 150.0, label = "18일"),
 
         // Day 19
-        ChartPoint(x = 18.0, y = 70.0, label = "19일"),
-        ChartPoint(x = 18.0, y = 145.0, label = "19일"),
+        ChartMark(x = 18.0, y = 70.0, label = "19일"),
+        ChartMark(x = 18.0, y = 145.0, label = "19일"),
 
         // Day 20
-        ChartPoint(x = 19.0, y = 68.0, label = "20일"),
-        ChartPoint(x = 19.0, y = 155.0, label = "20일"),
+        ChartMark(x = 19.0, y = 68.0, label = "20일"),
+        ChartMark(x = 19.0, y = 155.0, label = "20일"),
     )
 
     /**
      * Sample nutrition data for stacked bar charts (protein, fat, carbs)
-     * Returns List<ChartPoint> where multiple points with same x-value represent different segments
+     * Returns List<ChartMark> where multiple points with same x-value represent different segments
      */
-    fun getNutritionStackedData(): List<ChartPoint> = listOf(
+    fun getNutritionStackedData(): List<ChartMark> = listOf(
         // Monday (x = 0)
-        ChartPoint(x = 0.0, y = 80.0, label = "월"),
-        ChartPoint(x = 0.0, y = 45.0, label = "월"),
-        ChartPoint(x = 0.0, y = 120.0, label = "월"),
+        ChartMark(x = 0.0, y = 80.0, label = "월"),
+        ChartMark(x = 0.0, y = 45.0, label = "월"),
+        ChartMark(x = 0.0, y = 120.0, label = "월"),
 
         // Tuesday (x = 1)
-        ChartPoint(x = 1.0, y = 75.0, label = "화"),
-        ChartPoint(x = 1.0, y = 38.0, label = "화"),
-        ChartPoint(x = 1.0, y = 110.0, label = "화"),
+        ChartMark(x = 1.0, y = 75.0, label = "화"),
+        ChartMark(x = 1.0, y = 38.0, label = "화"),
+        ChartMark(x = 1.0, y = 110.0, label = "화"),
 
         // Wednesday (x = 2)
-        ChartPoint(x = 2.0, y = 90.0, label = "수"),
-        ChartPoint(x = 2.0, y = 52.0, label = "수"),
-        ChartPoint(x = 2.0, y = 140.0, label = "수"),
+        ChartMark(x = 2.0, y = 90.0, label = "수"),
+        ChartMark(x = 2.0, y = 52.0, label = "수"),
+        ChartMark(x = 2.0, y = 140.0, label = "수"),
 
         // Thursday (x = 3)
-        ChartPoint(x = 3.0, y = 85.0, label = "목"),
-        ChartPoint(x = 3.0, y = 41.0, label = "목"),
-        ChartPoint(x = 3.0, y = 135.0, label = "목"),
+        ChartMark(x = 3.0, y = 85.0, label = "목"),
+        ChartMark(x = 3.0, y = 41.0, label = "목"),
+        ChartMark(x = 3.0, y = 135.0, label = "목"),
 
         // Friday (x = 4)
-        ChartPoint(x = 4.0, y = 95.0, label = "금"),
-        ChartPoint(x = 4.0, y = 58.0, label = "금"),
-        ChartPoint(x = 4.0, y = 150.0, label = "금"),
+        ChartMark(x = 4.0, y = 95.0, label = "금"),
+        ChartMark(x = 4.0, y = 58.0, label = "금"),
+        ChartMark(x = 4.0, y = 150.0, label = "금"),
 
         // Saturday (x = 5)
-        ChartPoint(x = 5.0, y = 70.0, label = "토"),
-        ChartPoint(x = 5.0, y = 35.0, label = "토"),
-        ChartPoint(x = 5.0, y = 100.0, label = "토"),
+        ChartMark(x = 5.0, y = 70.0, label = "토"),
+        ChartMark(x = 5.0, y = 35.0, label = "토"),
+        ChartMark(x = 5.0, y = 100.0, label = "토"),
 
         // Sunday (x = 6)
-        ChartPoint(x = 6.0, y = 88.0, label = "일"),
-        ChartPoint(x = 6.0, y = 48.0, label = "일"),
-        ChartPoint(x = 6.0, y = 125.0, label = "일")
+        ChartMark(x = 6.0, y = 88.0, label = "일"),
+        ChartMark(x = 6.0, y = 48.0, label = "일"),
+        ChartMark(x = 6.0, y = 125.0, label = "일")
     )
 
     /**
      * Sample progress data for Apple Watch-style activity rings
      */
-    fun getActivityProgressData(): List<ProgressChartPoint> = listOf(
-        ProgressChartPoint(x = 0.0, current = 2500.0, max = 2000.0, label = "Move", unit = "KJ"),
-        ProgressChartPoint(x = 1.0, current = 20.0, max = 60.0, label = "Exercise", unit = "min"),
-        ProgressChartPoint(x = 2.0, current = 7.0, max = 10.0, label = "Stand", unit = "h")
+    fun getActivityProgressData(): List<ProgressChartMark> = listOf(
+        ProgressChartMark(x = 0.0, current = 2500.0, max = 2000.0, label = "Move", unit = "KJ"),
+        ProgressChartMark(x = 1.0, current = 20.0, max = 60.0, label = "Exercise", unit = "min"),
+        ProgressChartMark(x = 2.0, current = 7.0, max = 10.0, label = "Stand", unit = "h")
     )
 
     /**
@@ -754,35 +1079,35 @@ object SampleDataProvider {
     }
 
     /**
-     * Convert basic sample data to ChartPoint format
+     * Convert basic sample data to ChartMark format
      */
-    fun getBasicChartPoints(): List<ChartPoint> = sampleData.mapIndexed { index, value ->
-        ChartPoint(x = index.toDouble(), y = value, label = weekDays.getOrElse(index) { "" })
+    fun getBasicChartMarks(): List<ChartMark> = sampleData.mapIndexed { index, value ->
+        ChartMark(x = index.toDouble(), y = value, label = weekDays.getOrElse(index) { "" })
     }
 
     /**
-     * Convert extended sample data to ChartPoint format (for pagination demos)
+     * Convert extended sample data to ChartMark format (for pagination demos)
      */
-    fun getExtendedChartPoints(): List<ChartPoint> = sampleData4.mapIndexed { index, value ->
-        ChartPoint(x = index.toDouble(), y = value, label = weekDays[index % weekDays.size])
+    fun getExtendedChartMarks(): List<ChartMark> = sampleData4.mapIndexed { index, value ->
+        ChartMark(x = index.toDouble(), y = value, label = weekDays[index % weekDays.size])
     }
 
     /**
      * Generate dense chart points for tick reduction demos
      */
-    fun getDenseChartPoints(count: Int = 50): List<ChartPoint> {
+    fun getDenseChartMarks(count: Int = 50): List<ChartMark> {
         val labels = (1..count).map { "Day $it" }
         val values = (1..count).map { (20..80).random().toDouble() }
         return labels.mapIndexed { index, label ->
-            ChartPoint(x = index.toDouble(), y = values[index], label = label)
+            ChartMark(x = index.toDouble(), y = values[index], label = label)
         }
     }
 
     /**
-     * Get blood pressure data as separate ChartPoint lists for systolic and diastolic
+     * Get blood pressure data as separate ChartMark lists for systolic and diastolic
      * Uses the transform convenience function for proper time-based processing
      */
-    fun getBloodPressureChartPointsMap(): Map<String, List<ChartPoint>> {
+    fun getBloodPressureChartMarksMap(): Map<String, List<ChartMark>> {
         return getBloodPressureData().transform(
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.DAILY_AVERAGE

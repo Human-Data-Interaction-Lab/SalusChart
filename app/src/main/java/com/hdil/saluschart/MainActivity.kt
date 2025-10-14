@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.ScatterPlot
 import com.hdil.saluschart.ui.compose.charts.BarChart
@@ -32,15 +32,15 @@ import com.hdil.saluschart.ui.compose.charts.CalendarEntry
 import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
 import com.hdil.saluschart.ui.compose.charts.StackedBarChart
-import com.hdil.saluschart.core.chart.StackedChartPoint
+import com.hdil.saluschart.core.chart.StackedChartMark
 import java.time.LocalDate
 import java.time.YearMonth
-import com.hdil.saluschart.core.chart.ProgressChartPoint
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
 import com.hdil.saluschart.ui.compose.charts.MinimalLineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalRangeBarChart
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.ui.compose.charts.MinimalGaugeChart
 import com.hdil.saluschart.ui.theme.SalusChartTheme
 import androidx.compose.material3.SegmentedButton
@@ -233,9 +233,9 @@ class MainActivity : ComponentActivity() {
 //            }
 //        }
 //
-//        // ChartPoint 리스트로 변환
-//        val chartPoints = sampleData.mapIndexed { index, value ->
-//            ChartPoint(
+//        // ChartMark 리스트로 변환
+//        val ChartMarks = sampleData.mapIndexed { index, value ->
+//            ChartMark(
 //                x = index.toFloat(),
 //                y = value,
 //                label = days.getOrElse(index) { "" }
@@ -244,59 +244,59 @@ class MainActivity : ComponentActivity() {
 //
 //        // 범위 차트용 샘플 데이터 (심박수 범위 예시)
 //        val rangeData = listOf(
-//            RangeChartPoint(x = 0f, minPoint = ChartPoint(x = 0f, y = 54f), maxPoint = ChartPoint(x = 0f, y = 160f), label = "2일"),
-//            RangeChartPoint(x = 1f, minPoint = ChartPoint(x = 1f, y = 65f), maxPoint = ChartPoint(x = 1f, y = 145f), label = "3일"),
-//            RangeChartPoint(x = 2f, minPoint = ChartPoint(x = 2f, y = 58f), maxPoint = ChartPoint(x = 2f, y = 125f), label = "4일"),
-//            RangeChartPoint(x = 3f, minPoint = ChartPoint(x = 3f, y = 75f), maxPoint = ChartPoint(x = 3f, y = 110f), label = "6일"),
-//            RangeChartPoint(x = 4f, minPoint = ChartPoint(x = 4f, y = 68f), maxPoint = ChartPoint(x = 4f, y = 162f), label = "7일"),
-//            RangeChartPoint(x = 5f, minPoint = ChartPoint(x = 5f, y = 72f), maxPoint = ChartPoint(x = 5f, y = 168f), label = "8일"),
-//            RangeChartPoint(x = 6f, minPoint = ChartPoint(x = 6f, y = 65f), maxPoint = ChartPoint(x = 6f, y = 138f), label = "9일"),
-//            RangeChartPoint(x = 7f, minPoint = ChartPoint(x = 7f, y = 85f), maxPoint = ChartPoint(x = 7f, y = 105f), label = "10일")
+//            RangeChartMark(x = 0f, minPoint = ChartMark(x = 0f, y = 54f), maxPoint = ChartMark(x = 0f, y = 160f), label = "2일"),
+//            RangeChartMark(x = 1f, minPoint = ChartMark(x = 1f, y = 65f), maxPoint = ChartMark(x = 1f, y = 145f), label = "3일"),
+//            RangeChartMark(x = 2f, minPoint = ChartMark(x = 2f, y = 58f), maxPoint = ChartMark(x = 2f, y = 125f), label = "4일"),
+//            RangeChartMark(x = 3f, minPoint = ChartMark(x = 3f, y = 75f), maxPoint = ChartMark(x = 3f, y = 110f), label = "6일"),
+//            RangeChartMark(x = 4f, minPoint = ChartMark(x = 4f, y = 68f), maxPoint = ChartMark(x = 4f, y = 162f), label = "7일"),
+//            RangeChartMark(x = 5f, minPoint = ChartMark(x = 5f, y = 72f), maxPoint = ChartMark(x = 5f, y = 168f), label = "8일"),
+//            RangeChartMark(x = 6f, minPoint = ChartMark(x = 6f, y = 65f), maxPoint = ChartMark(x = 6f, y = 138f), label = "9일"),
+//            RangeChartMark(x = 7f, minPoint = ChartMark(x = 7f, y = 85f), maxPoint = ChartMark(x = 7f, y = 105f), label = "10일")
 //        )
 //
 //        // 스택 바 차트용 샘플 데이터 (일별 영양소 섭취량 예시)
 //        val stackedData = listOf(
 //            // Monday (x = 0)
-//            ChartPoint(x = 0f, y = 80f, label = "월"),
-//            ChartPoint(x = 0f, y = 45f, label = "월"),
-//            ChartPoint(x = 0f, y = 120f, label = "월"),
+//            ChartMark(x = 0f, y = 80f, label = "월"),
+//            ChartMark(x = 0f, y = 45f, label = "월"),
+//            ChartMark(x = 0f, y = 120f, label = "월"),
 //
 //            // Tuesday (x = 1)
-//            ChartPoint(x = 1f, y = 75f, label = "화"),
-//            ChartPoint(x = 1f, y = 38f, label = "화"),
-//            ChartPoint(x = 1f, y = 110f, label = "화"),
+//            ChartMark(x = 1f, y = 75f, label = "화"),
+//            ChartMark(x = 1f, y = 38f, label = "화"),
+//            ChartMark(x = 1f, y = 110f, label = "화"),
 //
 //            // Wednesday (x = 2)
-//            ChartPoint(x = 2f, y = 90f, label = "수"),
-//            ChartPoint(x = 2f, y = 52f, label = "수"),
-//            ChartPoint(x = 2f, y = 140f, label = "수"),
+//            ChartMark(x = 2f, y = 90f, label = "수"),
+//            ChartMark(x = 2f, y = 52f, label = "수"),
+//            ChartMark(x = 2f, y = 140f, label = "수"),
 //
 //            // Thursday (x = 3)
-//            ChartPoint(x = 3f, y = 85f, label = "목"),
-//            ChartPoint(x = 3f, y = 41f, label = "목"),
-//            ChartPoint(x = 3f, y = 135f, label = "목"),
+//            ChartMark(x = 3f, y = 85f, label = "목"),
+//            ChartMark(x = 3f, y = 41f, label = "목"),
+//            ChartMark(x = 3f, y = 135f, label = "목"),
 //
 //            // Friday (x = 4)
-//            ChartPoint(x = 4f, y = 95f, label = "금"),
-//            ChartPoint(x = 4f, y = 58f, label = "금"),
-//            ChartPoint(x = 4f, y = 150f, label = "금"),
+//            ChartMark(x = 4f, y = 95f, label = "금"),
+//            ChartMark(x = 4f, y = 58f, label = "금"),
+//            ChartMark(x = 4f, y = 150f, label = "금"),
 //
 //            // Saturday (x = 5)
-//            ChartPoint(x = 5f, y = 70f, label = "토"),
-//            ChartPoint(x = 5f, y = 35f, label = "토"),
-//            ChartPoint(x = 5f, y = 100f, label = "토"),
+//            ChartMark(x = 5f, y = 70f, label = "토"),
+//            ChartMark(x = 5f, y = 35f, label = "토"),
+//            ChartMark(x = 5f, y = 100f, label = "토"),
 //
 //            // Sunday (x = 6)
-//            ChartPoint(x = 6f, y = 88f, label = "일"),
-//            ChartPoint(x = 6f, y = 48f, label = "일"),
-//            ChartPoint(x = 6f, y = 125f, label = "일")
+//            ChartMark(x = 6f, y = 88f, label = "일"),
+//            ChartMark(x = 6f, y = 48f, label = "일"),
+//            ChartMark(x = 6f, y = 125f, label = "일")
 //        )
 //
 //        // 선택된 차트 타입에 따라 다른 차트 표시
 //        when (selectedChartType) {
 //            "Line" -> {
 //                LineChart(
-//                    data = chartPoints,
+//                    data = ChartMarks,
 //                    title = "요일별 활동량",
 //                    yLabel = "활동량",
 //                    xLabel = "요일",
@@ -306,7 +306,7 @@ class MainActivity : ComponentActivity() {
 //            }
 //            "Scatter" -> {
 //                ScatterPlot(
-//                    data = chartPoints,
+//                    data = ChartMarks,
 //                    title = "요일별 활동량",
 //                    yLabel = "활동량",
 //                    xLabel = "요일",
@@ -315,7 +315,7 @@ class MainActivity : ComponentActivity() {
 //            }
 //            "Bar" -> {
 //                BarChart(
-//                    data = chartPoints,
+//                    data = ChartMarks,
 //                    title = "요일별 활동량",
 //                    yLabel = "활동량",
 //                    xLabel = "요일",
@@ -351,7 +351,7 @@ class MainActivity : ComponentActivity() {
 ////            }
 //            "Pie" -> {
 //                PieChart(
-//                    data = chartPoints,
+//                    data = ChartMarks,
 //                    title = "요일별 활동량",
 //                    isDonut = true,
 //                    showLegend = true,
@@ -359,21 +359,21 @@ class MainActivity : ComponentActivity() {
 //            }
 //            "Progress" -> {
 //                 val progressData = listOf(
-//                     ProgressChartPoint(
+//                     ProgressChartMark(
 //                         x = 0f,
 //                         current = 1200f,
 //                         max = 2000f,
 //                         label = "Move",
 //                         unit = "KJ"
 //                     ),
-//                     ProgressChartPoint(
+//                     ProgressChartMark(
 //                         x = 1f,
 //                         current = 20f,
 //                         max = 60f,
 //                         label = "Exercise",
 //                         unit = "min"
 //                     ),
-//                     ProgressChartPoint(
+//                     ProgressChartMark(
 //                         x = 2f,
 //                         current = 7f,
 //                         max = 10f,
@@ -403,13 +403,13 @@ class MainActivity : ComponentActivity() {
 //            "MinBar" -> {
 //                 MinimalBarChart(
 //
-//                     data = chartPoints,
+//                     data = ChartMarks,
 //                     color = Color.Blue,
 //                 )
 //             }
 //             "MinLine" -> {
 //                 MinimalLineChart(
-//                     data = chartPoints,
+//                     data = ChartMarks,
 //                     color = Color.Blue,
 //                     showPoints = true
 //                 )
@@ -422,10 +422,10 @@ class MainActivity : ComponentActivity() {
 ////             }
 ////             "MinGauge" -> {
 ////                 // 단일 범위 데이터 생성 (심박수 범위 예시: 76-104 bpm)
-////                 val singleRangeData = RangeChartPoint(
+////                 val singleRangeData = RangeChartMark(
 ////                     x = 0f,
-////                     minPoint = ChartPoint(x = 0f, y = 76f),
-////                     maxPoint = ChartPoint(x = 0f, y = 104f),
+////                     minPoint = ChartMark(x = 0f, y = 76f),
+////                     maxPoint = ChartMark(x = 0f, y = 104f),
 ////                     label = "Heart Rate"
 ////                 )
 ////                 MinimalGaugeChart(

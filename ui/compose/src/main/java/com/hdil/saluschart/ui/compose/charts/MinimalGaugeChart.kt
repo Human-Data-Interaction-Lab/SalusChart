@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 
 /**
@@ -40,7 +40,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 @Composable
 fun MinimalGaugeChart(
     modifier: Modifier = Modifier,
-    data: RangeChartPoint,
+    data: RangeChartMark,
     containerMin: Double,
     containerMax: Double,
     containerColor: Color = Color.LightGray,

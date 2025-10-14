@@ -38,11 +38,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
-import com.hdil.saluschart.core.chart.BaseChartPoint
-import com.hdil.saluschart.core.chart.ChartPoint
+import com.hdil.saluschart.core.chart.BaseChartMark
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.StackedChartPoint
-import com.hdil.saluschart.core.chart.RangeChartPoint
+import com.hdil.saluschart.core.chart.StackedChartMark
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw.formatTickLabel
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import kotlin.Boolean
@@ -57,6 +57,7 @@ object BarChartDraw {
      * @param centered 텍스트를 중앙 정렬할지 여부 (기본값: true)
      * @param textSize 레이블 텍스트 크기 (기본값: 28f)
      * @param maxXTicksLimit X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
+     * @param xLabelAutoSkip 라벨 자동 스킵 활성화 여부 (true이면 텍스트 너비 기반 자동 계산)
      */
     fun drawBarXAxisLabels(
         ctx: DrawContext,
@@ -64,12 +65,20 @@ object BarChartDraw {
         metrics: ChartMath.ChartMetrics,
         centered: Boolean = true,
         textSize: Float = 28f,
-        maxXTicksLimit: Int? = null
+        maxXTicksLimit: Int? = null,
+        xLabelAutoSkip: Boolean = false
     ) {
-        // 틱 개수 제한이 설정된 경우 라벨을 줄임
-        val (displayLabels, displayIndices) = if (maxXTicksLimit != null) {
-            ChartMath.reduceXAxisTicks(labels, maxXTicksLimit)
+        // 라벨 감소 로직
+        val (displayLabels, displayIndices) = if (xLabelAutoSkip) {
+            // 자동 스킵: 텍스트 너비 기반으로 계산
+            ChartMath.computeAutoSkipLabels(
+                labels = labels,
+                textSize = textSize,
+                chartWidth = metrics.chartWidth,
+                maxXTicksLimit = maxXTicksLimit
+            )
         } else {
+            // 모든 라벨 표시
             Pair(labels, labels.indices.toList())
         }
         
@@ -117,7 +126,7 @@ object BarChartDraw {
      */
     @Composable
     fun BarMarker(
-        data: List<BaseChartPoint>,
+        data: List<BaseChartMark>,
         minValues: List<Double>,
         maxValues: List<Double>,
         metrics: ChartMath.ChartMetrics,
@@ -147,7 +156,7 @@ object BarChartDraw {
 
         // 툴팁 정보 저장 변수
         var tooltipOffset: Offset? = null
-        var tooltipData: BaseChartPoint? = null
+        var tooltipData: BaseChartMark? = null
 
         (0 until dataSize).forEach { index ->
             // 값 추출
@@ -296,7 +305,7 @@ object BarChartDraw {
             val xDp = with(density) { tooltipOffset.x.toDp() }
             val yDp = with(density) { tooltipOffset.y.toDp() }
             ChartTooltip(
-                chartPoint = tooltipData,
+                ChartMark = tooltipData,
                 unit = unit,
                 modifier = Modifier.offset(x = xDp, y = yDp - 80.dp)
             )

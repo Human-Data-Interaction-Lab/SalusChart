@@ -13,6 +13,6 @@ kotlin {
 }
 
 dependencies {
-//    implementation(project(":core:chart")) // ChartPoint 사용
+//    implementation(project(":core:chart")) // ChartMark 사용
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 }

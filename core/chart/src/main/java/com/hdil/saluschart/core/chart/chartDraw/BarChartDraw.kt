@@ -142,6 +142,7 @@ object BarChartDraw {
         segmentIndex: Int? = null,
         showLabel: Boolean = false,
         unit: String = "",
+        xGroupIndices: List<Int>? = null,
     ) {
         val density = LocalDensity.current
 
@@ -212,10 +213,21 @@ object BarChartDraw {
                 Pair(barW, barXPos)
             } else {
                 // 바차트 포지셔닝: 할당된 공간의 중앙에 배치
-                val barW = metrics.chartWidth / dataSize * actualBarWidthRatio
-                val spacing = metrics.chartWidth / dataSize
-                val barXPos = metrics.paddingX + index * spacing + (spacing - barW) / 2f
-                Pair(barW, barXPos)
+                if (xGroupIndices != null) {
+                    // Multiple bars per x-value: use x-group index for positioning
+                    val xGroupIndex = xGroupIndices.getOrNull(index) ?: index
+                    val numGroups = (xGroupIndices.maxOrNull() ?: 0) + 1
+                    val barW = metrics.chartWidth / numGroups * actualBarWidthRatio
+                    val spacing = metrics.chartWidth / numGroups
+                    val barXPos = metrics.paddingX + xGroupIndex * spacing + (spacing - barW) / 2f
+                    Pair(barW, barXPos)
+                } else {
+                    // Original logic: each bar has its own x-position
+                    val barW = metrics.chartWidth / dataSize * actualBarWidthRatio
+                    val spacing = metrics.chartWidth / dataSize
+                    val barXPos = metrics.paddingX + index * spacing + (spacing - barW) / 2f
+                    Pair(barW, barXPos)
+                }
             }
 
             // Double 좌표를 Dp로 변환

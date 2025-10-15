@@ -2,7 +2,6 @@ package com.hdil.saluschart.data.provider
 
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ProgressChartMark
-import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.HeartRate
@@ -45,42 +44,6 @@ object SampleDataProvider {
     
     // Nutrition segment labels for stacked charts
     val segmentLabels = listOf("단백질", "지방", "탄수화물")
-
-    /**
-     * Sample step count health data spanning two days with 30-minute intervals
-     */
-//    fun getStepCountData(): List<StepCount> = listOf(
-//        StepCount(Instant.parse("2025-05-04T08:00:00Z"), Instant.parse("2025-05-04T08:30:00Z"), 43),
-//        StepCount(Instant.parse("2025-05-04T09:00:00Z"), Instant.parse("2025-05-04T09:30:00Z"), 139),
-//        StepCount(Instant.parse("2025-05-04T10:00:00Z"), Instant.parse("2025-05-04T10:30:00Z"), 649),
-//        StepCount(Instant.parse("2025-05-04T11:00:00Z"), Instant.parse("2025-05-04T11:30:00Z"), 426),
-//        StepCount(Instant.parse("2025-05-04T12:00:00Z"), Instant.parse("2025-05-04T12:30:00Z"), 285),
-//        StepCount(Instant.parse("2025-05-04T13:00:00Z"), Instant.parse("2025-05-04T13:30:00Z"), 981),
-//        StepCount(Instant.parse("2025-05-04T14:00:00Z"), Instant.parse("2025-05-04T14:30:00Z"), 148),
-//        StepCount(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:30:00Z"), 845),
-//        StepCount(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:30:00Z"), 462),
-//        StepCount(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:30:00Z"), 139),
-//        StepCount(Instant.parse("2025-05-04T18:00:00Z"), Instant.parse("2025-05-04T18:30:00Z"), 237),
-//        StepCount(Instant.parse("2025-05-04T19:00:00Z"), Instant.parse("2025-05-04T19:30:00Z"), 739),
-//        StepCount(Instant.parse("2025-05-04T20:00:00Z"), Instant.parse("2025-05-04T20:30:00Z"), 169),
-//        StepCount(Instant.parse("2025-05-04T21:00:00Z"), Instant.parse("2025-05-04T21:30:00Z"), 878),
-//        StepCount(Instant.parse("2025-05-04T22:00:00Z"), Instant.parse("2025-05-04T22:30:00Z"), 525),
-//        StepCount(Instant.parse("2025-05-04T23:00:00Z"), Instant.parse("2025-05-04T23:30:00Z"), 826),
-//        StepCount(Instant.parse("2025-05-05T00:00:00Z"), Instant.parse("2025-05-05T00:30:00Z"), 96),
-//        StepCount(Instant.parse("2025-05-05T01:00:00Z"), Instant.parse("2025-05-05T01:30:00Z"), 80),
-//        StepCount(Instant.parse("2025-05-05T02:00:00Z"), Instant.parse("2025-05-05T02:30:00Z"), 0),
-//        StepCount(Instant.parse("2025-05-05T03:00:00Z"), Instant.parse("2025-05-05T03:30:00Z"), 0),
-//        StepCount(Instant.parse("2025-05-05T04:00:00Z"), Instant.parse("2025-05-05T04:30:00Z"), 0),
-//        StepCount(Instant.parse("2025-05-05T05:00:00Z"), Instant.parse("2025-05-05T05:30:00Z"), 0),
-//        StepCount(Instant.parse("2025-05-05T06:00:00Z"), Instant.parse("2025-05-05T06:30:00Z"), 0),
-//        StepCount(Instant.parse("2025-05-05T07:00:00Z"), Instant.parse("2025-05-05T07:30:00Z"), 0),
-//        StepCount(Instant.parse("2025-05-05T08:00:00Z"), Instant.parse("2025-05-05T08:30:00Z"), 18),
-//        StepCount(Instant.parse("2025-05-05T09:00:00Z"), Instant.parse("2025-05-05T09:30:00Z"), 289),
-//        StepCount(Instant.parse("2025-05-05T10:00:00Z"), Instant.parse("2025-05-05T10:30:00Z"), 400),
-//        StepCount(Instant.parse("2025-05-05T11:00:00Z"), Instant.parse("2025-05-05T11:30:00Z"), 576),
-//        StepCount(Instant.parse("2025-05-05T12:00:00Z"), Instant.parse("2025-05-05T12:30:00Z"), 362),
-//        StepCount(Instant.parse("2025-05-05T13:00:00Z"), Instant.parse("2025-05-05T13:30:00Z"), 738)
-//    )
 
     /**
      * Generates StepCount data with 0 steps from 02:00–08:00 local time.
@@ -185,244 +148,333 @@ object SampleDataProvider {
     )
 
     fun getHeartRateData(): List<HeartRate> = listOf(
+        // ===== 2025-05-04 =====
         HeartRate(
-            startTime = Instant.parse("2025-05-04T08:00:00Z"),
-            endTime = Instant.parse("2025-05-04T08:10:00Z"),
+            startTime = Instant.parse("2025-05-04T00:00:00Z"),
+            endTime = Instant.parse("2025-05-04T04:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T08:00:00Z"), 83),
-                HeartRateSample(Instant.parse("2025-05-04T08:01:00Z"), 61)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T07:50:00Z"),
-            endTime = Instant.parse("2025-05-04T08:00:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T07:50:00Z"), 76),
-                HeartRateSample(Instant.parse("2025-05-04T07:51:00Z"), 83)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T07:40:00Z"),
-            endTime = Instant.parse("2025-05-04T07:50:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T07:40:00Z"), 62),
-                HeartRateSample(Instant.parse("2025-05-04T07:41:00Z"), 85)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T07:30:00Z"),
-            endTime = Instant.parse("2025-05-04T07:40:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T07:30:00Z"), 85),
-                HeartRateSample(Instant.parse("2025-05-04T07:31:00Z"), 88)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T07:20:00Z"),
-            endTime = Instant.parse("2025-05-04T07:30:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T07:20:00Z"), 81),
-                HeartRateSample(Instant.parse("2025-05-04T07:21:00Z"), 64)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T07:10:00Z"),
-            endTime = Instant.parse("2025-05-04T07:20:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T07:10:00Z"), 81),
-                HeartRateSample(Instant.parse("2025-05-04T07:11:00Z"), 88)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T07:00:00Z"),
-            endTime = Instant.parse("2025-05-04T07:10:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T07:00:00Z"), 75),
-                HeartRateSample(Instant.parse("2025-05-04T07:01:00Z"), 97)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T06:50:00Z"),
-            endTime = Instant.parse("2025-05-04T07:00:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T06:50:00Z"), 95),
-                HeartRateSample(Instant.parse("2025-05-04T06:51:00Z"), 97)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T06:40:00Z"),
-            endTime = Instant.parse("2025-05-04T06:50:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T06:40:00Z"), 97),
-                HeartRateSample(Instant.parse("2025-05-04T06:41:00Z"), 67)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T06:30:00Z"),
-            endTime = Instant.parse("2025-05-04T06:40:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T06:30:00Z"), 67),
-                HeartRateSample(Instant.parse("2025-05-04T06:31:00Z"), 73)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T06:20:00Z"),
-            endTime = Instant.parse("2025-05-04T06:30:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T06:20:00Z"), 93),
-                HeartRateSample(Instant.parse("2025-05-04T06:21:00Z"), 83)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T06:10:00Z"),
-            endTime = Instant.parse("2025-05-04T06:20:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T06:10:00Z"), 98),
-                HeartRateSample(Instant.parse("2025-05-04T06:11:00Z"), 77)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T06:00:00Z"),
-            endTime = Instant.parse("2025-05-04T06:10:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T06:00:00Z"), 64),
-                HeartRateSample(Instant.parse("2025-05-04T06:01:00Z"), 76)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T05:50:00Z"),
-            endTime = Instant.parse("2025-05-04T06:00:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T05:50:00Z"), 80),
-                HeartRateSample(Instant.parse("2025-05-04T05:51:00Z"), 93)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T05:40:00Z"),
-            endTime = Instant.parse("2025-05-04T05:50:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T05:40:00Z"), 78),
-                HeartRateSample(Instant.parse("2025-05-04T05:41:00Z"), 61)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T05:30:00Z"),
-            endTime = Instant.parse("2025-05-04T05:40:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T05:30:00Z"), 90),
-                HeartRateSample(Instant.parse("2025-05-04T05:31:00Z"), 80)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T05:20:00Z"),
-            endTime = Instant.parse("2025-05-04T05:30:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T05:20:00Z"), 62),
-                HeartRateSample(Instant.parse("2025-05-04T05:21:00Z"), 84)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T05:10:00Z"),
-            endTime = Instant.parse("2025-05-04T05:20:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T05:10:00Z"), 67),
-                HeartRateSample(Instant.parse("2025-05-04T05:11:00Z"), 96)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T05:00:00Z"),
-            endTime = Instant.parse("2025-05-04T05:10:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T05:00:00Z"), 62),
-                HeartRateSample(Instant.parse("2025-05-04T05:01:00Z"), 64)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T04:50:00Z"),
-            endTime = Instant.parse("2025-05-04T05:00:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T04:50:00Z"), 63),
-                HeartRateSample(Instant.parse("2025-05-04T04:51:00Z"), 88)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T04:40:00Z"),
-            endTime = Instant.parse("2025-05-04T04:50:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T04:40:00Z"), 72),
-                HeartRateSample(Instant.parse("2025-05-04T04:41:00Z"), 72)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T04:30:00Z"),
-            endTime = Instant.parse("2025-05-04T04:40:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T04:30:00Z"), 88),
-                HeartRateSample(Instant.parse("2025-05-04T04:31:00Z"), 85)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T04:20:00Z"),
-            endTime = Instant.parse("2025-05-04T04:30:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T04:20:00Z"), 80),
-                HeartRateSample(Instant.parse("2025-05-04T04:21:00Z"), 93)
-            )
-        ),
-        HeartRate(
-            startTime = Instant.parse("2025-05-04T04:10:00Z"),
-            endTime = Instant.parse("2025-05-04T04:20:00Z"),
-            samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T04:10:00Z"), 71),
-                HeartRateSample(Instant.parse("2025-05-04T04:11:00Z"), 64)
+                HeartRateSample(Instant.parse("2025-05-04T00:00:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-04T00:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-04T00:40:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-04T01:00:00Z"), 53),
+                HeartRateSample(Instant.parse("2025-05-04T01:20:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-04T01:40:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-04T02:00:00Z"), 52),
+                HeartRateSample(Instant.parse("2025-05-04T02:20:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-04T02:40:00Z"), 53),
+                HeartRateSample(Instant.parse("2025-05-04T03:00:00Z"), 52),
+                HeartRateSample(Instant.parse("2025-05-04T03:20:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-04T03:40:00Z"), 54)
             )
         ),
         HeartRate(
             startTime = Instant.parse("2025-05-04T04:00:00Z"),
-            endTime = Instant.parse("2025-05-04T04:10:00Z"),
+            endTime = Instant.parse("2025-05-04T08:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T04:00:00Z"), 64),
-                HeartRateSample(Instant.parse("2025-05-04T04:01:00Z"), 93)
+                HeartRateSample(Instant.parse("2025-05-04T04:00:00Z"), 53),
+                HeartRateSample(Instant.parse("2025-05-04T04:20:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-04T04:40:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-04T05:00:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-04T05:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-04T05:40:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-04T06:00:00Z"), 66),
+                HeartRateSample(Instant.parse("2025-05-04T06:20:00Z"), 80),
+                HeartRateSample(Instant.parse("2025-05-04T06:40:00Z"), 69),
+                HeartRateSample(Instant.parse("2025-05-04T07:00:00Z"), 70),
+                HeartRateSample(Instant.parse("2025-05-04T07:20:00Z"), 85),
+                HeartRateSample(Instant.parse("2025-05-04T07:40:00Z"), 73)
             )
         ),
         HeartRate(
-            startTime = Instant.parse("2025-05-04T03:50:00Z"),
-            endTime = Instant.parse("2025-05-04T04:00:00Z"),
+            startTime = Instant.parse("2025-05-04T08:00:00Z"),
+            endTime = Instant.parse("2025-05-04T12:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T03:50:00Z"), 73),
-                HeartRateSample(Instant.parse("2025-05-04T03:51:00Z"), 74)
+                HeartRateSample(Instant.parse("2025-05-04T08:00:00Z"), 76),
+                HeartRateSample(Instant.parse("2025-05-04T08:20:00Z"), 91),
+                HeartRateSample(Instant.parse("2025-05-04T08:40:00Z"), 79),
+                HeartRateSample(Instant.parse("2025-05-04T09:00:00Z"), 78),
+                HeartRateSample(Instant.parse("2025-05-04T09:20:00Z"), 94),
+                HeartRateSample(Instant.parse("2025-05-04T09:40:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-04T10:00:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-04T10:20:00Z"), 98),
+                HeartRateSample(Instant.parse("2025-05-04T10:40:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-04T11:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-04T11:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-04T11:40:00Z"), 88)
             )
         ),
         HeartRate(
-            startTime = Instant.parse("2025-05-04T03:40:00Z"),
-            endTime = Instant.parse("2025-05-04T03:50:00Z"),
+            startTime = Instant.parse("2025-05-04T12:00:00Z"),
+            endTime = Instant.parse("2025-05-04T16:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T03:40:00Z"), 82),
-                HeartRateSample(Instant.parse("2025-05-04T03:41:00Z"), 77)
+                HeartRateSample(Instant.parse("2025-05-04T12:00:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-04T12:20:00Z"), 101),
+                HeartRateSample(Instant.parse("2025-05-04T12:40:00Z"), 89),
+                HeartRateSample(Instant.parse("2025-05-04T13:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-04T13:20:00Z"), 99),
+                HeartRateSample(Instant.parse("2025-05-04T13:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-04T14:00:00Z"), 83),
+                HeartRateSample(Instant.parse("2025-05-04T14:20:00Z"), 97),
+                HeartRateSample(Instant.parse("2025-05-04T14:40:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-04T15:00:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-04T15:20:00Z"), 96),
+                HeartRateSample(Instant.parse("2025-05-04T15:40:00Z"), 85)
             )
         ),
         HeartRate(
-            startTime = Instant.parse("2025-05-04T03:30:00Z"),
-            endTime = Instant.parse("2025-05-04T03:40:00Z"),
+            startTime = Instant.parse("2025-05-04T16:00:00Z"),
+            endTime = Instant.parse("2025-05-04T20:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T03:30:00Z"), 65),
-                HeartRateSample(Instant.parse("2025-05-04T03:31:00Z"), 64)
+                HeartRateSample(Instant.parse("2025-05-04T16:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-04T16:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-04T16:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-04T17:00:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-04T17:20:00Z"), 103),
+                HeartRateSample(Instant.parse("2025-05-04T17:40:00Z"), 90),
+                HeartRateSample(Instant.parse("2025-05-04T18:00:00Z"), 132),
+                HeartRateSample(Instant.parse("2025-05-04T18:20:00Z"), 147),
+                HeartRateSample(Instant.parse("2025-05-04T18:40:00Z"), 138),
+                HeartRateSample(Instant.parse("2025-05-04T19:00:00Z"), 92),
+                HeartRateSample(Instant.parse("2025-05-04T19:20:00Z"), 107),
+                HeartRateSample(Instant.parse("2025-05-04T19:40:00Z"), 95)
             )
         ),
         HeartRate(
-            startTime = Instant.parse("2025-05-04T03:20:00Z"),
-            endTime = Instant.parse("2025-05-04T03:30:00Z"),
+            startTime = Instant.parse("2025-05-04T20:00:00Z"),
+            endTime = Instant.parse("2025-05-05T00:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T03:20:00Z"), 95),
-                HeartRateSample(Instant.parse("2025-05-04T03:21:00Z"), 97)
+                HeartRateSample(Instant.parse("2025-05-04T20:00:00Z"), 78),
+                HeartRateSample(Instant.parse("2025-05-04T20:20:00Z"), 92),
+                HeartRateSample(Instant.parse("2025-05-04T20:40:00Z"), 81),
+                HeartRateSample(Instant.parse("2025-05-04T21:00:00Z"), 72),
+                HeartRateSample(Instant.parse("2025-05-04T21:20:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-04T21:40:00Z"), 75),
+                HeartRateSample(Instant.parse("2025-05-04T22:00:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-04T22:20:00Z"), 61),
+                HeartRateSample(Instant.parse("2025-05-04T22:40:00Z"), 59),
+                HeartRateSample(Instant.parse("2025-05-04T23:00:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-04T23:20:00Z"), 59),
+                HeartRateSample(Instant.parse("2025-05-04T23:40:00Z"), 57)
+            )
+        ),
+
+        // ===== 2025-05-05 =====
+        HeartRate(
+            startTime = Instant.parse("2025-05-05T00:00:00Z"),
+            endTime = Instant.parse("2025-05-05T04:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-05T00:00:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-05T00:20:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-05T00:40:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-05T01:00:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-05T01:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-05T01:40:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-05T02:00:00Z"), 53),
+                HeartRateSample(Instant.parse("2025-05-05T02:20:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-05T02:40:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-05T03:00:00Z"), 53),
+                HeartRateSample(Instant.parse("2025-05-05T03:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-05T03:40:00Z"), 55)
             )
         ),
         HeartRate(
-            startTime = Instant.parse("2025-05-04T03:10:00Z"),
-            endTime = Instant.parse("2025-05-04T03:20:00Z"),
+            startTime = Instant.parse("2025-05-05T04:00:00Z"),
+            endTime = Instant.parse("2025-05-05T08:00:00Z"),
             samples = listOf(
-                HeartRateSample(Instant.parse("2025-05-04T03:10:00Z"), 93),
-                HeartRateSample(Instant.parse("2025-05-04T03:11:00Z"), 98)
+                HeartRateSample(Instant.parse("2025-05-05T04:00:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-05T04:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-05T04:40:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-05T05:00:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-05T05:20:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-05T05:40:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-05T06:00:00Z"), 68),
+                HeartRateSample(Instant.parse("2025-05-05T06:20:00Z"), 83),
+                HeartRateSample(Instant.parse("2025-05-05T06:40:00Z"), 71),
+                HeartRateSample(Instant.parse("2025-05-05T07:00:00Z"), 72),
+                HeartRateSample(Instant.parse("2025-05-05T07:20:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-05T07:40:00Z"), 76)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-05T08:00:00Z"),
+            endTime = Instant.parse("2025-05-05T12:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-05T08:00:00Z"), 76),
+                HeartRateSample(Instant.parse("2025-05-05T08:20:00Z"), 92),
+                HeartRateSample(Instant.parse("2025-05-05T08:40:00Z"), 80),
+                HeartRateSample(Instant.parse("2025-05-05T09:00:00Z"), 78),
+                HeartRateSample(Instant.parse("2025-05-05T09:20:00Z"), 94),
+                HeartRateSample(Instant.parse("2025-05-05T09:40:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-05T10:00:00Z"), 80),
+                HeartRateSample(Instant.parse("2025-05-05T10:20:00Z"), 96),
+                HeartRateSample(Instant.parse("2025-05-05T10:40:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-05T11:00:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-05T11:20:00Z"), 98),
+                HeartRateSample(Instant.parse("2025-05-05T11:40:00Z"), 86)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-05T12:00:00Z"),
+            endTime = Instant.parse("2025-05-05T16:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-05T12:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-05T12:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-05T12:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-05T13:00:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-05T13:20:00Z"), 102),
+                HeartRateSample(Instant.parse("2025-05-05T13:40:00Z"), 90),
+                HeartRateSample(Instant.parse("2025-05-05T14:00:00Z"), 85),
+                HeartRateSample(Instant.parse("2025-05-05T14:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-05T14:40:00Z"), 89),
+                HeartRateSample(Instant.parse("2025-05-05T15:00:00Z"), 83),
+                HeartRateSample(Instant.parse("2025-05-05T15:20:00Z"), 98),
+                HeartRateSample(Instant.parse("2025-05-05T15:40:00Z"), 87)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-05T16:00:00Z"),
+            endTime = Instant.parse("2025-05-05T20:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-05T16:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-05T16:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-05T16:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-05T17:00:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-05T17:20:00Z"), 103),
+                HeartRateSample(Instant.parse("2025-05-05T17:40:00Z"), 91),
+                HeartRateSample(Instant.parse("2025-05-05T18:00:00Z"), 135),
+                HeartRateSample(Instant.parse("2025-05-05T18:20:00Z"), 150),
+                HeartRateSample(Instant.parse("2025-05-05T18:40:00Z"), 140),
+                HeartRateSample(Instant.parse("2025-05-05T19:00:00Z"), 94),
+                HeartRateSample(Instant.parse("2025-05-05T19:20:00Z"), 110),
+                HeartRateSample(Instant.parse("2025-05-05T19:40:00Z"), 98)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-05T20:00:00Z"),
+            endTime = Instant.parse("2025-05-06T00:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-05T20:00:00Z"), 78),
+                HeartRateSample(Instant.parse("2025-05-05T20:20:00Z"), 92),
+                HeartRateSample(Instant.parse("2025-05-05T20:40:00Z"), 81),
+                HeartRateSample(Instant.parse("2025-05-05T21:00:00Z"), 70),
+                HeartRateSample(Instant.parse("2025-05-05T21:20:00Z"), 85),
+                HeartRateSample(Instant.parse("2025-05-05T21:40:00Z"), 73),
+                HeartRateSample(Instant.parse("2025-05-05T22:00:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-05T22:20:00Z"), 61),
+                HeartRateSample(Instant.parse("2025-05-05T22:40:00Z"), 59),
+                HeartRateSample(Instant.parse("2025-05-05T23:00:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-05T23:20:00Z"), 59),
+                HeartRateSample(Instant.parse("2025-05-05T23:40:00Z"), 57)
+            )
+        ),
+
+        // ===== 2025-05-06 =====
+        HeartRate(
+            startTime = Instant.parse("2025-05-06T00:00:00Z"),
+            endTime = Instant.parse("2025-05-06T04:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-06T00:00:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-06T00:20:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-06T00:40:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-06T01:00:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-06T01:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-06T01:40:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-06T02:00:00Z"), 53),
+                HeartRateSample(Instant.parse("2025-05-06T02:20:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-06T02:40:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-06T03:00:00Z"), 52),
+                HeartRateSample(Instant.parse("2025-05-06T03:20:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-06T03:40:00Z"), 54)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-06T04:00:00Z"),
+            endTime = Instant.parse("2025-05-06T08:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-06T04:00:00Z"), 54),
+                HeartRateSample(Instant.parse("2025-05-06T04:20:00Z"), 57),
+                HeartRateSample(Instant.parse("2025-05-06T04:40:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-06T05:00:00Z"), 55),
+                HeartRateSample(Instant.parse("2025-05-06T05:20:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-06T05:40:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-06T06:00:00Z"), 70),
+                HeartRateSample(Instant.parse("2025-05-06T06:20:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-06T06:40:00Z"), 73),
+                HeartRateSample(Instant.parse("2025-05-06T07:00:00Z"), 128),
+                HeartRateSample(Instant.parse("2025-05-06T07:20:00Z"), 143),
+                HeartRateSample(Instant.parse("2025-05-06T07:40:00Z"), 135)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-06T08:00:00Z"),
+            endTime = Instant.parse("2025-05-06T12:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-06T08:00:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-06T08:20:00Z"), 98),
+                HeartRateSample(Instant.parse("2025-05-06T08:40:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-06T09:00:00Z"), 80),
+                HeartRateSample(Instant.parse("2025-05-06T09:20:00Z"), 96),
+                HeartRateSample(Instant.parse("2025-05-06T09:40:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-06T10:00:00Z"), 78),
+                HeartRateSample(Instant.parse("2025-05-06T10:20:00Z"), 94),
+                HeartRateSample(Instant.parse("2025-05-06T10:40:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-06T11:00:00Z"), 76),
+                HeartRateSample(Instant.parse("2025-05-06T11:20:00Z"), 92),
+                HeartRateSample(Instant.parse("2025-05-06T11:40:00Z"), 80)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-06T12:00:00Z"),
+            endTime = Instant.parse("2025-05-06T16:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-06T12:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-06T12:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-06T12:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-06T13:00:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-06T13:20:00Z"), 101),
+                HeartRateSample(Instant.parse("2025-05-06T13:40:00Z"), 89),
+                HeartRateSample(Instant.parse("2025-05-06T14:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-06T14:20:00Z"), 99),
+                HeartRateSample(Instant.parse("2025-05-06T14:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-06T15:00:00Z"), 82),
+                HeartRateSample(Instant.parse("2025-05-06T15:20:00Z"), 96),
+                HeartRateSample(Instant.parse("2025-05-06T15:40:00Z"), 85)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-06T16:00:00Z"),
+            endTime = Instant.parse("2025-05-06T20:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-06T16:00:00Z"), 84),
+                HeartRateSample(Instant.parse("2025-05-06T16:20:00Z"), 100),
+                HeartRateSample(Instant.parse("2025-05-06T16:40:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-06T17:00:00Z"), 86),
+                HeartRateSample(Instant.parse("2025-05-06T17:20:00Z"), 101),
+                HeartRateSample(Instant.parse("2025-05-06T17:40:00Z"), 89),
+                HeartRateSample(Instant.parse("2025-05-06T18:00:00Z"), 90),
+                HeartRateSample(Instant.parse("2025-05-06T18:20:00Z"), 105),
+                HeartRateSample(Instant.parse("2025-05-06T18:40:00Z"), 94),
+                HeartRateSample(Instant.parse("2025-05-06T19:00:00Z"), 88),
+                HeartRateSample(Instant.parse("2025-05-06T19:20:00Z"), 103),
+                HeartRateSample(Instant.parse("2025-05-06T19:40:00Z"), 91)
+            )
+        ),
+        HeartRate(
+            startTime = Instant.parse("2025-05-06T20:00:00Z"),
+            endTime = Instant.parse("2025-05-07T00:00:00Z"),
+            samples = listOf(
+                HeartRateSample(Instant.parse("2025-05-06T20:00:00Z"), 76),
+                HeartRateSample(Instant.parse("2025-05-06T20:20:00Z"), 91),
+                HeartRateSample(Instant.parse("2025-05-06T20:40:00Z"), 79),
+                HeartRateSample(Instant.parse("2025-05-06T21:00:00Z"), 70),
+                HeartRateSample(Instant.parse("2025-05-06T21:20:00Z"), 85),
+                HeartRateSample(Instant.parse("2025-05-06T21:40:00Z"), 73),
+                HeartRateSample(Instant.parse("2025-05-06T22:00:00Z"), 58),
+                HeartRateSample(Instant.parse("2025-05-06T22:20:00Z"), 61),
+                HeartRateSample(Instant.parse("2025-05-06T22:40:00Z"), 59),
+                HeartRateSample(Instant.parse("2025-05-06T23:00:00Z"), 56),
+                HeartRateSample(Instant.parse("2025-05-06T23:20:00Z"), 59),
+                HeartRateSample(Instant.parse("2025-05-06T23:40:00Z"), 57)
             )
         )
     )
@@ -899,7 +951,7 @@ object SampleDataProvider {
         BloodGlucose(Instant.parse("2025-05-03T08:00:00Z"), 58.0),
         BloodGlucose(Instant.parse("2025-05-02T20:00:00Z"), 65.0),
         BloodGlucose(Instant.parse("2025-05-02T08:00:00Z"), 49.0),
-        BloodGlucose(Instant.parse("2025-05-01T20:00:00Z"), 49.0),
+        BloodGlucose(Instant.parse("2025-05-01T20:00:00Z"), 59.0),
         BloodGlucose(Instant.parse("2025-05-01T08:00:00Z"), 57.0),
         BloodGlucose(Instant.parse("2025-04-30T20:00:00Z"), 55.0),
         BloodGlucose(Instant.parse("2025-04-30T08:00:00Z"), 53.0),
@@ -916,7 +968,7 @@ object SampleDataProvider {
         BloodGlucose(Instant.parse("2025-04-24T20:00:00Z"), 46.0),
         BloodGlucose(Instant.parse("2025-04-24T08:00:00Z"), 51.0),
         BloodGlucose(Instant.parse("2025-04-23T20:00:00Z"), 46.0),
-        BloodGlucose(Instant.parse("2025-04-23T08:00:00Z"), 57.0),
+        BloodGlucose(Instant.parse("2025-04-23T08:00:00Z"), 47.0),
         BloodGlucose(Instant.parse("2025-04-22T20:00:00Z"), 54.0),
         BloodGlucose(Instant.parse("2025-04-22T08:00:00Z"), 51.0),
         BloodGlucose(Instant.parse("2025-04-21T20:00:00Z"), 48.0),
@@ -1103,14 +1155,4 @@ object SampleDataProvider {
         }
     }
 
-    /**
-     * Get blood pressure data as separate ChartMark lists for systolic and diastolic
-     * Uses the transform convenience function for proper time-based processing
-     */
-    fun getBloodPressureChartMarksMap(): Map<String, List<ChartMark>> {
-        return getBloodPressureData().transform(
-            timeUnit = TimeUnitGroup.DAY,
-            aggregationType = AggregationType.DAILY_AVERAGE
-        )
-    }
 }

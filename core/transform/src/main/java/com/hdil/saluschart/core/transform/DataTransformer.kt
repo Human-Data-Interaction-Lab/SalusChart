@@ -278,7 +278,7 @@ class DataTransformer {
 
         // Step 1: 일별로 데이터 집계 (normalize to daily bins)
         val dailyAggregatedData = groupByDay(timeValuePairs).map { (date, values) ->
-            date to values.sum() // 하루 내 모든 값들의 합계
+            date to values.average() // 하루 내 모든 값들의 평균
         }.sortedBy { it.first }
 
         if (dailyAggregatedData.isEmpty()) return emptyList()
@@ -326,14 +326,6 @@ class DataTransformer {
         val intervals = mutableListOf<LocalDateTime>()
 
         when (targetTimeUnit) {
-            TimeUnitGroup.DAY -> {
-                var current = minTime.truncatedTo(ChronoUnit.DAYS)
-                val end = maxTime.truncatedTo(ChronoUnit.DAYS).plusDays(1)
-                while (current.isBefore(end)) {
-                    intervals.add(current)
-                    current = current.plusDays(1)
-                }
-            }
             TimeUnitGroup.WEEK -> {
                 var current = minTime.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)).atStartOfDay()
                 val endDate = maxTime.toLocalDate().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))

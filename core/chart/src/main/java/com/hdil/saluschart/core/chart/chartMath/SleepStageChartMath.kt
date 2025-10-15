@@ -99,51 +99,6 @@ object SleepStageChartMath {
     }
 
     /**
-     * 중간 정각 레이블을 계산합니다 (0~3개).
-     * 수면 세션 시간에 따라 적절한 간격을 자동으로 결정합니다.
-     *
-     * @param startInstant 시작 시간
-     * @param endInstant 끝 시간
-     * @return 중간에 표시할 정각 시간 목록 (0~3개)
-     */
-    fun calculateIntermediateHourLabels(startInstant: Instant, endInstant: Instant): List<Instant> {
-        // 전체 시간 길이 (시간 단위)
-        val totalHours = ChronoUnit.HOURS.between(startInstant, endInstant)
-
-        // 시간 길이에 따라 간격 결정
-        val intervalHours = when {
-            totalHours <= 2 -> return emptyList()  // 2시간 이하: 중간 레이블 없음
-            totalHours <= 6 -> 2  // 2~6시간: 2시간 간격
-            totalHours <= 9 -> 3  // 6~9시간: 3시간 간격
-            totalHours <= 12 -> 4  // 9~12시간: 4시간 간격
-            else -> 6  // 12시간 이상: 6시간 간격
-        }
-
-        // 시작 시간을 다음 정각으로 올림
-        val startZdt = startInstant.atZone(ZoneId.systemDefault())
-        val firstHour = startZdt.plusHours(1).truncatedTo(ChronoUnit.HOURS)
-
-        // 끝 시간을 이전 정각으로 내림
-        val endZdt = endInstant.atZone(ZoneId.systemDefault())
-        val lastHour = endZdt.truncatedTo(ChronoUnit.HOURS)
-
-        // 간격에 맞는 정각 시간 생성
-        val labels = mutableListOf<Instant>()
-        var currentHour = firstHour
-
-        while (currentHour.isBefore(lastHour) || currentHour.isEqual(lastHour)) {
-            // 시작 시간과 끝 시간이 아닌 경우만 추가
-            if (currentHour.toInstant() != startInstant && currentHour.toInstant() != endInstant) {
-                labels.add(currentHour.toInstant())
-            }
-
-            currentHour = currentHour.plusHours(intervalHours.toLong())
-        }
-
-        return labels
-    }
-
-    /**
      * Sleep stage specific transformation: converts SleepStage objects to RangeChartMarks
      * Each SleepStage becomes a RangeChartMark where:
      * - x = sleep stage type ordinal (for Y-axis positioning)
@@ -177,5 +132,140 @@ object SleepStageChartMath {
                 label = stage.stage.name
             )
         }
+    }
+
+    /**
+     * 중간 정각 레이블을 자동으로 생성하고 측정하여 겹치지 않도록 필터링합니다.
+     * 시작과 끝 사이의 모든 정각 시간을 생성한 후, 텍스트 너비를 측정하여 겹치지 않는 레이블만 선택합니다.
+     * 
+     * @param startInstant 시작 시간
+     * @param endInstant 끝 시간
+     * @param textSize 레이블 텍스트 크기 (픽셀)
+     * @param chartWidth 차트의 실제 너비 (픽셀)
+     * @param showStartEndLabels 시작/끝 레이블 표시 여부
+     * @return 겹치지 않는 중간 레이블 목록
+     */
+    fun computeNonOverlappingIntermediateLabels(
+        startInstant: Instant,
+        endInstant: Instant,
+        textSize: Float,
+        chartWidth: Float,
+        showStartEndLabels: Boolean
+    ): List<Instant> {
+        // 1. Generate all possible intermediate hour labels (every hour on the hour)
+        val startZdt = startInstant.atZone(ZoneId.systemDefault())
+        val endZdt = endInstant.atZone(ZoneId.systemDefault())
+        
+        // Round up to next hour for first intermediate label
+        val firstHour = startZdt.plusHours(1).truncatedTo(ChronoUnit.HOURS)
+        // Round down to previous hour for last intermediate label
+        val lastHour = endZdt.truncatedTo(ChronoUnit.HOURS)
+        
+        val allIntermediateLabels = mutableListOf<Instant>()
+        var currentHour = firstHour
+        
+        while (currentHour.isBefore(lastHour) || currentHour.isEqual(lastHour)) {
+            // Don't include start or end time
+            if (currentHour.toInstant() != startInstant && currentHour.toInstant() != endInstant) {
+                allIntermediateLabels.add(currentHour.toInstant())
+            }
+            currentHour = currentHour.plusHours(1)
+        }
+        
+        if (allIntermediateLabels.isEmpty()) {
+            return emptyList()
+        }
+
+        // 2. Measure text and filter based on width to prevent overlapping
+        val paint = android.graphics.Paint().apply {
+            this.textSize = textSize
+            isAntiAlias = true
+        }
+
+        val startTimeMs = startInstant.toEpochMilli().toDouble()
+        val endTimeMs = endInstant.toEpochMilli().toDouble()
+
+        // Padding between labels (30% of text size, same as computeAutoSkipLabels)
+        val labelPadding = textSize * 0.8f
+
+        // Data class to hold label information
+        data class LabelInfo(
+            val instant: Instant,
+            val text: String,
+            val xPosition: Float,
+            val textWidth: Float,
+            val leftBound: Float,
+            val rightBound: Float
+        )
+
+        // Calculate bounds for start label (if shown)
+        val startLabelInfo = if (showStartEndLabels) {
+            val startText = formatTimeFromMilliseconds(startTimeMs, withDate = false)
+            val startWidth = paint.apply { textAlign = android.graphics.Paint.Align.LEFT }.measureText(startText)
+            LabelInfo(
+                instant = startInstant,
+                text = startText,
+                xPosition = 0f,
+                textWidth = startWidth,
+                leftBound = 0f,
+                rightBound = startWidth + labelPadding
+            )
+        } else null
+
+        // Calculate bounds for end label (if shown)
+        val endLabelInfo = if (showStartEndLabels) {
+            val endText = formatTimeFromMilliseconds(endTimeMs, withDate = false)
+            val endWidth = paint.apply { textAlign = android.graphics.Paint.Align.RIGHT }.measureText(endText)
+            LabelInfo(
+                instant = endInstant,
+                text = endText,
+                xPosition = chartWidth,
+                textWidth = endWidth,
+                leftBound = chartWidth - endWidth - labelPadding,
+                rightBound = chartWidth
+            )
+        } else null
+
+        // Calculate info for each intermediate label
+        val intermediateLabelInfos = allIntermediateLabels.map { instant ->
+            val timeMs = instant.toEpochMilli().toDouble()
+            val text = formatTimeFromMilliseconds(timeMs, withDate = false)
+            val width = paint.apply { textAlign = android.graphics.Paint.Align.CENTER }.measureText(text)
+            
+            // Calculate x position based on time ratio
+            val ratio = (timeMs - startTimeMs) / (endTimeMs - startTimeMs)
+            val xPos = ratio.toFloat() * chartWidth
+            
+            LabelInfo(
+                instant = instant,
+                text = text,
+                xPosition = xPos,
+                textWidth = width,
+                leftBound = xPos - width / 2f - labelPadding,
+                rightBound = xPos + width / 2f + labelPadding
+            )
+        }
+
+        // Filter intermediate labels to avoid overlaps
+        val acceptedLabels = mutableListOf<Instant>()
+        var lastAcceptedRightBound = startLabelInfo?.rightBound ?: Float.NEGATIVE_INFINITY
+
+        for (labelInfo in intermediateLabelInfos) {
+            // Check if this label would overlap with the last accepted label
+            if (labelInfo.leftBound < lastAcceptedRightBound) {
+                continue // Skip this label due to overlap with previous
+            }
+
+            // Check if this label would overlap with end label
+            if (endLabelInfo != null && labelInfo.rightBound > endLabelInfo.leftBound) {
+                continue // Skip this label due to overlap with end label
+            }
+
+            // No overlap, accept this label
+            acceptedLabels.add(labelInfo.instant)
+            lastAcceptedRightBound = labelInfo.rightBound
+        }
+
+        return acceptedLabels
     }
 }

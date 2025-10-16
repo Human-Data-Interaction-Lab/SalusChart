@@ -173,7 +173,7 @@ fun BarChart_StepCount() {
     var selectedTimeUnit by remember { mutableStateOf("Hour") }
     var expanded by remember { mutableStateOf(false) }
 
-    val timeUnitOptions = listOf("Hour", "Day", "Week")
+    val timeUnitOptions = listOf("Hour", "Day")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Time Unit Selection Dropdown
@@ -243,13 +243,11 @@ fun BarChart_StepCount() {
                 timeUnit = when (selectedTimeUnit) {
                     "Hour" -> TimeUnitGroup.HOUR
                     "Day" -> TimeUnitGroup.DAY
-                    "Week" -> TimeUnitGroup.WEEK
                     else -> TimeUnitGroup.HOUR
                 },
                 aggregationType = when (selectedTimeUnit) {
                     "Hour" -> AggregationType.SUM
-                    "Day" -> AggregationType.DAILY_AVERAGE
-                    "Week" -> AggregationType.SUM
+                    "Day" -> AggregationType.SUM
                     else -> AggregationType.SUM
                 }
             ),
@@ -269,20 +267,17 @@ fun BarChart_StepCount() {
             pageSize  = when (selectedTimeUnit) {
                 "Hour" -> 24
                 "Day" -> null
-                "Week" -> null
                 else -> 12
             },
             unifyYAxisAcrossPages = true,
             yTickStep = when (selectedTimeUnit) {
                 "Hour" -> 400.0
                 "Day" -> 4000.0
-                "Week" -> 10000.0
                 else -> 1000.0
             },
             maxY = when (selectedTimeUnit) {
                 "Hour" -> null
                 "Day" -> 24000.0
-                "Week" -> null
                 else -> null
             }, // 임시 (tooltip 잘 보이기 위해)
             showLabel = false,

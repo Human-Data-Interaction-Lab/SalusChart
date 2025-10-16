@@ -1,0 +1,126 @@
+/Users/ilop0/SalusChart/app/src/main/AndroidManifest.xml:18: Warning: Redundant label can be removed [RedundantLabel]
+            android:label="@string/app_name"
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "RedundantLabel":
+   When an activity does not have a label attribute, it will use the one from
+   the application tag. Since the application has already specified the same
+   label, the label on this activity can be omitted.
+
+/Users/ilop0/SalusChart/gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 8.13 is available: 8.14.3 [AndroidGradlePluginVersion]
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AndroidGradlePluginVersion":
+   This detector looks for usage of the Android Gradle Plugin where the
+   version you are using is not the current stable release. Using older
+   versions is fine, and there are cases where you deliberately want to stick
+   with an older version. However, you may simply not be aware that a more
+   recent version is available, and that is what this lint check helps find.
+
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:8: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.9.2 is available: 2.9.4 [GradleDependency]
+lifecycleRuntimeKtx = "2.9.2"
+                      ~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:9: Warning: A newer version of androidx.activity:activity-compose than 1.10.1 is available: 1.11.0 [GradleDependency]
+activityCompose = "1.10.1"
+                  ~~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:10: Warning: A newer version of androidx.compose:compose-bom than 2025.08.00 is available: 2025.10.00 [GradleDependency]
+composeBom = "2025.08.00"
+             ~~~~~~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:13: Warning: A newer version of com.google.android.material:material than 1.12.0 is available: 1.13.0 [GradleDependency]
+material = "1.12.0"
+           ~~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:14: Warning: A newer version of androidx.compose.runtime:runtime-android than 1.9.0 is available: 1.9.3 [GradleDependency]
+runtimeAndroid = "1.9.0"
+                 ~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:15: Warning: A newer version of androidx.xr.runtime:runtime than 1.0.0-alpha05 is available: 1.0.0-alpha06 [GradleDependency]
+runtime = "1.0.0-alpha05"
+          ~~~~~~~~~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:16: Warning: Upgrade androidx.compose.foundation for keyboard and mouse support [GradleDependency]
+foundation = "1.9.1"
+             ~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:17: Warning: A newer version of androidx.compose.foundation:foundation-layout than 1.9.1 is available: 1.9.3 [GradleDependency]
+foundationLayout = "1.9.1"
+                   ~~~~~~~
+
+   Explanation for issues of type "GradleDependency":
+   This detector looks for usages of libraries where the version you are using
+   is not the current stable release. Using older versions is fine, and there
+   are cases where you deliberately want to stick with an older version.
+   However, you may simply not be aware that a more recent version is
+   available, and that is what this lint check helps find.
+
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:3: Warning: A newer version of org.jetbrains.kotlin.android than 2.2.10 is available: 2.2.20 [NewerVersionAvailable]
+kotlin = "2.2.10"
+         ~~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:3: Warning: A newer version of org.jetbrains.kotlin.plugin.compose than 2.2.10 is available: 2.2.20 [NewerVersionAvailable]
+kotlin = "2.2.10"
+         ~~~~~~~~
+/Users/ilop0/SalusChart/gradle/libs.versions.toml:11: Warning: A newer version of org.jetbrains.kotlin.jvm than 2.2.10 is available: 2.2.20 [NewerVersionAvailable]
+jetbrainsKotlinJvm = "2.2.10"
+                     ~~~~~~~~
+
+   Explanation for issues of type "NewerVersionAvailable":
+   This detector checks with a central repository to see if there are newer
+   versions available for the dependencies used by this project. This is
+   similar to the GradleDependency check, which checks for newer versions
+   available in the Android SDK tools and libraries, but this works with any
+   MavenCentral dependency, and connects to the library every time, which
+   makes it more flexible but also much slower.
+
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:3: Hint: The resource R.color.purple_200 appears to be unused [UnusedResources]
+    <color name="purple_200">#FFBB86FC</color>
+           ~~~~~~~~~~~~~~~~~
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:4: Hint: The resource R.color.purple_500 appears to be unused [UnusedResources]
+    <color name="purple_500">#FF6200EE</color>
+           ~~~~~~~~~~~~~~~~~
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:5: Hint: The resource R.color.purple_700 appears to be unused [UnusedResources]
+    <color name="purple_700">#FF3700B3</color>
+           ~~~~~~~~~~~~~~~~~
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:6: Hint: The resource R.color.teal_200 appears to be unused [UnusedResources]
+    <color name="teal_200">#FF03DAC5</color>
+           ~~~~~~~~~~~~~~~
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:7: Hint: The resource R.color.teal_700 appears to be unused [UnusedResources]
+    <color name="teal_700">#FF018786</color>
+           ~~~~~~~~~~~~~~~
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:8: Hint: The resource R.color.black appears to be unused [UnusedResources]
+    <color name="black">#FF000000</color>
+           ~~~~~~~~~~~~
+/Users/ilop0/SalusChart/app/src/main/res/values/colors.xml:9: Hint: The resource R.color.white appears to be unused [UnusedResources]
+    <color name="white">#FFFFFFFF</color>
+           ~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests =true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests =true.
+   ,
+
+   Available options:
+
+   **skip-libraries** (default is true):
+   Whether the unused resource check should skip reporting unused resources in libraries.
+
+   Many libraries will declare resources that are part of the library surface; other modules depending on the library will also reference the resources. To avoid reporting all these resources as unused (in the context of a library), the unused resource check normally skips reporting unused resources in libraries. Instead, run the unused resource check on the consuming app module (along with `checkDependencies=true`).
+
+   However, there are cases where you want to check that all the resources declared in a library are used; in that case, you can disable the skip option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UnusedResources">
+           <option name="skip-libraries" value="true" />
+       </issue>
+   </lint>
+   ```
+
+0 errors, 13 warnings, 7 hints

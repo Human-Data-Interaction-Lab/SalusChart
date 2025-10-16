@@ -214,34 +214,39 @@ object SleepStageChartDraw {
 
     /**
      * 수면 단계 차트의 X축 레이블을 그립니다.
-     * SleepSession의 시작/끝 시간과 중간에 0~3개의 정각 레이블을 표시합니다.
+     * SleepSession의 시작/끝 시간과 중간에 0~4개의 정각 레이블을 표시합니다.
      *
      * @param ctx 그리기 컨텍스트
      * @param metrics 차트 메트릭 정보
      * @param startTimeMillis SleepSession의 시작 시간 (밀리초)
      * @param endTimeMillis SleepSession의 끝 시간 (밀리초)
      * @param textSize 레이블 텍스트 크기 (기본값: 28f)
+     * @param showStartEndLabels 시작/끝 레이블 표시 여부 (기본값: false)
+     * @param xLabelAutoSkip 라벨 자동 스킵 활성화 여부 (true이면 텍스트 너비 기반 자동 계산)
      */
     fun drawSleepStageXAxisLabels(
         ctx: DrawContext,
         metrics: ChartMath.ChartMetrics,
         startTimeMillis: Double,
         endTimeMillis: Double,
-        textSize: Float = 28f
+        textSize: Float = 28f,
+        showStartEndLabels: Boolean,
+        xLabelAutoSkip: Boolean = false
     ) {
         // 시작/끝 시간을 Instant로 변환
         val startInstant = Instant.ofEpochMilli(kotlin.math.round(startTimeMillis).toLong())
         val endInstant = Instant.ofEpochMilli(kotlin.math.round(endTimeMillis).toLong())
         
         // 시작과 끝 시간 텍스트 (날짜 포함)
-        val startTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis, withDate = true)
-        val endTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis, withDate = true)
+        val startTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis, withDate = false)
+        val endTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis, withDate = false)
         
         // X축 레이블 위치 계산
         val startX = metrics.paddingX
         val endX = metrics.paddingX + metrics.chartWidth
-        val labelY = metrics.paddingY + metrics.chartHeight + 50f
-        
+        val xAxisY = metrics.paddingY + metrics.chartHeight
+        val labelY = xAxisY + 50f
+
         // Paint 설정
         val paint = android.graphics.Paint().apply {
             color = android.graphics.Color.DKGRAY
@@ -249,16 +254,68 @@ object SleepStageChartDraw {
             isAntiAlias = true
         }
         
-        // 시작 시간 레이블 그리기 (왼쪽 정렬)
-        paint.textAlign = android.graphics.Paint.Align.LEFT
-        ctx.canvas.nativeCanvas.drawText(startTimeText, startX, labelY + textSize, paint)
+        // 틱 마커용 Paint 설정
+        val tickPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.LTGRAY
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+
+        if (showStartEndLabels) {
+            // 시작 시간 틱 마커 그리기
+            ctx.canvas.nativeCanvas.drawLine(
+                startX,
+                xAxisY,
+                startX,
+                xAxisY + 15f,
+                tickPaint
+            )
+
+            // 시작 시간 레이블 그리기 (왼쪽 정렬)
+            paint.textAlign = android.graphics.Paint.Align.LEFT
+            ctx.canvas.nativeCanvas.drawText(startTimeText, startX, labelY, paint)
+
+            // 끝 시간 틱 마커 그리기
+            ctx.canvas.nativeCanvas.drawLine(
+                endX,
+                xAxisY,
+                endX,
+                xAxisY + 15f,
+                tickPaint
+            )
+
+            // 끝 시간 레이블 그리기 (오른쪽 정렬)
+            paint.textAlign = android.graphics.Paint.Align.RIGHT
+            ctx.canvas.nativeCanvas.drawText(endTimeText, endX, labelY, paint)
+        }
         
-        // 끝 시간 레이블 그리기 (오른쪽 정렬)
-        paint.textAlign = android.graphics.Paint.Align.RIGHT
-        ctx.canvas.nativeCanvas.drawText(endTimeText, endX, labelY + textSize, paint)
-        
-        // 중간 정각 레이블 계산 및 그리기
-        val intermediateLabels = ChartMath.SleepStage.calculateIntermediateHourLabels(startInstant, endInstant)
+        // 중간 정각 레이블 생성 및 필터링
+        val intermediateLabels = if (xLabelAutoSkip) {
+            // 자동 스킵: 모든 정각 레이블 생성 후 텍스트 너비 기반으로 필터링
+            ChartMath.SleepStage.computeNonOverlappingIntermediateLabels(
+                startInstant = startInstant,
+                endInstant = endInstant,
+                textSize = textSize,
+                chartWidth = metrics.chartWidth,
+                showStartEndLabels = showStartEndLabels
+            )
+        } else {
+            // 자동 스킵 비활성화: 모든 정각 레이블 표시 (겹칠 수 있음)
+            val startZdt = startInstant.atZone(java.time.ZoneId.systemDefault())
+            val endZdt = endInstant.atZone(java.time.ZoneId.systemDefault())
+            val firstHour = startZdt.plusHours(1).truncatedTo(java.time.temporal.ChronoUnit.HOURS)
+            val lastHour = endZdt.truncatedTo(java.time.temporal.ChronoUnit.HOURS)
+            
+            val allLabels = mutableListOf<Instant>()
+            var currentHour = firstHour
+            while (currentHour.isBefore(lastHour) || currentHour.isEqual(lastHour)) {
+                if (currentHour.toInstant() != startInstant && currentHour.toInstant() != endInstant) {
+                    allLabels.add(currentHour.toInstant())
+                }
+                currentHour = currentHour.plusHours(1)
+            }
+            allLabels
+        }
         
         // 중간 레이블 그리기 (중앙 정렬, 날짜 제외)
         paint.textAlign = android.graphics.Paint.Align.CENTER
@@ -270,6 +327,15 @@ object SleepStageChartDraw {
             val ratio = (hourTimeMs - startTimeMillis) / (endTimeMillis - startTimeMillis)
             val x = metrics.paddingX + ratio.toFloat() * metrics.chartWidth
             
+            // 틱 마커 그리기
+            ctx.canvas.nativeCanvas.drawLine(
+                x,
+                xAxisY,
+                x,
+                xAxisY + 15f,
+                tickPaint
+            )
+
             ctx.canvas.nativeCanvas.drawText(hourText, x, labelY, paint)
         }
     }
@@ -472,4 +538,3 @@ object SleepStageChartDraw {
 //        }
 //    }
 }
-

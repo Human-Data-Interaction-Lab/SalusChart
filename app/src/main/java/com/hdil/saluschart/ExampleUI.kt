@@ -45,6 +45,7 @@ import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.transform.toHeartRateTemporalDataSet
 import com.hdil.saluschart.core.transform.toRangeChartMarks
 import com.hdil.saluschart.core.transform.transform
+import com.hdil.saluschart.core.transform.transformToChartMark
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.MassUnit
@@ -97,25 +98,13 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Step Count - Bar Chart",
         "Exercise - Bar Chart",
         "Heart Rate - Range Bar Chart",
+        "Heart Rate - Line Chart",
+        "Sleep Session - Sleep Stage Chart",
         "Weight - Line Chart",
         "Body Fat - Line Chart",
         "Blood Pressure - Scatter Plot",
         "Blood Glucose - Range Bar Chart",
         "Diet - Stacked Bar Chart FreeScroll",
-        "Diet - Stacked Bar Chart Paged",
-        "Heart Rate - Range Bar Basic Chart",
-        "Heart Rate - Range Bar FreeScroll Fixed Axis",
-        "Heart Rate - Range Bar Paged (Left Fixed)",
-        "Heart Rate - Range Bar Paged (Right Fixed)",
-        "CalendarChart 1",
-        "CalendarChart 2",
-        "CalendarChart with Paging",
-        "Minimal Charts",
-        "PieChart 1",
-        "DonutChart 1",
-        "Progress Bar Chart",
-        "Progress Ring Chart",
-        "Sleep Stage Chart",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Exercise - Bar Chart") }
@@ -153,21 +142,17 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             }
 
             when (selectedChartType) {
-                "Standard Bar Chart" -> BarChart_1()
-                "Step Count - Bar Chart" -> BarChart_2()
-                "Exercise - Bar Chart" -> BarChart_3()
-                "Weight - Line Chart" -> LineChart_1()
-                "Body Fat - Line Chart" -> LineChart_2()
-                "LineChart with Paging" -> LineChart_3()
-                "Blood Pressure - Scatter Plot" -> ScatterPlot_1()
+                "Step Count - Bar Chart" -> BarChart_StepCount()
+                "Exercise - Bar Chart" -> BarChart_Exercise()
+                "Weight - Line Chart" -> LineChart_Weight()
+                "Body Fat - Line Chart" -> LineChart_BodyFat()
+                "Heart Rate - Line Chart" -> LineChart_HeartRate()
+                "Blood Pressure - Scatter Plot" -> ScatterPlot_BloodPressure()
                 "Diet - Stacked Bar Chart FreeScroll" -> StackedBarChart_1()
                 "Diet - Stacked Bar Chart Paged" -> StackedBarChart_Paged_LeftAxis()
                 "Heart Rate - Range Bar Basic Chart" -> RangeBarChart_1()
-                "Heart Rate - Range Bar Chart" -> RangeBarChart_2()
-                "Blood Glucose - Range Bar Chart" -> RangeBarChart_3()
-                "Heart Rate - Range Bar FreeScroll Fixed Axis" -> RangeBarChart_FreeScroll_FixedAxis()
-                "Heart Rate - Range Bar Paged (Left Fixed)", -> RangeBarChart_Paged_LeftAxis()
-                "Heart Rate - Range Bar Paged (Right Fixed)", -> RangeBarChart_Paged_RightAxis()
+                "Heart Rate - Range Bar Chart" -> RangeBarChart_HeartRate()
+                "Blood Glucose - Range Bar Chart" -> RangeBarChart_BloodGlucose()
                 "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
@@ -176,8 +161,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
-                "Sleep Stage Chart" -> SleepStageChart_1()
-                "Sleep Stage Chart - FreeScroll Fixed Axis" -> SleepStageChart_2()
+                "Sleep Session - Sleep Stage Chart" -> SleepStageChart_1()
                 else -> Text("Unknown Chart Type")
             }
         }
@@ -185,35 +169,11 @@ fun ExampleUI(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BarChart_1() {
-    val avgY = if (ChartMarks.isNotEmpty()) ChartMarks.map { it.y }.average().toFloat() else 0f
-    BarChart(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = ChartMarks,
-        xLabel = "Week",
-        yLabel = "Value",
-        title = "요일별 데이터",
-        barColor = Primary_Purple,
-        maxY = 70.0,
-        barWidthRatio = 0.8f,
-        xLabelTextSize = 40f,
-        tooltipTextSize = 5f,
-        interactionType = InteractionType.Bar.BAR,
-        yAxisPosition = YAxisPosition.LEFT,
-        showLabel = true,
-        referenceLineType = ReferenceLineType.AVERAGE,
-        referenceLineStyle = LineStyle.DASHED,
-        showReferenceLineLabel = false,
-        referenceLineInteractive = true,
-    )
-}
-
-@Composable
-fun BarChart_2() {
+fun BarChart_StepCount() {
     var selectedTimeUnit by remember { mutableStateOf("Hour") }
     var expanded by remember { mutableStateOf(false) }
 
-    val timeUnitOptions = listOf("Hour", "Day", "Week")
+    val timeUnitOptions = listOf("Hour", "Day")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Time Unit Selection Dropdown
@@ -283,13 +243,11 @@ fun BarChart_2() {
                 timeUnit = when (selectedTimeUnit) {
                     "Hour" -> TimeUnitGroup.HOUR
                     "Day" -> TimeUnitGroup.DAY
-                    "Week" -> TimeUnitGroup.WEEK
                     else -> TimeUnitGroup.HOUR
                 },
                 aggregationType = when (selectedTimeUnit) {
                     "Hour" -> AggregationType.SUM
-                    "Day" -> AggregationType.DAILY_AVERAGE
-                    "Week" -> AggregationType.SUM
+                    "Day" -> AggregationType.SUM
                     else -> AggregationType.SUM
                 }
             ),
@@ -309,47 +267,111 @@ fun BarChart_2() {
             pageSize  = when (selectedTimeUnit) {
                 "Hour" -> 24
                 "Day" -> null
-                "Week" -> null
                 else -> 12
             },
             unifyYAxisAcrossPages = true,
             yTickStep = when (selectedTimeUnit) {
                 "Hour" -> 400.0
                 "Day" -> 4000.0
-                "Week" -> 10000.0
                 else -> 1000.0
             },
             maxY = when (selectedTimeUnit) {
                 "Hour" -> null
                 "Day" -> 24000.0
-                "Week" -> null
                 else -> null
             }, // 임시 (tooltip 잘 보이기 위해)
             showLabel = false,
             xLabelAutoSkip = true,
             yAxisPosition = YAxisPosition.RIGHT,
-            referenceLineType = ReferenceLineType.AVERAGE,
-            referenceLineStyle = LineStyle.DASHED,
-            showReferenceLineLabel = false,
         )
     }
 }
 
 @Composable
-fun BarChart_3() {
-    BarChart(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = exerciseHealthData.transform(
-            timeUnit = TimeUnitGroup.DAY,
-            aggregationType = AggregationType.DURATION_SUM
-        ),
-        title = "일별 운동 시간",
-        barColor = Primary_Purple,
-        yAxisPosition = YAxisPosition.LEFT,
-        showLabel = true,
-        pageSize = 7,
-        interactionType = InteractionType.Bar.TOUCH_AREA,
-    )
+fun BarChart_Exercise() {
+    var selectedFillGaps by remember { mutableStateOf("Fill Gaps") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val fillGapsOptions = listOf("Fill Gaps", "No Fill Gaps")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Fill Gaps Selection Dropdown
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "간격 채우기:",
+                modifier = Modifier.padding(end = 8.dp),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clickable { expanded = !expanded }
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedFillGaps,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Fill Gaps Dropdown",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    fillGapsOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            onClick = {
+                                selectedFillGaps = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Exercise Bar Chart
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = exerciseHealthData.transform(
+                timeUnit = TimeUnitGroup.DAY,
+                aggregationType = AggregationType.DURATION_SUM,
+                fillGaps = selectedFillGaps == "Fill Gaps"
+            ),
+            title = "일별 운동 시간 (${if (selectedFillGaps == "Fill Gaps") "간격 채움" else "간격 비움"})",
+            barColor = Primary_Purple,
+            yAxisPosition = YAxisPosition.LEFT,
+            showLabel = true,
+            pageSize = 7,
+            interactionType = InteractionType.Bar.TOUCH_AREA,
+            unit = "분",
+        )
+    }
 }
 
 @Composable
@@ -366,20 +388,24 @@ fun DonutChart_1() {
 }
 
 @Composable
-fun LineChart_1() {
+fun LineChart_Weight() {
     var selectedUnit by remember { mutableStateOf("kg") }
-    var expanded by remember { mutableStateOf(false) }
+    var unitExpanded by remember { mutableStateOf(false) }
+    var selectedAutoSkip by remember { mutableStateOf("Auto Skip On") }
+    var autoSkipExpanded by remember { mutableStateOf(false) }
 
     val unitOptions = listOf("kg", "lb")
+    val autoSkipOptions = listOf("Auto Skip On", "Auto Skip Off")
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Unit Selection Dropdown
+        // Dropdown controls row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Unit Selection Dropdown
             Text(
                 text = "체중 단위:",
                 modifier = Modifier.padding(end = 8.dp),
@@ -390,7 +416,7 @@ fun LineChart_1() {
             Box {
                 Row(
                     modifier = Modifier
-                        .clickable { expanded = !expanded }
+                        .clickable { unitExpanded = !unitExpanded }
                         .background(
                             Color.LightGray.copy(alpha = 0.3f),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
@@ -412,8 +438,8 @@ fun LineChart_1() {
                 }
 
                 DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    expanded = unitExpanded,
+                    onDismissRequest = { unitExpanded = false }
                 ) {
                     unitOptions.forEach { unit ->
                         DropdownMenuItem(
@@ -425,7 +451,62 @@ fun LineChart_1() {
                             },
                             onClick = {
                                 selectedUnit = unit
-                                expanded = false
+                                unitExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Auto Skip Selection Dropdown
+            Text(
+                text = "라벨 자동 생략:",
+                modifier = Modifier.padding(end = 8.dp),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clickable { autoSkipExpanded = !autoSkipExpanded }
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedAutoSkip,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Auto Skip Dropdown",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = autoSkipExpanded,
+                    onDismissRequest = { autoSkipExpanded = false }
+                ) {
+                    autoSkipOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            onClick = {
+                                selectedAutoSkip = option
+                                autoSkipExpanded = false
                             }
                         )
                     }
@@ -457,19 +538,19 @@ fun LineChart_1() {
                 },
                 lineColor = Primary_Purple,
                 strokeWidth = 12f,
-                showPoint = true,
+                showPoint = false,
                 pointRadius = Pair(6.dp, 3.dp),
                 showValue = false,
-                windowSize = 7,
-                interactionType = InteractionType.Line.POINT,
-                yAxisPosition = YAxisPosition.RIGHT
+                interactionType = InteractionType.Line.TOUCH_AREA,
+                yAxisPosition = YAxisPosition.RIGHT,
+                xLabelAutoSkip = selectedAutoSkip == "Auto Skip On"
             )
         }
     }
 }
 
 @Composable
-fun LineChart_2() {
+fun LineChart_BodyFat() {
     LineChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
         data = bodyFatHealthData.transform(
@@ -495,21 +576,21 @@ fun LineChart_2() {
 }
 
 @Composable
-fun LineChart_3() {
+fun LineChart_HeartRate() {
     LineChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
-        data = ChartMarks4,
-        title = "요일별 활동량",
-        lineColor = Primary_Purple,
-        strokeWidth = 12f,
+        data = heartRateHealthData.transformToChartMark(
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.DAILY_AVERAGE
+        ),
+        title = "일별 심박수 평균 변화",
+        unit = "bpm",
+        lineColor = Color(0xFFE91E63),
         showPoint = false,
-        showValue = true,
-        yAxisPosition = YAxisPosition.RIGHT,
-        // paging:
-        pageSize = 7,
-        unifyYAxisAcrossPages = true,
-        yTickStep = 10.0,
-        )
+        minY = 70.0,
+        maxY = 90.0,
+        interactionType = InteractionType.Line.TOUCH_AREA
+    )
 }
 
 @Composable
@@ -572,7 +653,7 @@ fun CalendarChart_3() {
 
 
 @Composable
-fun ScatterPlot_1() {
+fun ScatterPlot_BloodPressure() {
     // Get blood pressure data as a map, then flatten to a single list
     val bloodPressureMap = bloodPressureHealthData.transform(
         timeUnit = TimeUnitGroup.DAY,
@@ -874,7 +955,7 @@ fun RangeBarChart_1() {
     )
 }
 @Composable
-fun RangeBarChart_2() {
+fun RangeBarChart_HeartRate() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = heartRateHealthData.transform(
@@ -887,11 +968,12 @@ fun RangeBarChart_2() {
         barWidthRatio = 0.8f,
         barColor = Color(0xFFE91E63), // Pink color to distinguish from other charts
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
-        unit = "bpm"
+        unit = "bpm",
+        pageSize = 24,
     )
 }
 @Composable
-fun RangeBarChart_3() {
+fun RangeBarChart_BloodGlucose() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = bloodGlucoseHealthData.transform(
@@ -904,7 +986,8 @@ fun RangeBarChart_3() {
         barWidthRatio = 0.8f,
         barColor = Color(0xFF4CAF50), // Green color for blood glucose
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
-        unit = "mg/dL"
+        unit = "mg/dL",
+        windowSize = 7
     )
 }
 
@@ -1069,26 +1152,11 @@ fun SleepStageChart_1() {
             // Handle stage click if needed
         },
         barHeightRatio = 0.6f,
-        yAxisPosition = YAxisPosition.LEFT
+        yAxisPosition = YAxisPosition.LEFT,
+        showStartEndLabels = true
     )
 }
 
-@Composable
-fun SleepStageChart_2() {
-    SleepStageChart(
-        modifier = Modifier.fillMaxWidth().height(300.dp),
-        sleepSession = singleSleepSessionData,
-        title = "Sleep Stage Analysis",
-        showLabels = true,
-        showXAxis = true,
-        onStageClick = { index, tooltipText ->
-            // Handle stage click if needed
-        },
-        barHeightRatio = 0.8f,
-        yAxisPosition = YAxisPosition.LEFT,
-        windowSize = 8
-    )
-}
 
 @Preview(showBackground = true)
 @Composable

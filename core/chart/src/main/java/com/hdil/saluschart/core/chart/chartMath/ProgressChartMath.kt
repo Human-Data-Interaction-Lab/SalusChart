@@ -52,6 +52,7 @@ object ProgressChartMath {
      * @param barSpacing 바 간의 간격
      * @return Pair<바 너비, 바별 Y 위치 리스트>
      */
+    // SJ_COMMENT: unifyYAxisAcrossPages 의미?
     fun computeProgressBarMetrics(
         size: Size,
         data: List<ProgressChartMark>,
@@ -86,6 +87,7 @@ object ProgressChartMath {
      * @param data 프로그레스 차트 데이터 리스트
      * @return List<Pair<시작 각도, 스윕 각도>>
      */
+    // SJ_COMMENT: unused?
     fun computeProgressAngles(data: List<ProgressChartMark>): List<Pair<Float, Float>> {
         return data.map { point ->
             val startAngle = -90f // 12시 방향에서 시작

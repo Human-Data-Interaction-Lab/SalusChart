@@ -293,6 +293,7 @@ fun List<SkeletalMuscleMass>.toTemporalDataSet(): TemporalDataSet = this.toSkele
  *
  * @return TemporalDataSet 또는 지원되지 않는 타입인 경우 null
  */
+// SJ_COMMENT: unused. 의미?
 fun List<HealthData>.toTemporalDataSet(): TemporalDataSet? {
     return when {
         this.any { it is StepCount } -> this.filterIsInstance<StepCount>().toStepCountTemporalDataSet()

@@ -408,6 +408,8 @@ fun LineChart(
     }
 }
 
+
+// SJ_COMMENT: unifyYAxisAcrossPages 의미?
 @Composable
 private fun LineChartPagedInternal(
     modifier: Modifier,
@@ -567,4 +569,5 @@ private fun FixedPagerYAxisLine(
 }
 
 // helper so the call site reads clearly; adapt if your Line charts shouldn’t force 0
+// SJ_COMMENT: Currently unused.
 private fun chartTypeForLineWantsZero(): Boolean = false

@@ -87,6 +87,7 @@ fun List<Exercise>.transform(
  * Diet 리스트를 직접 ChartMark로 변환하는 편의 함수
  * 모든 속성(calories, protein, carbohydrate, fat)을 라벨에 포함하여 반환합니다.
  */
+// SJ_COMMENT: unused?
 @JvmName("dietTransform")
 fun List<Diet>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
@@ -112,6 +113,7 @@ fun List<Diet>.transform(
  * 
  * @param property 추출할 속성 ("calories", "protein", "carbohydrate", "fat")
  */
+// SJ_COMMENT: unused?
 @JvmName("dietTransformByProperty")
 fun List<Diet>.transformByProperty(
     property: String,
@@ -145,6 +147,7 @@ fun List<BloodPressure>.transform(
  * 
  * @param property "systolic" 또는 "diastolic"
  */
+// SJ_COMMENT: unused?
 @JvmName("bloodPressureTransformByProperty")
 fun List<BloodPressure>.transformByProperty(
     property: String, // "systolic" or "diastolic"
@@ -210,6 +213,7 @@ fun List<HeartRate>.transformToChartMark(
  * @param fillGaps 누락된 시간 포인트를 0으로 채울지 여부 (기본값: true)
  * @return RangeChartMark 리스트
  */
+// SJ_COMMENT: unused?
 @JvmName("heartRateTransformToRangeChartMark")
 fun List<HeartRate>.transformToRangeChartMark(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,

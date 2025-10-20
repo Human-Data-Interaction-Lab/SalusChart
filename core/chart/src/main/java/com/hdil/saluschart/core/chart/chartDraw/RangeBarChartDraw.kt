@@ -31,6 +31,7 @@ import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
+// SJ_COMMENT: unused?
 object RangeBarChartDraw {
 
 //    /**

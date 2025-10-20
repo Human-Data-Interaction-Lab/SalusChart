@@ -231,19 +231,20 @@ fun ScatterPlot(
                         )
                     }
 
-                    ChartDraw.Scatter.PointMarker(
-                        data = data,
-                        points = canvasPoints,
-                        values = yValues,
-                        selectedPointIndex = selectedPointIndex,
-                        onPointClick = null, // No point interaction in this mode
-                        pointType = pointType,
-                        interactive = false, // Visual only, no interactions
-                        chartType = chartType,
-                        showTooltipForIndex = selectedPointIndex,
-                        canvasSize = canvasSize,
-                        unit = unit,
-                    )
+
+//                    ChartDraw.Scatter.PointMarker(
+//                        data = data,
+//                        points = canvasPoints,
+//                        values = yValues,
+//                        selectedPointIndex = selectedPointIndex,
+//                        onPointClick = null, // No point interaction in this mode
+//                        pointType = pointType,
+//                        interactive = false, // Visual only, no interactions
+//                        chartType = chartType,
+//                        showTooltipForIndex = selectedPointIndex,
+//                        canvasSize = canvasSize,
+//                        unit = unit,
+//                    )
 
                     // Conditional interaction based on interactionType parameter
                     when (interactionType) {

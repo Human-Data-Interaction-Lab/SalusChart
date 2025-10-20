@@ -3,6 +3,6 @@
 
     <!-- This file will be automatically populated when you run lint -->
     <!-- It helps to manage existing lint issues without blocking new development -->
-    <!-- Run './gradlew lintDebug --write-baseline' to populate this file -->
+    <!-- Run './gradlew lintDebug-write-baseline' to populate this file -->
 
 </issues> 

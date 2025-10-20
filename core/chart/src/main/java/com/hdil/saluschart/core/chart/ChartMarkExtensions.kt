@@ -67,6 +67,7 @@ fun List<ChartMark>.toStackedChartMarks(
  * @param ChartMarks List of ChartMarks (should be in pairs: min1, max1, min2, max2, ...)
  * @return List of RangeChartMarks
  */
+// SJ_COMMENT: unused. 의미?
 fun List<ChartMark>.toRangeChartMarksFromPairs(): List<RangeChartMark> {
     if (isEmpty()) return emptyList()
 
@@ -91,6 +92,7 @@ fun List<ChartMark>.toRangeChartMarksFromPairs(): List<RangeChartMark> {
  * @param groupSize Number of segments per stack (e.g., 3 for protein, fat, carbs)
  * @return List of StackedChartMarks
  */
+// SJ_COMMENT: unused. 의미?
 fun List<ChartMark>.toStackedChartMarksFromGroups(groupSize: Int): List<StackedChartMark> {
     if (isEmpty()) return emptyList()
 

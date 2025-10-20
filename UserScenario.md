@@ -153,7 +153,6 @@ LineChart(
     showPoints(true)
     zoomable(true)
     tooltip { point -> DefaultTooltip(point) }
-    ...
 }
 ```
 

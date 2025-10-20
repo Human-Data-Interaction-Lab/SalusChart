@@ -105,6 +105,15 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Blood Pressure - Scatter Plot",
         "Blood Glucose - Range Bar Chart",
         "Diet - Stacked Bar Chart FreeScroll",
+        "Minimal Charts",
+        "CalendarChart 1",
+        "CalendarChart 2",
+        "CalendarChart with Paging",
+        "PieChart 1",
+        "DonutChart 1",
+        "Progress Bar Chart",
+        "Progress Ring Chart",
+        "Sleep Session - Sleep Stage Chart",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Exercise - Bar Chart") }
@@ -137,7 +146,6 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                     contentDescription = "Close",
                     tint = Color.Black,
                     modifier = Modifier.size(32.dp) // 아이콘 크기 조정
-
                 )
             }
 

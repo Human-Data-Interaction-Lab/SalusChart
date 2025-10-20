@@ -325,6 +325,7 @@ fun BarChart(
     }
 }
 
+// SJ_COMMENT: unifyYAxisAcrossPages 의미?
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BarChartPagedInternal(

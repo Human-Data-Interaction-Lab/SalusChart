@@ -42,6 +42,7 @@ import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.toRangeChartMarks
 import com.hdil.saluschart.ui.theme.ChartColor
 
+// SJ_COMMENT: unused?
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Float.roundUpToStep(step: Float): Float =
@@ -345,6 +346,7 @@ private fun FixedPagerYAxisRange(
     }
 }
 
+// SJ_COMMENT: unifyYAxisAcrossPages 의미?
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RangeBarChartPagedInternal(

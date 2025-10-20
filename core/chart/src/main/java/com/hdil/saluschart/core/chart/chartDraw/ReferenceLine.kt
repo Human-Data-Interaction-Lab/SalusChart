@@ -279,6 +279,10 @@ object ReferenceLine {
             }
             
             // 레이블 표시 조건: showLabel이 true이거나 interactive이면서 pressed 상태일 때
+            /*
+            SJ_COMMENT
+            useRelativePositioning 파라미터 의미? 왜 항상 true로 설정하지?
+             */
             if (showLabel || (interactive && isPressed)) {
                 ReferenceLineLabel(
                     value = average,
@@ -287,7 +291,7 @@ object ReferenceLine {
                     labelFormat = labelFormat,
                     metrics = metrics,
                     yAxisPosition = yAxisPosition,
-                    useRelativePositioning = true 
+                    useRelativePositioning = true
                 )
             }
         }

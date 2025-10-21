@@ -1,5 +1,6 @@
 package com.hdil.saluschart.core.chart.chartMath
 
+import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.hdil.saluschart.core.chart.ChartMark
@@ -174,7 +175,7 @@ object ChartMath {
         // decide if we want zero-based min
         val wantsZeroMin = (chartType == ChartType.BAR ||
                 chartType == ChartType.STACKED_BAR ||
-                chartType == ChartType.MINIMAL_BAR)
+                chartType == ChartType.MINIMAL_BAR || chartType == ChartType.SCATTERPLOT)
 
         val baseMin = minY ?: if (wantsZeroMin) 0.0 else dataMin
         val baseMax = maxY ?: dataMax
@@ -245,6 +246,8 @@ object ChartMath {
     ): ChartMetrics {
         val effectivePaddingX = if (includeYAxisPadding) yAxisPaddingPx else 0f
 
+        Log.e("ChartMath", "includYAxisPadding: $includeYAxisPadding, yAxisPaddingPx: $yAxisPaddingPx")
+
         // Call computeYAxisRange to calculate Y-axis 
         val yAxisRange = computeYAxisRange(
             values = values,
@@ -257,6 +260,8 @@ object ChartMath {
 
         val chartWidth  = size.width  - effectivePaddingX * 2f
         val chartHeight = size.height - paddingY
+
+        Log.e("ChartMath", "Computed Metrics - chartWidth: $chartWidth, chartHeight: $chartHeight, paddingX: $effectivePaddingX, paddingY: $paddingY, yAxisRange: $yAxisRange")
 
         return ChartMetrics(
             paddingX = effectivePaddingX,

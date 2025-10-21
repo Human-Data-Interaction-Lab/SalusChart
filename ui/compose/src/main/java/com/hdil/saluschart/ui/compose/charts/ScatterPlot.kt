@@ -77,7 +77,6 @@ fun ScatterPlot(
     windowSize: Int? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     pageSize: Int? = null,
-    unifyYAxisAcrossPages: Boolean = true,
     initialPageIndex: Int? = null,
     yAxisFixedWidth: Dp = 0.dp,
 ) {
@@ -115,7 +114,6 @@ fun ScatterPlot(
             // scale/paging
             showTitle = showTitle,
             outerPadding = contentPadding,
-            unifyYAxisAcrossPages = unifyYAxisAcrossPages,
             yTickStep = yTickStep,
             initialPageIndex = initialPageIndex,
             minY = minY,
@@ -142,6 +140,7 @@ fun ScatterPlot(
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
     
     var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedIndices by remember { mutableStateOf<Set<Int>?>(null) }
 
     Column(modifier = modifier.padding(contentPadding)) {
         if (showTitle) {
@@ -156,7 +155,8 @@ fun ScatterPlot(
             // 스크롤 모드에서 실제 표시할 데이터와 캔버스 너비 계산
             val canvasWidth = if (useScrolling) {
                 val chartWidth = availableWidth - (marginHorizontal * 2)
-                val sectionsCount = (data.size.toFloat() / windowSize!!.toFloat()).toInt()
+                val ws = requireNotNull(windowSize)
+                val sectionsCount = (data.size.toFloat() / ws.toFloat()).toInt()
                 chartWidth * sectionsCount
             } else null
 
@@ -222,7 +222,9 @@ fun ScatterPlot(
                         if (showYAxis && !isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
-                        ChartDraw.Line.drawLineXAxisLabels(
+//                        ChartDraw.Line.drawLineXAxisLabels(
+                        // X축 라벨은 Bar 스타일로 중앙 정렬(막대 중심) 위치에 맞춰 그림
+                        ChartDraw.Bar.drawBarXAxisLabels(
                             ctx = drawContext,
                             labels = xLabels,
                             metrics = metrics,
@@ -249,7 +251,8 @@ fun ScatterPlot(
                     // Conditional interaction based on interactionType parameter
                     when (interactionType) {
                         InteractionType.Scatter.POINT -> {
-                            // PointMarker interactions (direct point touching)
+                            // 포인트 직접 터치: 단일 선택 사용, 집합 선택 초기화
+                            selectedIndices = null
                             ChartDraw.Scatter.PointMarker(
                                 data = data,
                                 points = canvasPoints,
@@ -270,23 +273,93 @@ fun ScatterPlot(
                             )
                         }
 
-                        else -> {
-                            // Default to non-interactive rendering
-                            ChartDraw.Scatter.PointMarker(
-                                data = data,
-                                points = canvasPoints,
-                                values = yValues,
-                                selectedPointIndex = null,
-                                onPointClick = null,
-                                pointType = pointType,
-                                chartType = chartType,
-                                showTooltipForIndex = null,
-                                pointRadius = pointSize,
-                                innerRadius = 0.dp,
-                                interactive = false,
-                                canvasSize = canvasSize,
-                                unit = unit,
-                            )
+                        InteractionType.Scatter.TOUCH_AREA -> {
+                            // 넓은 터치 영역: 카테고리(x 고유값)별로 전체 높이 스트립을 깔아 터치 감도를 높임
+                            val metrics = chartMetrics
+                            if (metrics != null && canvasPoints.isNotEmpty()) {
+                                // 고유 x 값(카테고리)과 인덱스 매핑
+                                val uniqueXs = data.map { it.x }.distinct().sorted()
+                                val catCount = uniqueXs.size
+                                // 카테고리별 대표 데이터 인덱스(첫 번째 항목) 맵핑
+                                val catIndexToDataIndex: List<Int> = uniqueXs.map { ux ->
+                                    data.indexOfFirst { it.x == ux }
+                                }
+                                // BarMarker에 맞춰 더미 데이터(카테고리 수만큼) 구성
+                                val catMarks = uniqueXs.mapIndexed { idx, ux ->
+                                    val firstIdx = catIndexToDataIndex[idx].coerceAtLeast(0)
+                                    val src = data.getOrNull(firstIdx)
+                                    ChartMark(
+                                        x = ux,
+                                        y = src?.y ?: 0.0,
+                                        label = src?.label ?: ux.toString()
+                                    )
+                                }
+
+                                ChartDraw.Bar.BarMarker(
+                                    data = catMarks,
+                                    minValues = List(catCount) { metrics.minY },
+                                    maxValues = List(catCount) { metrics.maxY },
+                                    metrics = metrics,
+                                    color = Color.Transparent,
+                                    barWidthRatio = 1.0f,
+                                    interactive = true,
+                                    useLineChartPositioning = false,
+                                    onBarClick = { idx, _ ->
+                                        // 동일 카테고리의 모든 포인트(1:N) 집합 선택
+                                        val ux = uniqueXs.getOrNull(idx)
+                                        val indicesInCat: Set<Int> = if (ux != null) data.indices.filter { data[it].x == ux }.toSet() else emptySet()
+                                        selectedPointIndex = null // 단일 선택 해제
+                                        selectedIndices = if (indicesInCat.isNotEmpty() && selectedIndices == indicesInCat) null else indicesInCat
+                                    },
+                                    chartType = chartType,
+                                    showTooltipForIndex = null,
+                                    isTouchArea = true,
+                                    customTooltipText = null,
+                                    segmentIndex = null,
+                                    showLabel = false,
+                                    unit = unit
+                                )
+
+                                // 포인트/툴팁 렌더링 (비인터랙티브 포인트 + 외부 선택 인덱스로 툴팁 표시)
+                                ChartDraw.Scatter.PointMarker(
+                                    data = data,
+                                    points = canvasPoints,
+                                    values = yValues,
+                                    color = pointColor,
+                                    selectedPointIndex = null,
+                                    selectedIndices = selectedIndices,
+                                    onPointClick = null,
+                                    pointType = pointType,
+                                    chartType = chartType,
+                                    showTooltipForIndex = null,
+                                    showTooltipForIndices = selectedIndices,
+                                    pointRadius = pointSize,
+                                    innerRadius = 0.dp,
+                                    interactive = false,
+                                    canvasSize = canvasSize,
+                                    unit = unit,
+                                )
+                            } else {
+                                // 안전장치: 메트릭스가 아직 없으면 기본 비인터랙티브 렌더링
+                                ChartDraw.Scatter.PointMarker(
+                                    data = data,
+                                    points = canvasPoints,
+                                    values = yValues,
+                                    color = pointColor,
+                                    selectedPointIndex = null,
+                                    selectedIndices = null,
+                                    onPointClick = null,
+                                    pointType = pointType,
+                                    chartType = chartType,
+                                    showTooltipForIndex = null,
+                                    showTooltipForIndices = null,
+                                    pointRadius = pointSize,
+                                    innerRadius = 0.dp,
+                                    interactive = false,
+                                    canvasSize = canvasSize,
+                                    unit = unit,
+                                )
+                            }
                         }
                     }
 
@@ -355,7 +428,6 @@ private fun ScatterPlotPagedInternal(
     showYAxis: Boolean,
     // scale/paging
     showTitle: Boolean,
-    unifyYAxisAcrossPages: Boolean,
     yTickStep: Double?,
     initialPageIndex: Int?,
     minY: Double?,

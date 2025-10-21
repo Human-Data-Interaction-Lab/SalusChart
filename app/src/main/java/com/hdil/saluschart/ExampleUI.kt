@@ -116,7 +116,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Sleep Session - Sleep Stage Chart",
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Exercise - Bar Chart") }
+    var selectedChartType by remember { mutableStateOf<String?>("Blood Pressure - Scatter Plot") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -688,7 +688,7 @@ fun ScatterPlot_BloodPressure() {
         unit = "mmHg",
         yLabel = "혈압 (mmHg)",
         xLabel = "일자",
-        interactionType = InteractionType.Scatter.POINT,
+        interactionType = InteractionType.Scatter.TOUCH_AREA,
         pointType = PointType.Circle,
         pointSize = 4.dp,
         yAxisPosition = YAxisPosition.LEFT,

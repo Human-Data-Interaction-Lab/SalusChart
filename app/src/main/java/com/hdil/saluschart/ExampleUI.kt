@@ -116,7 +116,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Sleep Session - Sleep Stage Chart",
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Blood Pressure - Scatter Plot") }
+    var selectedChartType by remember { mutableStateOf<String?>("Diet - Stacked Bar Chart FreeScroll") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -375,8 +375,11 @@ fun BarChart_Exercise() {
             barColor = Primary_Purple,
             yAxisPosition = YAxisPosition.LEFT,
             showLabel = true,
-            pageSize = 7,
+            windowSize = 7,
+//            pageSize = 7,
             interactionType = InteractionType.Bar.TOUCH_AREA,
+            referenceLineType = ReferenceLineType.AVERAGE,
+            showReferenceLineLabel = true,
             unit = "분",
         )
     }
@@ -578,6 +581,7 @@ fun LineChart_BodyFat() {
         interactionType = InteractionType.Line.TOUCH_AREA,
         yAxisPosition = YAxisPosition.RIGHT,
         referenceLineType = ReferenceLineType.TREND,
+        showReferenceLineLabel = true,
         referenceLineStyle = LineStyle.DASHDOT,
         windowSize = 8
     )

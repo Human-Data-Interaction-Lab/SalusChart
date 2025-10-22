@@ -233,7 +233,7 @@ fun SingleMonthCalendarChart(
                     .offset { IntOffset(clampedX.roundToInt(), clampedY.roundToInt()) }
                     .onGloballyPositioned { tooltipSize = it.size }
             ) {
-                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(ChartMark = tip)
+                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(ChartMark = tip, color = color)
             }
         }
     }

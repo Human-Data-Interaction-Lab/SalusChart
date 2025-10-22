@@ -35,7 +35,7 @@ fun ChartTooltip(
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
     customText: String? = null,
-    color: Color = Color.Black,
+    color: Any = Color.Black,
     modifier: Modifier = Modifier
 ) {
 
@@ -80,7 +80,7 @@ fun ChartTooltip(
                         modifier = Modifier
                             .size(6.dp)
                             .background(
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                color = color as Color,
                                 shape = CircleShape
                             )
                     )
@@ -103,7 +103,7 @@ fun ChartTooltip(
                                 modifier = Modifier
                                     .size(6.dp)
                                     .background(
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        color = color as Color,
                                         shape = CircleShape
                                     )
                             )
@@ -127,7 +127,7 @@ fun ChartTooltip(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .background(
-                                            color = color,
+                                            color = (color as? List<Color>)?.getOrNull(index) ?: Color.Black,
                                             shape = CircleShape
                                         )
                                 )
@@ -155,7 +155,7 @@ fun ChartTooltip(
                                 modifier = Modifier
                                     .size(6.dp)
                                     .background(
-                                        color = color,
+                                        color = color as Color,
                                         shape = CircleShape
                                     )
                             )

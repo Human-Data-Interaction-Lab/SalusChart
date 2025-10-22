@@ -67,8 +67,11 @@ object ScatterPlotDraw {
     ) {
         val density = LocalDensity.current
 
-        // 툴팁 정보를 모아 한 번에 렌더 (멀티 포인트 지원)
-        val tooltipEntries = mutableListOf<Pair<ChartMark, Offset>>()
+        // 최적화: 툴팁 엔트리 용량을 미리 예상하여 할당 (선택된 인덱스 수만큼)
+        val expectedTooltipCount = showTooltipForIndices?.size ?: if (showTooltipForIndex != null) 1 else 0
+        val tooltipEntries = remember(showTooltipForIndex, showTooltipForIndices) {
+            ArrayList<Pair<ChartMark, Offset>>(expectedTooltipCount)
+        }.apply { clear() }
 
         // value labels 사전 계산 (루프 밖으로 이동)
         val textPx = with(density) { 12.sp.toPx() }
@@ -208,6 +211,7 @@ object ScatterPlotDraw {
                     ChartMark = mark,
                     modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius),
                     unit = unit,
+                    color = color
                 )
             }
         }

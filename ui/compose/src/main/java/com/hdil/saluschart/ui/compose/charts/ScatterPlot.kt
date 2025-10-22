@@ -277,22 +277,31 @@ fun ScatterPlot(
                             // 넓은 터치 영역: 카테고리(x 고유값)별로 전체 높이 스트립을 깔아 터치 감도를 높임
                             val metrics = chartMetrics
                             if (metrics != null && canvasPoints.isNotEmpty()) {
-                                // 고유 x 값(카테고리)과 인덱스 매핑
-                                val uniqueXs = data.map { it.x }.distinct().sorted()
-                                val catCount = uniqueXs.size
-                                // 카테고리별 대표 데이터 인덱스(첫 번째 항목) 맵핑
-                                val catIndexToDataIndex: List<Int> = uniqueXs.map { ux ->
-                                    data.indexOfFirst { it.x == ux }
+                                // 최적화: 카테고리 관련 계산을 remember로 캐싱
+                                // 고유 x값(카테고리)와 인덱스 매핑
+                                val categoryData = remember(data) {
+                                    val uniqueXs = data.map { it.x }.distinct().sorted()
+                                    val catCount = uniqueXs.size
+                                    val catIndexToDataIndex = uniqueXs.map { ux ->
+                                        data.indexOfFirst { it.x == ux }
+                                    }
+                                    val catMarks = uniqueXs.mapIndexed { idx, ux ->
+                                        val firstIdx = catIndexToDataIndex[idx].coerceAtLeast(0)
+                                        val src = data.getOrNull(firstIdx)
+                                        ChartMark(
+                                            x = ux,
+                                            y = src?.y ?: 0.0,
+                                            label = src?.label ?: ux.toString()
+                                        )
+                                    }
+                                    Triple(uniqueXs, catCount, catMarks)
                                 }
-                                // BarMarker에 맞춰 더미 데이터(카테고리 수만큼) 구성
-                                val catMarks = uniqueXs.mapIndexed { idx, ux ->
-                                    val firstIdx = catIndexToDataIndex[idx].coerceAtLeast(0)
-                                    val src = data.getOrNull(firstIdx)
-                                    ChartMark(
-                                        x = ux,
-                                        y = src?.y ?: 0.0,
-                                        label = src?.label ?: ux.toString()
-                                    )
+                                val (uniqueXs, catCount, catMarks) = categoryData
+
+                                // 최적화: X값별 인덱스 맵을 사전 계산하여 클릭 시 빠른 조회
+                                val xToIndicesMap = remember(data) {
+                                    data.indices.groupBy { data[it].x }
+                                        .mapValues { it.value.toSet() }
                                 }
 
                                 ChartDraw.Bar.BarMarker(
@@ -303,19 +312,16 @@ fun ScatterPlot(
                                     color = Color.Transparent,
                                     barWidthRatio = 1.0f,
                                     interactive = true,
-                                    useLineChartPositioning = false,
                                     onBarClick = { idx, _ ->
-                                        // 동일 카테고리의 모든 포인트(1:N) 집합 선택
+                                        // 최적화: 사전 계산된 맵에서 O(1) 조회
+                                        // 동일 카테고리의 모든 포인트(1:N) 집합
                                         val ux = uniqueXs.getOrNull(idx)
-                                        val indicesInCat: Set<Int> = if (ux != null) data.indices.filter { data[it].x == ux }.toSet() else emptySet()
-                                        selectedPointIndex = null // 단일 선택 해제
+                                        val indicesInCat: Set<Int> = ux?.let { xToIndicesMap[it] } ?: emptySet()
+                                        selectedPointIndex = null
                                         selectedIndices = if (indicesInCat.isNotEmpty() && selectedIndices == indicesInCat) null else indicesInCat
                                     },
                                     chartType = chartType,
-                                    showTooltipForIndex = null,
                                     isTouchArea = true,
-                                    customTooltipText = null,
-                                    segmentIndex = null,
                                     showLabel = false,
                                     unit = unit
                                 )

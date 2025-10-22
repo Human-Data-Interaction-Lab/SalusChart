@@ -1,5 +1,6 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -218,7 +219,6 @@ object BarChartDraw {
                 else -> false // LINE, SCATTERPLOT 등에서는 툴팁 표시 안함
             }
 
-
             if (shouldShowTooltip) {
                 tooltipData = data[index]
                 tooltipOffset = Offset(barX.toFloat(), barY.toFloat())
@@ -286,7 +286,8 @@ object BarChartDraw {
             ChartTooltip(
                 ChartMark = tooltipData,
                 unit = unit,
-                modifier = Modifier.offset(x = xDp, y = yDp - 80.dp)
+                modifier = Modifier.offset(x = xDp, y = yDp - 80.dp),
+                color = color
             )
         }
     }

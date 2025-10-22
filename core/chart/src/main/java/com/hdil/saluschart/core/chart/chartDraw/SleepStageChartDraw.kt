@@ -202,12 +202,25 @@ object SleepStageChartDraw {
                 val endTime = ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.maxPoint.y)
                 "$startTime - $endTime"
             } else null
+
+            val sleepcolor = if (tooltipData is RangeChartMark) {
+                val sleepStageOrdinal = tooltipData.x.toInt()
+                val sleepStageType = when (sleepStageOrdinal) {
+                    0 -> SleepStageType.AWAKE
+                    1 -> SleepStageType.REM
+                    2 -> SleepStageType.LIGHT
+                    3 -> SleepStageType.DEEP
+                    else -> SleepStageType.UNKNOWN
+                }
+                ChartMath.SleepStage.getSleepStageColor(sleepStageType)
+            } else Color.Black
             
             ChartTooltip(
                 ChartMark = tooltipData,
                 unit = unit,
                 customText = customTooltipText,
-                modifier = Modifier.offset(x = xDp, y = yDp - 80.dp)
+                modifier = Modifier.offset(x = xDp, y = yDp - 80.dp),
+                color = sleepcolor
             )
         }
     }

@@ -188,7 +188,8 @@ fun PieChart(
                             ChartMark = data[selectedSectionIndex],
                             modifier = Modifier.offset {
                                 tooltipPosition
-                            }
+                            },
+                            color = colors[selectedSectionIndex]
                         )
                     }
                 }
@@ -307,7 +308,8 @@ fun PieChart(
                             ChartMark = data[selectedSectionIndex],
                             modifier = Modifier.offset {
                                 tooltipPosition
-                            }
+                            },
+                            color = colors[selectedSectionIndex]
                         )
                     }
                 }

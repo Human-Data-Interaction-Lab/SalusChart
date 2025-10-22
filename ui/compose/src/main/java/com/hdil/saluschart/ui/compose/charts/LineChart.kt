@@ -378,7 +378,8 @@ fun LineChart(
                                 unit = unit,
                                 modifier = Modifier
                                     .offset { IntOffset(xClamped.toInt(), yClamped.toInt()) }
-                                    .onSizeChanged { tipSize = it }   // measure so clamping is exact
+                                    .onSizeChanged { tipSize = it },   // measure so clamping is exact
+                                color = lineColor
                             )
                         }
                     }

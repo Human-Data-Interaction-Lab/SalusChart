@@ -45,6 +45,7 @@ sealed interface InteractionType {
     
     sealed interface Scatter : InteractionType {
         data object POINT : Scatter     // 스캐터 포인트 직접 터치
+        data object TOUCH_AREA : Scatter // 스캐터 넓은 터치 영역
     }
     
     sealed interface StackedBar : InteractionType {

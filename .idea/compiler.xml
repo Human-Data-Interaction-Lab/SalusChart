@@ -2,24 +2,16 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="11">
-      <module name="SalusChart.app" target="21" />
-      <module name="SalusChart.core.chart" target="21" />
       <module name="SalusChart.core.chart.test" target="11" />
-      <module name="SalusChart.core.dsl" target="21" />
       <module name="SalusChart.core.dsl.test" target="11" />
       <module name="SalusChart.core.main" target="11" />
       <module name="SalusChart.core.test" target="11" />
-      <module name="SalusChart.core.transform" target="21" />
       <module name="SalusChart.core.transform.test" target="11" />
-      <module name="SalusChart.core.util" target="21" />
       <module name="SalusChart.core.util.test" target="11" />
       <module name="SalusChart.data.main" target="11" />
-      <module name="SalusChart.data.provider" target="21" />
       <module name="SalusChart.data.test" target="11" />
-      <module name="SalusChart.ui.compose" target="21" />
       <module name="SalusChart.ui.main" target="11" />
       <module name="SalusChart.ui.test" target="11" />
-      <module name="SalusChart.ui.theme" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

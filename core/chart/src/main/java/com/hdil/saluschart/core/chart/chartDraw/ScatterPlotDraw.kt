@@ -53,6 +53,7 @@ object ScatterPlotDraw {
         pointRadius: Dp = 4.dp,
         innerRadius: Dp = 2.dp,
         selectedPointIndex: Int? = null,
+        selectedIndices: Set<Int>? = null,
         onPointClick: ((Int) -> Unit)? = null,
         interactive: Boolean = false,
         showPoint: Boolean = true,
@@ -60,14 +61,17 @@ object ScatterPlotDraw {
         showValue: Boolean = false,
         chartType: ChartType,
         showTooltipForIndex: Int? = null,
+        showTooltipForIndices: Set<Int>? = null,
         canvasSize: Size,
         unit : String = "",
     ) {
         val density = LocalDensity.current
 
-        // 툴팁 정보 저장 변수
-        var tooltipOffset: Offset? = null
-        var tooltipData: ChartMark? = null
+        // 최적화: 툴팁 엔트리 용량을 미리 예상하여 할당 (선택된 인덱스 수만큼)
+        val expectedTooltipCount = showTooltipForIndices?.size ?: if (showTooltipForIndex != null) 1 else 0
+        val tooltipEntries = remember(showTooltipForIndex, showTooltipForIndices) {
+            ArrayList<Pair<ChartMark, Offset>>(expectedTooltipCount)
+        }.apply { clear() }
 
         // value labels 사전 계산 (루프 밖으로 이동)
         val textPx = with(density) { 12.sp.toPx() }
@@ -78,19 +82,24 @@ object ScatterPlotDraw {
             val xDp = with(density) { center.x.toDp() }
             val yDp = with(density) { center.y.toDp() }
 
-            // 선택 상태 결정: selectedPointIndex가 null이면 모든 포인트 선택됨
-            val isSelected = selectedPointIndex == null || selectedPointIndex == index
+            // 선택 상태 계산: selectedIndices가 우선, 없으면 단일 인덱스 규칙 사용(null이면 모두 선택)
+            val isSelected = when {
+                selectedIndices != null -> selectedIndices.contains(index)
+                else -> selectedPointIndex == null || selectedPointIndex == index
+            }
             val pointColor = if (showPoint) {
                 if (isSelected) color else Color.Gray
             } else {
-                if (selectedPointIndex == index) color else Color.Transparent
+                if ((selectedIndices?.contains(index) == true) || selectedPointIndex == index) color else Color.Transparent
             }
 
-            // 툴팁 표시 여부 결정
-            val shouldShowTooltip = (showTooltipForIndex == index)
-            if (shouldShowTooltip) {
-                tooltipData = data[index]
-                tooltipOffset = center
+            // 툴팁 표시 여부: 집합 기준 우선, 아니면 단일 인덱스 기준
+            val showTip = when {
+                showTooltipForIndices != null -> showTooltipForIndices.contains(index)
+                else -> showTooltipForIndex == index
+            }
+            if (showTip) {
+                tooltipEntries += (data[index] to center)
             }
 
             // 포인트 타입에 따라 렌더링 (BarMarker처럼 단순화)
@@ -102,12 +111,10 @@ object ScatterPlotDraw {
                             .offset(x = xDp - pointRadius, y = yDp - pointRadius)
                             .size(pointRadius * 2)
                             .background(color = pointColor, shape = CircleShape)
-                            .clickable(enabled = interactive) {
-                                onPointClick?.invoke(index)
-                            }
+                            .clickable(enabled = interactive) { onPointClick?.invoke(index) }
                     )
                     // 내부 원 (innerRadius > 0인 경우에만)
-                    if (innerRadius > 0.dp && (showPoint || selectedPointIndex == index)) {
+                    if (innerRadius > 0.dp && (showPoint || isSelected)) {
                         Box(
                             modifier = Modifier
                                 .offset(x = xDp - innerRadius, y = yDp - innerRadius)
@@ -123,9 +130,7 @@ object ScatterPlotDraw {
                         modifier = Modifier
                             .offset(x = xDp - pointRadius, y = yDp - pointRadius)
                             .size(pointRadius * 2)
-                            .clickable(enabled = interactive) {
-                                onPointClick?.invoke(index)
-                            }
+                            .clickable(enabled = interactive) { onPointClick?.invoke(index) }
                     ) {
                         Canvas(modifier = Modifier.size(pointRadius * 2)) {
                             val trianglePath = Path().apply {
@@ -140,10 +145,7 @@ object ScatterPlotDraw {
                                 }
                                 close()
                             }
-                            drawPath(
-                                path = trianglePath,
-                                color = pointColor
-                            )
+                            drawPath(path = trianglePath, color = pointColor)
                         }
                     }
                 }
@@ -155,9 +157,7 @@ object ScatterPlotDraw {
                             .offset(x = xDp - pointRadius, y = yDp - pointRadius)
                             .size(pointRadius * 2)
                             .background(color = pointColor)
-                            .clickable(enabled = interactive) {
-                                onPointClick?.invoke(index)
-                            }
+                            .clickable(enabled = interactive) { onPointClick?.invoke(index) }
                     )
                 }
             }
@@ -165,9 +165,7 @@ object ScatterPlotDraw {
 
         if (showValue) {
             val anchors = remember(points, values, canvasSize) {
-                if (canvasSize.width <= 0f || canvasSize.height <= 0f || points.isEmpty()) {
-                    emptyList()
-                } else {
+                if (canvasSize.width <= 0f || canvasSize.height <= 0f || points.isEmpty()) emptyList() else {
                     LineChartMath.computeLabelAnchors(
                         points = points,
                         values = values.map { it.toFloat() },
@@ -204,15 +202,18 @@ object ScatterPlotDraw {
             }
         }
 
-        // 툴팁은 forEachIndexed 밖에서 한 번만 표시
-        if (tooltipData != null && tooltipOffset != null) {
-            val xDp = with(density) { tooltipOffset!!.x.toDp() }
-            val yDp = with(density) { tooltipOffset!!.y.toDp() }
-            ChartTooltip(
-                ChartMark = tooltipData!!,
-                modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius),
-                unit = unit,
-            )
+        // 멀티 툴팁 렌더링
+        if (tooltipEntries.isNotEmpty()) {
+            tooltipEntries.forEach { (mark, offset) ->
+                val xDp = with(density) { offset.x.toDp() }
+                val yDp = with(density) { offset.y.toDp() }
+                ChartTooltip(
+                    ChartMark = mark,
+                    modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius),
+                    unit = unit,
+                    color = color
+                )
+            }
         }
     }
 //
@@ -372,4 +373,3 @@ object ScatterPlotDraw {
 //        }
 //    }
 }
-

@@ -15,6 +15,7 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.math.sqrt
 
+// TODO : metric 관련 함수에서 고정값 수정 필요
 object ChartMath {
 
     var Pie = PieChartMath
@@ -78,6 +79,8 @@ object ChartMath {
      * @param actualMax 사용자 지정 최대 Y값 (지정시 데이터 범위를 확장)
      * @return 계산된 눈금 값들의 리스트
      */
+
+     // 추가 정보는 노션 페이지 'Enhanced Readability Algorithm' 참고
     fun computeNiceTicks(
         min: Double,
         max: Double,
@@ -282,6 +285,8 @@ object ChartMath {
      * @param maxXTicksLimit 최대 라벨 개수 제한 (null이면 제한 없음)
      * @return 감소된 라벨 목록과 해당 인덱스 목록의 Pair
      */
+
+    // 추가 정보는 노션 페이지 'Enhanced Readability Algorithm' 참고
     fun computeAutoSkipLabels(
         labels: List<String>,
         textSize: Float,

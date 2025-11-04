@@ -15,6 +15,7 @@ enum class YAxisPosition {
     RIGHT   // 오른쪽
 }
 
+// TODO : metric 관련 함수에서 고정값 수정 필요
 object ChartDraw {
 
     var Pie = PieChartDraw
@@ -141,7 +142,15 @@ object ChartDraw {
             strokeWidth = 2f
         )
     }
-
+    /* 
+     * 고정된 Y축을 그립니다. (paging용)
+     *
+     * @param drawScope 그리기 영역
+     * @param metrics 차트 메트릭 정보
+     * @param yAxisPosition Y축 위치
+     * @param paneWidthPx 팬 너비
+     * @param labelTextSizePx 레이블 텍스트 크기
+     */
     fun drawYAxisStandalone(
         drawScope: DrawScope,
         metrics: ChartMath.ChartMetrics,

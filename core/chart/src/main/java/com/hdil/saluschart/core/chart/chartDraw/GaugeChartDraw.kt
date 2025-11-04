@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// TODO: 현재 Minimal Gauge Chart 제작 시 사용 중, 추후 Gauge chart (큰 버전) 제작 시 재사용 가능한 함수들
 object GaugeChartDraw {
     /**
      * 범위 텍스트를 표시하는 컴포저블
@@ -48,6 +49,12 @@ object GaugeChartDraw {
 
     /**
      * 게이지 바를 그리는 컴포저블
+     * @param dataMin 데이터 최소값
+     * @param dataMax 데이터 최대값
+     * @param containerMin 컨테이너(게이지 바를 감싸는 배경) 최소값
+     * @param containerMax 컨테이너(게이지 바를 감싸는 배경) 최대값
+     * @param containerColor 컨테이너 색상
+     * @param rangeColor 범위 색상
      */
     @Composable
     fun GaugeBar(

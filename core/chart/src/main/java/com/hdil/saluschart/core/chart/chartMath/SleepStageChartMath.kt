@@ -99,16 +99,15 @@ object SleepStageChartMath {
     }
 
     /**
-     * Sleep stage specific transformation: converts SleepStage objects to RangeChartMarks
-     * Each SleepStage becomes a RangeChartMark where:
-     * - x = sleep stage type ordinal (for Y-axis positioning)
-     * - minPoint = start time ChartMark (x = stage ordinal, y = start time)
-     * - maxPoint = end time ChartMark (x = stage ordinal, y = end time)
+     * 수면 단계 데이터를 RangeChartMark로 변환합니다.
+     * 각 SleepStage는 다음과 같이 RangeChartMark로 변환됩니다:
+     * - x = 수면 단계 타입의 순서 값 (Y축 포지셔닝용)
+     * - minPoint = 시작 시간 ChartMark (x = 단계 순서값, y = 시작 시간)
+     * - maxPoint = 종료 시간 ChartMark (x = 단계 순서값, y = 종료 시간)
+     * minPoint/maxPoint의 x값과 y값은 HorizontalBarMarker에 입력될 때 서로 바뀝니다.
      * 
-     * The x value and y value for minPoint/maxPoint are switched when inputted into HorizontalBarMarker
-     * 
-     * @param List<SleepStage> List of SleepStage objects
-     * @return List of RangeChartMarks for sleep stage chart
+     * @param List<SleepStage> 수면 단계 객체 목록
+     * @return 수면 단계 차트용 RangeChartMark 목록
      */
     fun List<SleepStage>.toSleepStageRangeChartMarks(): List<RangeChartMark> {
         return mapIndexed { index, stage ->
@@ -145,6 +144,8 @@ object SleepStageChartMath {
      * @param showStartEndLabels 시작/끝 레이블 표시 여부
      * @return 겹치지 않는 중간 레이블 목록
      */
+
+     // 추가 정보는 노션 페이지 'Enhanced Readability Algorithm' 참고 (computeAutoSkipLabels와 유사)
     fun computeNonOverlappingIntermediateLabels(
         startInstant: Instant,
         endInstant: Instant,

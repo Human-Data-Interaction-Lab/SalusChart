@@ -51,9 +51,9 @@ fun BarChart(
     yLabel: String = "Value",
     title: String = "Bar Chart Example",
     barColor: Color = ChartColor.Default,
-    minY: Double? = null,
-    maxY: Double? = null,
-    barWidthRatio: Float = 0.8f,
+    minY: Double? = null, // Minimum Y value for chart
+    maxY: Double? = null, // Maximum Y value for chart
+    barWidthRatio: Float = 0.8f, // Ratio of bar width to space width (바 너비 / 한 칸 너비)
     xLabelTextSize: Float = 28f,
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
@@ -62,26 +62,26 @@ fun BarChart(
     showTitle: Boolean = false,
     showYAxis: Boolean = true,
     showLabel: Boolean = false,
-    xLabelAutoSkip: Boolean = true,
-    maxXTicksLimit: Int? = null,
-    yTickStep: Double? = null,    // Grid tick step (both modes)
+    xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
+    maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
+    yTickStep: Double? = null, // y-axis grid tick step (automatically calculated if null)
     unit: String = "",
     // Reference line
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
+    referenceLineType: ReferenceLineType = ReferenceLineType.NONE, // NONE, AVERAGE
     referenceLineColor: Color = Color.Black,
     referenceLineStrokeWidth: Dp = 2.dp,
     referenceLineStyle: LineStyle = LineStyle.DASHED,
     showReferenceLineLabel: Boolean = false,
-    referenceLineLabelFormat: String = "평균: %.0f",
-    referenceLineInteractive: Boolean = false,
+    referenceLineLabelFormat: String = "평균: %.0f", // Format for reference line label
+    referenceLineInteractive: Boolean = false, // Whether to make the reference line clickable
     onReferenceLineClick: (() -> Unit)? = null,
     // Free-scroll mode
     windowSize: Int? = null,                    // visible items in scroll window
     contentPadding: PaddingValues = PaddingValues(16.dp),    // Free-scroll paddings
     pageSize: Int? = null,                      // items per page
     unifyYAxisAcrossPages: Boolean = true,
-    initialPageIndex: Int? = null,          // initial page to show (default last)
-    yAxisFixedWidth: Dp = 0.dp,             // external axis width in paged mode
+    initialPageIndex: Int? = null,          // initial page to show (last page if null)
+    yAxisFixedWidth: Dp = 0.dp,             // Padding between the chart and the y-axis
 ) {
     if (data.isEmpty()) return
 
@@ -90,10 +90,10 @@ fun BarChart(
         "Cannot enable both scrolling mode (windowSize) and paging mode (pageSize) simultaneously"
     }
 
-    // compute effective page size (0 = off)
+    // Compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
 
-    // enable paging if pageSize is provided and data exceeds page size
+    // Enable paging if pageSize is provided and data exceeds page size
     val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
 
     if (enablePaging) {
@@ -131,7 +131,7 @@ fun BarChart(
     }
 
     val chartType = ChartType.BAR
-    
+
     val useScrolling  = windowSize != null && windowSize < data.size
     val isFixedYAxis = showYAxis && useScrolling
     val scrollState = rememberScrollState()
@@ -146,6 +146,7 @@ fun BarChart(
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
 
+            // Calculate canvas width for scrolling mode
             val canvasWidth = if (useScrolling) {
                 val chartWidth = availableWidth - (marginHorizontal * 2)
                 val sectionsCount = (data.size.toFloat() / windowSize!!.toFloat()).toInt()
@@ -159,7 +160,7 @@ fun BarChart(
             var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
 
             Row(Modifier.fillMaxSize()) {
-                // LEFT fixed axis pane
+                // Left fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
@@ -177,7 +178,7 @@ fun BarChart(
                     }
                 }
 
-                // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
                 val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
                 val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
@@ -228,6 +229,7 @@ fun BarChart(
                     // Bars & interaction
                     when (interactionType) {
                         InteractionType.Bar.TOUCH_AREA -> {
+                            // Draw visual bars
                             chartMetrics?.let { metrics ->
                                 ChartDraw.Bar.BarMarker(
                                     data = data,
@@ -243,6 +245,7 @@ fun BarChart(
                                     unit = unit
                                 )
                             }
+                            // Draw interactive touch area
                             chartMetrics?.let { metrics ->
                                 ChartDraw.Bar.BarMarker(
                                     data = data,
@@ -260,6 +263,7 @@ fun BarChart(
                             }
                         }
                         InteractionType.Bar.BAR -> {
+                            // Draw interactive bars
                             chartMetrics?.let { metrics ->
                                 ChartDraw.Bar.BarMarker(
                                     data = data,
@@ -280,6 +284,7 @@ fun BarChart(
                         }
                     }
 
+                    // Draw reference line
                     if (referenceLineType != ReferenceLineType.NONE) {
                         chartMetrics?.let { metrics ->
                             ReferenceLine.ReferenceLine(
@@ -301,7 +306,7 @@ fun BarChart(
                     }
                 }
 
-                // RIGHT fixed axis pane
+                // Right fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
@@ -325,7 +330,8 @@ fun BarChart(
     }
 }
 
-// SJ_COMMENT: unifyYAxisAcrossPages 의미?
+// TODO: unifyYAxisAcrossPages 의미?
+// Function for paged bar chart
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BarChartPagedInternal(
@@ -376,6 +382,7 @@ private fun BarChartPagedInternal(
         )
     }
 
+    // Compute max rounded value and effective tick step
     val maxRounded = yAxisRange.maxY
     val effectiveTickStep = yAxisRange.tickStep
 
@@ -386,7 +393,7 @@ private fun BarChartPagedInternal(
         }
 
         Row(Modifier.fillMaxWidth()) {
-            // LEFT fixed external Y-axis
+            // Left fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 FixedPagerYAxis(
                     maxY = maxRounded,
@@ -396,7 +403,7 @@ private fun BarChartPagedInternal(
                 )
             }
 
-            // PAGER
+            // Pager
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
@@ -443,7 +450,7 @@ private fun BarChartPagedInternal(
                 )
             }
 
-            // RIGHT fixed external Y-axis
+            // Right fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                 FixedPagerYAxis(
                     maxY = maxRounded,
@@ -456,6 +463,7 @@ private fun BarChartPagedInternal(
     }
 }
 
+// Function for fixed external Y-axis in paged bar chart
 @Composable
 private fun FixedPagerYAxis(
     maxY: Double,
@@ -477,6 +485,7 @@ private fun FixedPagerYAxis(
             includeYAxisPadding = false,
             fixedTickStep = step.toDouble()
         )
+        // Call standalone y-axis drawing function
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
             metrics = m,

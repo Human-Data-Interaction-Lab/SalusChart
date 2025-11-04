@@ -36,6 +36,9 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 object SleepStageChartDraw {
+    // TODO: 현재 SleepStageChart 제작 시 사용 중, 추후 Gauge Chart 제작 시 재사용 가능할 수 있음
+    // - 그러나 현재 HorizontalBarMarker 함수는 Sleep Stage Chart에 특화된 함수이므로, 추후 일반화 필요할 수 있음
+
     /**
      * 수평 바 차트의 바들을 Composable로 생성합니다.
      * 수면 단계 차트와 같은 수평 바 차트에 사용됩니다.
@@ -52,7 +55,6 @@ object SleepStageChartDraw {
      * @param showTooltipForIndex 외부에서 제어되는 툴팁 표시 인덱스 (null이면 표시 안함)
      * @param isTouchArea true이면 터치 영역용 (투명, 전체 너비, 상호작용 가능), false이면 일반 바 (기본값: false)
      * @param customTooltipText 커스텀 툴팁 텍스트 목록 (null이면 기본 툴팁 사용)
-     * @param showLabel 라벨 표시 여부 (기본값: false)
      * @param unit 단위 (기본값: "")
      */
     @Composable
@@ -101,8 +103,10 @@ object SleepStageChartDraw {
                 Pair(metrics.chartWidth, metrics.paddingX)
             } else {
                 // minValue에서 maxValue까지의 바 계산 (X축 방향)
-                val xMinScreen = ((minValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth
-                val xMaxScreen = ((maxValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth
+                val xMinScreen =
+                    ((minValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth
+                val xMaxScreen =
+                    ((maxValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartWidth
                 val width = xMaxScreen - xMinScreen
                 // Add paddingX to position bars correctly within the chart area
                 Pair(width, metrics.paddingX + xMinScreen)
@@ -131,6 +135,7 @@ object SleepStageChartDraw {
                         showTooltipForIndex == index
                     }
                 }
+
                 else -> false // 다른 차트 타입에서는 툴팁 표시 안함
             }
 
@@ -148,7 +153,7 @@ object SleepStageChartDraw {
                 else -> SleepStageType.UNKNOWN
             }
             val stageColor = ChartMath.SleepStage.getSleepStageColor(sleepStageType)
-            
+
             val actualColor = if (isTouchArea) {
                 Color.Transparent // 터치 영역용은 투명
             } else {
@@ -182,12 +187,12 @@ object SleepStageChartDraw {
                     }
             )
         }
-        
+
         // 툴팁 표시 (바 박스 외부에 독립적으로 배치)
         if (tooltipData != null && tooltipOffset != null) {
             val xDp = with(density) { tooltipOffset.x.toDp() }
             val yDp = with(density) { tooltipOffset.y.toDp() }
-            
+
             // Generate custom tooltip text for sleep stage charts
             val customTooltipText = if (tooltipData is RangeChartMark) {
                 val sleepStageOrdinal = tooltipData.x.toInt()
@@ -198,8 +203,10 @@ object SleepStageChartDraw {
                     3 -> "Deep"
                     else -> "Unknown"
                 }
-                val startTime = ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.minPoint.y)
-                val endTime = ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.maxPoint.y)
+                val startTime =
+                    ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.minPoint.y)
+                val endTime =
+                    ChartMath.SleepStage.formatTimeFromMilliseconds(tooltipData.maxPoint.y)
                 "$startTime - $endTime"
             } else null
 
@@ -214,7 +221,7 @@ object SleepStageChartDraw {
                 }
                 ChartMath.SleepStage.getSleepStageColor(sleepStageType)
             } else Color.Black
-            
+
             ChartTooltip(
                 ChartMark = tooltipData,
                 unit = unit,
@@ -228,6 +235,7 @@ object SleepStageChartDraw {
     /**
      * 수면 단계 차트의 X축 레이블을 그립니다.
      * SleepSession의 시작/끝 시간과 중간에 0~4개의 정각 레이블을 표시합니다.
+     * 필요 시 자동 스킵 기능을 통해 레이블이 겹치지 않도록 합니다.
      *
      * @param ctx 그리기 컨텍스트
      * @param metrics 차트 메트릭 정보
@@ -249,11 +257,13 @@ object SleepStageChartDraw {
         // 시작/끝 시간을 Instant로 변환
         val startInstant = Instant.ofEpochMilli(kotlin.math.round(startTimeMillis).toLong())
         val endInstant = Instant.ofEpochMilli(kotlin.math.round(endTimeMillis).toLong())
-        
+
         // 시작과 끝 시간 텍스트 (날짜 포함)
-        val startTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis, withDate = false)
-        val endTimeText = ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis, withDate = false)
-        
+        val startTimeText =
+            ChartMath.SleepStage.formatTimeFromMilliseconds(startTimeMillis, withDate = false)
+        val endTimeText =
+            ChartMath.SleepStage.formatTimeFromMilliseconds(endTimeMillis, withDate = false)
+
         // X축 레이블 위치 계산
         val startX = metrics.paddingX
         val endX = metrics.paddingX + metrics.chartWidth
@@ -266,7 +276,7 @@ object SleepStageChartDraw {
             this.textSize = textSize
             isAntiAlias = true
         }
-        
+
         // 틱 마커용 Paint 설정
         val tickPaint = android.graphics.Paint().apply {
             color = android.graphics.Color.LTGRAY
@@ -301,7 +311,7 @@ object SleepStageChartDraw {
             paint.textAlign = android.graphics.Paint.Align.RIGHT
             ctx.canvas.nativeCanvas.drawText(endTimeText, endX, labelY, paint)
         }
-        
+
         // 중간 정각 레이블 생성 및 필터링
         val intermediateLabels = if (xLabelAutoSkip) {
             // 자동 스킵: 모든 정각 레이블 생성 후 텍스트 너비 기반으로 필터링
@@ -318,7 +328,7 @@ object SleepStageChartDraw {
             val endZdt = endInstant.atZone(java.time.ZoneId.systemDefault())
             val firstHour = startZdt.plusHours(1).truncatedTo(java.time.temporal.ChronoUnit.HOURS)
             val lastHour = endZdt.truncatedTo(java.time.temporal.ChronoUnit.HOURS)
-            
+
             val allLabels = mutableListOf<Instant>()
             var currentHour = firstHour
             while (currentHour.isBefore(lastHour) || currentHour.isEqual(lastHour)) {
@@ -329,17 +339,18 @@ object SleepStageChartDraw {
             }
             allLabels
         }
-        
+
         // 중간 레이블 그리기 (중앙 정렬, 날짜 제외)
         paint.textAlign = android.graphics.Paint.Align.CENTER
         intermediateLabels.forEach { hourInstant ->
             val hourTimeMs = hourInstant.toEpochMilli().toDouble()
-            val hourText = ChartMath.SleepStage.formatTimeFromMilliseconds(hourTimeMs, withDate = false)
-            
+            val hourText =
+                ChartMath.SleepStage.formatTimeFromMilliseconds(hourTimeMs, withDate = false)
+
             // X 위치 계산 (시간 비율에 따라)
             val ratio = (hourTimeMs - startTimeMillis) / (endTimeMillis - startTimeMillis)
             val x = metrics.paddingX + ratio.toFloat() * metrics.chartWidth
-            
+
             // 틱 마커 그리기
             ctx.canvas.nativeCanvas.drawLine(
                 x,
@@ -388,6 +399,7 @@ object SleepStageChartDraw {
             )
         }
     }
+
     /**
      * 수면 단계 차트의 독립적인 Y축을 그립니다.
      * 고정된 Y축 패널에서 사용됩니다.
@@ -515,39 +527,4 @@ object SleepStageChartDraw {
             )
         }
     }
-
-//    /**
-//     * 수면 단계 차트의 Y축 레이블을 그립니다.
-//     * 수면 단계는 고정된 순서로 표시됩니다: AWAKE, REM, LIGHT, DEEP
-//     *
-//     * @param ctx 그리기 컨텍스트
-//     * @param metrics 차트 메트릭 정보
-//     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
-//     */
-//    fun drawSleepStageLabels(
-//        ctx: androidx.compose.ui.graphics.drawscope.DrawContext,
-//        metrics: ChartMetrics,r
-//        textSize: Float = 28f
-//    ) {
-//        // 수면 단계는 고정된 순서 (위에서 아래로)
-//        val sleepStages = listOf("Awake", "REM", "Light", "Deep")
-//        val totalStages = sleepStages.size
-//        val stageHeight = metrics.chartHeight / totalStages
-//
-//        sleepStages.forEachIndexed { index, stage ->
-//            // 각 수면 단계의 중앙 Y 위치 계산
-//            val y = metrics.paddingY + (index + 0.5f) * stageHeight
-//
-//            ctx.canvas.nativeCanvas.drawText(
-//                stage,
-//                20f, // Y축 레이블은 왼쪽에 고정
-//                y,
-//                android.graphics.Paint().apply {
-//                    color = android.graphics.Color.DKGRAY
-//                    this.textSize = textSize
-//                    textAlign = android.graphics.Paint.Align.CENTER
-//                }
-//            )
-//        }
-//    }
 }

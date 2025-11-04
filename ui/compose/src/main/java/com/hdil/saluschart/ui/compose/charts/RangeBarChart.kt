@@ -42,7 +42,7 @@ import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.toRangeChartMarks
 import com.hdil.saluschart.ui.theme.ChartColor
 
-// SJ_COMMENT: unused?
+// TODO: unused?
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Float.roundUpToStep(step: Float): Float =
@@ -57,23 +57,23 @@ fun RangeBarChart(
     yLabel: String = "Value",
     title: String = "Range Bar Chart",
     barColor: Color = ChartColor.Default,
-    barWidthRatio: Float = 0.6f,
+    barWidthRatio: Float = 0.6f, // Ratio of bar width to space width (바 너비 / 한 칸 너비)
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
     onBarClick: ((Int, RangeChartMark) -> Unit)? = null,
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
-    xLabelAutoSkip: Boolean = true,
-    maxXTicksLimit: Int? = null,
-    yTickStep: Double? = null,
+    xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
+    maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
+    yTickStep: Double? = null, // y-axis grid tick step (automatically calculated if null)
     unit: String = "",
     // Scroll/Page
-    windowSize: Int? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
-    pageSize: Int? = null,
+    windowSize: Int? = null, // visible items in scroll window
+    contentPadding: PaddingValues = PaddingValues(16.dp), // Free-scroll paddings
+    pageSize: Int? = null, // items per page
     unifyYAxisAcrossPages: Boolean = true,
-    initialPageIndex: Int? = null,
-    yAxisFixedWidth: Dp = 0.dp,
+    initialPageIndex: Int? = null, // initial page to show (last page if null)
+    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
 ) {
     if (data.isEmpty()) return
 
@@ -105,10 +105,10 @@ fun RangeBarChart(
         }
     }
 
-    // compute effective page size (0 = off)
+    // Compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
 
-    // enable paging if pageSize is provided and data exceeds page size
+    // Enable paging if pageSize is provided and data exceeds page size
     val enablePaging = requestedPageSize > 0 && rangeData.size > requestedPageSize
 
     if (enablePaging) {
@@ -151,6 +151,7 @@ fun RangeBarChart(
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
 
+            // Calculate canvas width for scrolling mode
             val canvasWidth = if (useScrolling) {
                 val chartWidth = availableWidth - (marginHorizontal * 2)
                 val sectionsCount = (rangeData.size.toFloat() / windowSize!!.toFloat()).toInt()
@@ -163,7 +164,7 @@ fun RangeBarChart(
             var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
             Row(Modifier.fillMaxSize()) {
-                // LEFT fixed axis pane
+                // Left fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
@@ -181,8 +182,7 @@ fun RangeBarChart(
                     }
                 }
 
-                // Chart area
-                // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
                 val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
                 val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
@@ -243,6 +243,7 @@ fun RangeBarChart(
 
                     when (interactionType) {
                         InteractionType.RangeBar.TOUCH_AREA -> {
+                            // Draw visual bars
                             chartMetrics?.let { m ->
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
@@ -256,6 +257,7 @@ fun RangeBarChart(
                                     showTooltipForIndex = selectedIndex,
                                     unit = unit
                                 )
+                                // Draw interactive touch area
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
                                     minValues = List(rangeData.size) { m.minY },
@@ -272,6 +274,7 @@ fun RangeBarChart(
                             }
                         }
                         InteractionType.RangeBar.BAR -> {
+                            // Draw interactive bars
                             chartMetrics?.let { m ->
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
@@ -292,7 +295,7 @@ fun RangeBarChart(
                     }
                 }
 
-                // RIGHT fixed axis pane
+                // Right fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
@@ -315,6 +318,7 @@ fun RangeBarChart(
     }
 }
 
+// Function for fixed external Y-axis in paged range bar chart
 @Composable
 private fun FixedPagerYAxisRange(
     minY: Double,
@@ -337,6 +341,7 @@ private fun FixedPagerYAxisRange(
             includeYAxisPadding = false,
             fixedTickStep = step
         )
+        // Call standalone y-axis drawing function
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
             metrics = m,
@@ -346,7 +351,8 @@ private fun FixedPagerYAxisRange(
     }
 }
 
-// SJ_COMMENT: unifyYAxisAcrossPages 의미?
+// TODO: unifyYAxisAcrossPages 의미?
+// Function for paged range bar chart
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RangeBarChartPagedInternal(
@@ -391,6 +397,7 @@ private fun RangeBarChartPagedInternal(
         )
     }
 
+    // Compute min/max rounded values and effective tick step
     val minRounded = yAxisRange.minY
     val maxRounded = yAxisRange.maxY
     val effectiveTickStep = yAxisRange.tickStep
@@ -402,7 +409,7 @@ private fun RangeBarChartPagedInternal(
         }
 
         Row(Modifier.fillMaxWidth()) {
-            // LEFT fixed external Y-axis
+            // Left fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 FixedPagerYAxisRange(
                     minY = minRounded,
@@ -413,6 +420,7 @@ private fun RangeBarChartPagedInternal(
                 )
             }
 
+            // Pager
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f).fillMaxHeight()
@@ -457,7 +465,7 @@ private fun RangeBarChartPagedInternal(
                 )
             }
 
-            // RIGHT fixed external Y-axis
+            // Right fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                 FixedPagerYAxisRange(
                     minY = minRounded,

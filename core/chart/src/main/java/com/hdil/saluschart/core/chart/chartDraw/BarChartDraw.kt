@@ -103,6 +103,8 @@ object BarChartDraw {
      * @param isTouchArea true이면 터치 영역용 (투명, 전체 높이, 상호작용 가능), false이면 일반 바 (기본값: false)
      * @param customTooltipText 커스텀 툴팁 텍스트 목록 (null이면 기본 툴팁 사용)
      * @param segmentIndex 스택 바 차트에서 세그먼트 인덱스 (툴팁 위치 조정용, null이면 기본 위치)
+     * @param showLabel 레이블 표시 여부 (기본값: false)
+     * @param unit 단위 (기본값: "")
      */
     @Composable
     fun BarMarker(
@@ -169,7 +171,8 @@ object BarChartDraw {
 
             // 바 X 위치 계산 - 차트 타입에 따라 다른 포지셔닝 로직 사용
             val (barWidth, barX) = if (useLineChartPositioning) {
-                // 라인차트 포지셔닝: 포인트 중심에 바 배치
+                // 라인차트에 사용되는 포지셔닝: 포인트 중심에 바 배치
+                // 주로 터치 영역일 때 사용
                 val pointSpacing = if (dataSize > 1) metrics.chartWidth / (dataSize - 1) else 0f
                 val pointX = metrics.paddingX + index * pointSpacing
 
@@ -182,7 +185,7 @@ object BarChartDraw {
                     metrics.chartWidth * actualBarWidthRatio
                 }
 
-                // 첫 번째 바는 오른쪽으로만 확장, 마지막 바는 왼쪽으로만 확장
+                // 첫 번째 바는 오른쪽으로만 확장, 마지막 바는 왼쪽으로만 확장 (차트 영역 벗어나지 않도록)
                 val barXPos = when {
                     index == 0 && dataSize > 1 -> pointX // 첫 번째 바: 포인트에서 시작
                     index == dataSize - 1 && dataSize > 1 -> pointX - barW // 마지막 바: 포인트에서 끝

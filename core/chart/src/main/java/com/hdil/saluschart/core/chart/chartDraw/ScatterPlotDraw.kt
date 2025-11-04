@@ -30,11 +30,20 @@ import kotlin.math.sin
 
 object ScatterPlotDraw {
 
+    // TODO: 현재 line chart 및 scatter plot 첫 번째 데이터포인트가 왼쪽 가장 끝에서 시작 (첫 번째 포인트가 y축과 맞닿음)
+    // - 이에 첫 번째 PointMarker가 y축과 겹치는 현상 발생 (ExampleUI의 ScatterPlot 예시 참고)
+    // - 따라서 BarMarker 함수와 유사한 포지셔닝 로직 필요할 수 있음
+    // - BarMarker의 포지셔닝 로직 (useLIneChartPositioning = false) 참고 
+
+    // - 현재 BarMarker 함수는 BarMarker 내에서 각 바의 좌표를 계산하지만, 
+    // - PointMarker 함수는 외부에서 좌표를 계산한 후 (mapLineToCanvasPoints 또는 mapScatterToCanvasPoints 함수) points 파라미터로 전달받고 있음
+    // - 일관성이 부족한 디자인
+    
     /**
      * 각 데이터 포인트를 원으로 표시합니다.
      * BarMarker 방식으로 최적화: 중첩 Box 최소화, 변수 사전 계산
      *
-     * @param points 포인트 중심 좌표 목록
+     * @param points 포인트 중심 좌표 목록 (외부에서 이미 계산된 좌표 리스트를 불러 옴)
      * @param values 표시할 값 목록
      * @param pointRadius 포인트 외부 반지름
      * @param innerRadius 포인트 내부 반지름

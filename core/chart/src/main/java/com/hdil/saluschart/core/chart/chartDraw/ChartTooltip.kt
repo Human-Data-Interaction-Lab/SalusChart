@@ -93,6 +93,7 @@ fun ChartTooltip(
                     )
                 }
             } else {
+                // Custom text for RangeChartMark and StackedChartMark
                 when (ChartMark) {
                     is com.hdil.saluschart.core.chart.RangeChartMark -> {
                         Row(
@@ -108,7 +109,7 @@ fun ChartTooltip(
                                     )
                             )
                             Text(
-                                text = "${ChartMark.minPoint.y.roundToInt()}$unit ~ ${ChartMark.maxPoint.y.roundToInt()}$unit",
+                                text = "${ChartMark.minPoint.y.roundToInt()}$unit ~ ${ChartMark.maxPoint.y.roundToInt()}$unit", // Custom text format: '100 kg ~ 120 kg'
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = textColor.copy(alpha = 0.9f),
@@ -145,7 +146,7 @@ fun ChartTooltip(
                             }
                         }
                     }
-
+                    // Default text
                     else -> {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),

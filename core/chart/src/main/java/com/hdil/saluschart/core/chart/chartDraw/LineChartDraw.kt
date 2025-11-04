@@ -33,7 +33,10 @@ object LineChartDraw {
         }
         drawScope.drawPath(path, color = color, style = Stroke(width = strokeWidth))
     }
-
+    
+    // TODO: 현재 line chart 및 scatter plot 레이블이 왼쪽 가장 끝에서 시작 (첫 번째 레이블이 y축과 맞닿음)
+    // - 이에 첫 번째 PointMarker가 y축과 겹치는 현상 발생 (ScatterPlot 예시 참고)
+    // - 따라서 drawBarXAxisLabels 함수 참고하여 첫 번째 레이블과 데이터포인트를 왼쪽 끝에서 반 칸 띄어서 그리는 작업 필요할 수도 있음
     /**
      * X축 레이블을 그립니다 (라인차트용 - 첫 번째 레이블이 왼쪽 끝에서 시작).
      *

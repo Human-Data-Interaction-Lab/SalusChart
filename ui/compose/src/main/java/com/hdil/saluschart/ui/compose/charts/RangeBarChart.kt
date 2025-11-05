@@ -52,7 +52,7 @@ private fun Float.roundUpToStep(step: Float): Float =
 @Composable
 fun RangeBarChart(
     modifier: Modifier = Modifier,
-    data: List<BaseChartMark>,
+    data: List<BaseChartMark>, // Use BaseChartMark to support both ChartMark and RangeChartMark
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Range Bar Chart",
@@ -84,6 +84,9 @@ fun RangeBarChart(
 
     val chartType = ChartType.RANGE_BAR
 
+    // TODO: RangeChartMark 직접 input하는 경우는 TemporalDataSetToChartMark.kt 파일의 toRangeChartMarks 함수 사용할 때 한정
+    // - Range bar chart 이외 모든 함수는 ChartMark만 input으로 함 (따라서 RangeChartMark input은 일관성 부족)
+
     // Convert data to RangeChartMark if needed
     val rangeData = remember(data) {
         when {
@@ -93,6 +96,10 @@ fun RangeBarChart(
             }
             data.all { it is ChartMark } -> {
                 // Data is ChartMark, convert using toRangeChartMarks
+                // TODO: 이 함수는 ChartMarkExtensions.kt 파일에 있는 toRangeChartMarks 함수임 (ChartMark list -> RangeChartMark list)
+                // - 위에서 설명한 TemporalDataSetToChartMark.kt 파일의 toRangeChartMarks 함수와 이름이 같고 기능이 다름 (MIN_MAX 집계된 TemporalDataSet -> RangeChartMark list)
+                // - BloodGlucose 범위 차트 등 제작할 때 MIN_MAX transformation 위해서 추가한 함수이므로, 일반 ChartMark list -> RangeChartMark list 변환 시에는 사용하지 않음
+                // - 둘 중 하나의 방법만 사용하길 권장
                 (data as List<ChartMark>).toRangeChartMarks(
                     minValueSelector = { g -> g.minByOrNull { it.y } ?: g.first() },
                     maxValueSelector = { g -> g.maxByOrNull { it.y } ?: g.first() }

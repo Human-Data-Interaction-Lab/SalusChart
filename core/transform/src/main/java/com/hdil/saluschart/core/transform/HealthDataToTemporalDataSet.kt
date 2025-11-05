@@ -6,8 +6,17 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// Activity Data (StepCount, Exercise, Diet, SleepSession, HeartRate)
+// - Each activity data has start time and end time
+// - Therefore, it needs to be aggregated by time unit (minute)
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
 /**
  * HealthData 리스트를 TemporalDataSet로 변환하는 확장 함수들
+ * "HealthData → TemporalDataSet" → Transform → ChartMark
+ * 
+ * HealthData type 각각의 구조적인 특성을 반영하여 적절한 집계 및 변환을 수행
  */
 
 /**
@@ -52,7 +61,8 @@ fun List<Exercise>.toExerciseTemporalDataSet(): TemporalDataSet {
 
 /**
  * Diet 리스트를 다중 값 TemporalDataSet로 변환
- * 시간 간격 데이터를 분별로 집계하여 단일 시점 데이터로 변환
+ * 시간 간격 데이터를 분별로 집계하여 시점별 다중 속성 데이터로 변환
+ * (각 시점마다 calories, protein, carbohydrate, fat 값을 포함)
  */
 fun List<Diet>.toDietTemporalDataSet(): TemporalDataSet {
     val aggregatedData = aggregateActivityDataTime(
@@ -88,8 +98,8 @@ fun List<Diet>.toDietTemporalDataSet(): TemporalDataSet {
 /**
  * HeartRate 리스트를 TemporalDataSet로 변환
  * 
- * 모든 HeartRateSample을 추출하여 각 샘플을 독립적인 데이터 포인트로 변환합니다.
- * HeartRate의 startTime/endTime는 무시되며, 각 샘플의 time만 사용됩니다.
+ * 모든 HeartRateSample을 추출하여 각 샘플을 독립적인 데이터 포인트로 변환
+ * HeartRate의 startTime/endTime는 무시되며, 각 샘플의 time만 사용
  * 
  */
 fun List<HeartRate>.toHeartRateTemporalDataSet(): TemporalDataSet {
@@ -122,6 +132,7 @@ fun List<HeartRate>.toHeartRateTemporalDataSet(): TemporalDataSet {
  * 수면 세션의 총 시간(시간 단위)을 해당 수면 기간에 걸쳐 분별로 분산
  * 
  * 참고: 수면 단계(sleep stages) 정보는 현재 TemporalDataSet에서 보존되지 않습니다.
+ * 이는 SleepStageChart 제작 시 TemporalDataSet 정보가 불필요하기 때문입니다.
  * 향후 수면 단계 차트 구현 시 별도의 변환 함수가 필요할 수 있습니다.
  */
 fun List<SleepSession>.toSleepSessionTemporalDataSet(): TemporalDataSet {
@@ -144,55 +155,16 @@ fun List<SleepSession>.toSleepSessionTemporalDataSet(): TemporalDataSet {
     )
 }
 
-///**
-// * SleepSession 리스트를 수면 단계별 다중 값 TemporalDataSet로 변환
-// * 각 수면 단계별 시간(시간 단위)을 해당 수면 기간에 걸쳐 분별로 분산
-// *
-// * 이 함수는 향후 수면 단계 차트 구현을 위해 준비된 함수입니다.
-// * 현재는 기본 차트 컴포넌트에서 사용 가능하지만, 전용 수면 단계 차트에서 더 효과적으로 활용될 예정입니다.
-// */
-//fun List<SleepSession>.toSleepStageTemporalDataSet(): TemporalDataSet {
-//    val aggregatedData = aggregateActivityDataTime(
-//        activities = this,
-//        getStartTime = { it.startTime },
-//        getEndTime = { it.endTime },
-//        extractValues = { sleepSession ->
-//            // 각 수면 단계별 총 시간 계산 (시간 단위)
-//            val stageHours = mutableMapOf<String, Float>()
-//
-//            sleepSession.stages.forEach { stage ->
-//                val stageDuration = Duration.between(stage.startTime, stage.endTime).toMinutes() / 60.0f
-//                val stageKey = stage.stage.name.lowercase()
-//                stageHours[stageKey] = stageHours.getOrDefault(stageKey, 0f) + stageDuration
-//            }
-//
-//            // 모든 가능한 수면 단계에 대해 0으로 초기화 후 실제 값 설정
-//            val allStages = listOf("deep", "light", "rem", "awake", "awake_in_bed", "out_of_bed", "sleeping", "unknown")
-//            allStages.associateWith { stage ->
-//                stageHours.getOrDefault(stage, 0f)
-//            }
-//        }
-//    )
-//
-//    val sortedTimes = aggregatedData.keys.sorted()
-//    val allStageNames = listOf("deep", "light", "rem", "awake", "awake_in_bed", "out_of_bed", "sleeping", "unknown")
-//
-//    val yMultiple = allStageNames.associateWith { stageName ->
-//        sortedTimes.map { time ->
-//            aggregatedData[time]?.get(stageName) ?: 0f
-//        }
-//    }
-//
-//    return TemporalDataSet(
-//        x = sortedTimes,
-//        yMultiple = yMultiple,
-//        timeUnit = TimeUnitGroup.MINUTE
-//    )
-//}
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// Body Measurement Data (BloodPressure, BloodGlucose, Weight, BodyFat, SkeletalMuscleMass)
+// - Each body measurement data has only one value at a specific timepoint
+// - Therefore, it can be directly converted to a single value TemporalDataSet
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 /**
  * BloodPressure 리스트를 다중 값 TemporalDataSet로 변환
- * 단일 시점 데이터
+ * 다중 속성 데이터
+ * (각 시점마다 systolic, diastolic 값을 포함)
  */
 fun List<BloodPressure>.toBloodPressureTemporalDataSet(): TemporalDataSet {
     val times = this.map { it.time }
@@ -286,32 +258,10 @@ fun List<BodyFat>.toTemporalDataSet(): TemporalDataSet = this.toBodyFatTemporalD
 @JvmName("skeletalMuscleMassToTemporalDataSet")
 fun List<SkeletalMuscleMass>.toTemporalDataSet(): TemporalDataSet = this.toSkeletalMuscleMassTemporalDataSet()
 
-
+// TODO: Util 파일 따로 제작한다면, 이 함수도 이동해야 할 듯
 /**
- * 혼합 HealthData 리스트를 TemporalDataSet로 변환 (첫 번째 일치하는 타입 사용)
- * 단일 데이터 타입만 포함된 리스트에 권장됨
- *
- * @return TemporalDataSet 또는 지원되지 않는 타입인 경우 null
- */
-// SJ_COMMENT: unused. 의미?
-fun List<HealthData>.toTemporalDataSet(): TemporalDataSet? {
-    return when {
-        this.any { it is StepCount } -> this.filterIsInstance<StepCount>().toStepCountTemporalDataSet()
-        this.any { it is Exercise } -> this.filterIsInstance<Exercise>().toExerciseTemporalDataSet()
-        this.any { it is Diet } -> this.filterIsInstance<Diet>().toDietTemporalDataSet()
-        this.any { it is HeartRate } -> this.filterIsInstance<HeartRate>().toHeartRateTemporalDataSet()
-        this.any { it is SleepSession } -> this.filterIsInstance<SleepSession>().toSleepSessionTemporalDataSet()
-        this.any { it is BloodPressure } -> this.filterIsInstance<BloodPressure>().toBloodPressureTemporalDataSet()
-        this.any { it is BloodGlucose } -> this.filterIsInstance<BloodGlucose>().toBloodGlucoseTemporalDataSet()
-        this.any { it is Weight } -> this.filterIsInstance<Weight>().toWeightTemporalDataSet()
-        this.any { it is BodyFat } -> this.filterIsInstance<BodyFat>().toBodyFatTemporalDataSet()
-        this.any { it is SkeletalMuscleMass } -> this.filterIsInstance<SkeletalMuscleMass>().toSkeletalMuscleMassTemporalDataSet()
-        else -> null
-    }
-}
-
-/**
- * 시간 간격 기반 활동 데이터를 분별로 집계
+ * 시간 간격 기반 활동(Activity) 데이터를 분별로 집계
+ * 활동 데이터는 시작 시간과 종료 시간을 가지고 있으므로, 이를 분 단위로 집계해서 시간-값 쌍 맵으로 변환
  * 
  * @param T 활동 데이터 타입
  * @param activities 집계할 활동 데이터 리스트

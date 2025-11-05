@@ -234,7 +234,7 @@ fun PieChart(
                                 detectTapGestures { offset ->
                                     val (center, radius) = ChartMath.Pie.computePieMetrics(androidx.compose.ui.geometry.Size(size.width.toFloat(), size.height.toFloat()))
                                     val sections = ChartMath.Pie.computePieAngles(data)
-
+                                    // 파이 차트 클릭 시 클릭된 섹션의 인덱스를 반환
                                     val clickedIndex = ChartMath.Pie.getClickedSectionIndex(
                                         offset, center, radius, sections
                                     )

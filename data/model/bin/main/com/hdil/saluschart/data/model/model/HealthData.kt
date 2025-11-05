@@ -2,6 +2,10 @@ package com.hdil.saluschart.data.model.model
 
 sealed class HealthData
 
+/**
+ * 무게 단위 변환을 위한 클래스입니다.
+ * 각 단위는 그램을 기준으로 변환됩니다.
+ */
 data class Mass private constructor(
     val inGrams: Double
 ) {

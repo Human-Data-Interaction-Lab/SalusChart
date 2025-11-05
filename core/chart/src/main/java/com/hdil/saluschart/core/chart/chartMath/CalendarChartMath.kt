@@ -38,6 +38,16 @@ object CalendarChartMath {
         return minSize + (maxSize - minSize) * normalizedValue
     }
 
+    /**
+     * 값에 따른 원의 색상을 계산합니다.
+     *
+     * @param color 기본 색상
+     * @param value 현재 값
+     * @param maxValue 가능한 최대값
+     * @param minSize 최소 원 크기
+     * @param maxSize 최대 원 크기
+     * @return 계산된 원의 색상
+     */
     fun calculateBubbleColor(color: Color, value: Float, maxValue: Float, minSize: Float, maxSize: Float): Color {
         if (maxValue <= 0f) return color
         val normalizedValue = (value / maxValue).coerceIn(0f, 1f)

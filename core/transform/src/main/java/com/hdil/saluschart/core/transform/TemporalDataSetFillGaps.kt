@@ -8,6 +8,13 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 
+// TODO: 누락된 시간 포인트에 0 값을 대입하면, min/max 계산 시 문제가 생길 여지 존재 
+// - (min value가 따로 존재하는데도 최대/최소 계산 범위 내 누락된 시간 포인트로 인해 항상 0으로 처리되는 문제)
+// - 이 문제가 실제로 생기는지 확인 필요 
+
+// TODO: transform 모듈 내에서 로직 겹치는 함수 존재, Utils 파일로 빼야할 듯
+// - ex. normalizeToTimeUnitDateTime, incrementByTimeUnit
+
 /**
  * TemporalDataSet의 시간 간격을 채우는 확장 함수들
  * 
@@ -22,7 +29,7 @@ import java.time.temporal.TemporalAdjusters
  * 누락된 시간 포인트는 0 값으로 채웁니다.
  * 
  * 사용 예시:
- * ```kotlin
+ * ```
  * val exerciseData = exercises.toTemporalDataSet()
  *     .transform(timeUnit = TimeUnitGroup.DAY)
  *     .fillTemporalGaps()  // 누락된 날짜를 0으로 채움
@@ -107,6 +114,7 @@ private fun generateCompleteTimePoints(
 /**
  * 시간 단위에 따라 LocalDateTime을 정규화
  */
+ // TODO: DataTransformer의 groupBy'TimeUnit' 함수와 유사한 로직 존재 
 private fun normalizeToTimeUnitDateTime(dateTime: LocalDateTime, timeUnit: TimeUnitGroup): LocalDateTime {
     return when (timeUnit) {
         TimeUnitGroup.MINUTE -> dateTime.truncatedTo(ChronoUnit.MINUTES)
@@ -134,6 +142,7 @@ private fun normalizeTimePoint(instant: Instant, timeUnit: TimeUnitGroup): Insta
 /**
  * 시간 단위에 따라 LocalDateTime 증가
  */
+ // TODO: DataTransformer의 간격 끝 시간 계산 로직이 TemporalDataSetFillGaps와 중복됨
 private fun incrementByTimeUnit(dateTime: LocalDateTime, timeUnit: TimeUnitGroup): LocalDateTime {
     return when (timeUnit) {
         TimeUnitGroup.MINUTE -> dateTime.plusMinutes(1)

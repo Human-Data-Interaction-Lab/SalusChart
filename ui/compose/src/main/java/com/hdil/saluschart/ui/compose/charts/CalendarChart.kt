@@ -128,7 +128,7 @@ fun SingleMonthCalendarChart(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
-                        // ✅ Any tap dismisses current tooltip
+                        // Any tap dismisses current tooltip
                         tooltipPoint = null
                         tooltipAnchor = null
                     }
@@ -361,6 +361,9 @@ private fun CalendarCellComposable(
     }
 }
 
+/**
+ * 여러 월을 표시하는 캘린더 차트
+ */
 @Composable
 fun PagedCalendarChart(
     modifier: Modifier = Modifier,

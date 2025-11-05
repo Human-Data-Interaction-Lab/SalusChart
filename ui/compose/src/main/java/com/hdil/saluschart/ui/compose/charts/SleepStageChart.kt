@@ -37,14 +37,14 @@ fun SleepStageChart(
     showLabels: Boolean = true,
     showXAxis: Boolean = false,
     onStageClick: ((Int, String) -> Unit)? = null,
-    barHeightRatio: Float = 0.5f,
+    barHeightRatio: Float = 0.5f, // Ratio of bar height to chart height
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
-    contentPadding: PaddingValues = PaddingValues(24.dp),
+    contentPadding: PaddingValues = PaddingValues(24.dp), // Padding between the chart and the content box
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
-    showStartEndLabels: Boolean = true,
-    xLabelAutoSkip: Boolean = true,
-    yAxisFixedWidth: Dp = 0.dp
+    showStartEndLabels: Boolean = true, // Whether to show sleep start time & sleep end time labels
+    xLabelAutoSkip: Boolean = true, // Whether to automatically skip x-axis labels if they overlap
+    yAxisFixedWidth: Dp = 0.dp // Padding between the chart and the y-axis
 ) {
     if (sleepSession.stages.isEmpty()) return
 
@@ -58,7 +58,7 @@ fun SleepStageChart(
         }
 
         Row(Modifier.fillMaxSize()) {
-            // LEFT Y-axis pane (always shown if showYAxis=true)
+            // Left Y-axis pane (always shown if showYAxis=true)
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 Canvas(
                     modifier = Modifier
@@ -91,7 +91,7 @@ fun SleepStageChart(
                         ChartDraw.drawXAxis(this, metrics)
                     }
 
-                    // Draw X-axis labels (start and end time of SleepSession)
+                    // Draw X-axis labels (start & end time of SleepSession)
                     ChartDraw.SleepStage.drawSleepStageXAxisLabels(
                         ctx = drawContext,
                         metrics = metrics,
@@ -114,7 +114,7 @@ fun SleepStageChart(
 
                 // Draw horizontal bars for all sleep stages
                 chartMetrics?.let { metrics ->
-                    // Convert SleepStages to RangeChartMarks using sleep stage specific transformation
+                    // Convert SleepStages inside SleepSession to RangeChartMarks using sleep stage specific transformation
                     val rangeData = sleepSession.stages.toSleepStageRangeChartMarks()
                     
                     // Draw all horizontal bars with automatic color assignment
@@ -137,7 +137,7 @@ fun SleepStageChart(
                 }
             }
 
-            // RIGHT Y-axis pane (always shown if showYAxis=true)
+            // Right Y-axis pane (always shown if showYAxis=true)
             if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                 Canvas(
                     modifier = Modifier

@@ -12,7 +12,7 @@ import com.hdil.saluschart.core.chart.ChartMark
 import kotlin.math.sqrt
 
 object LineChartMath {
-
+    // TODO: 이거 필요한지? (과거에 핋요 없다고 판단되어서 삭제했었음, 누가 다시 만들었지)
     /**
      * Compute non-overlapping label anchors (in canvas px) for a polyline.
      *
@@ -22,6 +22,10 @@ object LineChartMath {
      * @param textPx   font size in px (e.g., 12.sp.toPx())
      * @param padPx    padding around label rects in px
      * @param minGapToLinePx minimum distance to the line (vertically) in px
+     * @param passes number of passes for collision resolution
+     * @param strokeWidthPx stroke width in px
+     * @param edgeMarginPx edge margin in px
+     * @return List of label anchors in canvas px
      */
     fun computeLabelAnchors(
         points: List<Offset>,

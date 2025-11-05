@@ -11,6 +11,7 @@ import java.time.DayOfWeek
 
 /**
  * TemporalDataSet를 ChartMark 리스트로 변환하는 확장 함수
+ * HealthData → TemporalDataSet → "Transformed TemporalDataSet → ChartMark"
  * 단일 값 데이터용
  *
  * @param fillGaps true인 경우 시간 범위 내 누락된 시간 포인트를 0으로 채움 (기본값: true)
@@ -129,7 +130,7 @@ fun TemporalDataSet.toRangeChartMarks(fillGaps: Boolean = true): List<RangeChart
     val minValues = dataToConvert.getValues("min")!!
     val maxValues = dataToConvert.getValues("max")!!
     val labels = dataToConvert.generateTimeLabels()
-    
+    // Create RangeChartMark list from min and max values
     return dataToConvert.x.indices.map { index ->
         RangeChartMark(
             x = index.toDouble(),
@@ -150,6 +151,15 @@ fun TemporalDataSet.toRangeChartMarks(fillGaps: Boolean = true): List<RangeChart
 
 /**
  * 시간 단위에 따른 레이블 생성 (공통 로직)
+ * @return 레이블 리스트
+ * 
+ * 레이블 형식 예시: 
+ * TimeUnitGroup.MINUTE: "14:00", 
+ * TimeUnitGroup.HOUR: "14시", 
+ * TimeUnitGroup.DAY: "5/8 월", 
+ * TimeUnitGroup.WEEK: "5월 1주차", 
+ * TimeUnitGroup.MONTH: "2025년 5월", 
+ * TimeUnitGroup.YEAR: "2025년"
  */
 fun TemporalDataSet.generateTimeLabels(): List<String> {
     return when (timeUnit) {

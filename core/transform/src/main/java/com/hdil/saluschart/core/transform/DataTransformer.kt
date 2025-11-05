@@ -9,7 +9,8 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 
 /**
- * 시간 기반 데이터 변환 엔진
+ * Time-based data transformation engine.
+ * Deals with aggregating time-based data using different aggregation types and time units.
  */
 class DataTransformer {
 
@@ -27,13 +28,15 @@ class DataTransformer {
      * - MIN_MAX: 최소값과 최대값 (예: 일일 심박수 범위)
      *   단일 값 데이터를 다중 값 데이터(min, max)로 변환
      */
+     // TODO: MIN_MAX transformation이 굳이 필요할 지 재확인 
+     // - 최대/최소 나타내야 하는 HealthData 타입 (BloodGlucose, BloodPressure 등)을 위해 넣었으나, RangeChartMark 사용 시 필요 없음
     fun transform(
         data: TemporalDataSet,
         transformTimeUnit: TimeUnitGroup,
         aggregationType: AggregationType = AggregationType.SUM
     ): TemporalDataSet {
 
-        // 평균 계산 시 유효성 검증
+        // Daily average 시 유효성 검증
         if (aggregationType == AggregationType.DAILY_AVERAGE) {
             // 원본 시간 단위가 변환 시간 단위보다 작거나 같아야 함
             require(TimeUnitGroup.DAY.isSmallerThanOrEqual(transformTimeUnit)) {
@@ -41,7 +44,7 @@ class DataTransformer {
             }
         }
         
-        // 지속 시간 합계 계산 시 유효성 검증
+        // Duration sum 계산 시 유효성 검증
         if (aggregationType == AggregationType.DURATION_SUM) {
             // 원본 데이터가 분 단위여야 함 (aggregateActivityDataTime으로 생성된 데이터)
             require(data.timeUnit == TimeUnitGroup.MINUTE) {
@@ -69,6 +72,10 @@ class DataTransformer {
 
     /**
      * 시간 단위별 그룹핑
+     * @param data 
+     * @param targetTimeUnit 변환할 시간 단위
+     * @param aggregationType 집계 방법
+     * @return 그룹핑된 TemporalDataSet
      */
     private fun groupByTimeUnit(
         data: TemporalDataSet,
@@ -116,6 +123,7 @@ class DataTransformer {
             }
         } else {
             // 다중 값 처리
+            // 다중 값은 Diet HealthData (다수의 영양소 종류), BloodPressure HealthData (수축기, 이완기) 을 위해 사용됨
             val aggregatedMultipleData = mutableMapOf<String, List<Pair<LocalDateTime, Double>>>()
             
             // 각 속성별로 집계 수행
@@ -145,6 +153,10 @@ class DataTransformer {
 
     /**
      * 시간-값 쌍에 대한 집계 처리 (공통 로직)
+     * @param timeValuePairs 시간-값 쌍 리스트
+     * @param targetTimeUnit 변환할 시간 단위
+     * @param aggregationType 집계 방법
+     * @return 그룹핑된 시간-값 쌍 리스트
      */
     private fun processAggregation(
         timeValuePairs: List<Pair<LocalDateTime, Double>>,
@@ -186,14 +198,17 @@ class DataTransformer {
                 }.sortedBy { it.first }
             }
             AggregationType.MIN_MAX -> {
-                throw IllegalArgumentException("MIN_MAX 집계는 단일 값 TemporalDataSet에서만 사용 가능합니다.")
+                throw IllegalArgumentException("MIN_MAX 집계는 단일 값 TemporalDataSet에서만 사용 가능합니다.") // Unreachable code
             }
         }
     }
     
     /**
-     * MIN_MAX 집계 처리
+     * MIN_MAX 집계 전용 처리
      * 각 시간 단위별로 최소값과 최대값을 계산
+     * @param timeValuePairs 시간-값 쌍 리스트
+     * @param targetTimeUnit 변환할 시간 단위
+     * @return 그룹핑된 시간-값 쌍 리스트
      */
     private fun processMinMaxAggregation(
         timeValuePairs: List<Pair<LocalDateTime, Double>>,
@@ -262,8 +277,11 @@ class DataTransformer {
         }.mapValues { (_, pairs) -> pairs.map { it.second } }
     }
     /**
-     * 간격 기반 평균 계산
+     * DAILY_AVERAGE 집계 시 간격 기반 평균 계산
      * DAILY_AVERAGE의 경우 targetTimeUnit 윈도우 내에서 일별 평균을 계산
+     * @param timeValuePairs 시간-값 쌍 리스트
+     * @param targetTimeUnit 변환할 시간 단위
+     * @return 그룹핑된 시간-값 쌍 리스트
      * 
      * 알고리즘:
      * 1. 일별로 데이터를 집계 (normalization to daily bins)
@@ -288,7 +306,7 @@ class DataTransformer {
             return dailyAggregatedData
         }
 
-        // Step 2: targetTimeUnit 윈도우 생성
+        // Step 2: 전체 시간을 targetTimeUnit 단위로 일정한 간격으로 나누어 윈도우 생성
         val minTime = dailyAggregatedData.first().first
         val maxTime = dailyAggregatedData.last().first
         val targetIntervals = generateCompleteIntervals(minTime, maxTime, targetTimeUnit)
@@ -317,6 +335,10 @@ class DataTransformer {
     
     /**
      * 시간 범위에 대해 완전한 간격 생성
+     * @param minTime 시작 시간
+     * @param maxTime 종료 시간
+     * @param targetTimeUnit 변환할 시간 단위
+     * @return 완전한 간격 리스트
      */
     private fun generateCompleteIntervals(
         minTime: LocalDateTime,
@@ -362,6 +384,7 @@ class DataTransformer {
     /**
      * 간격의 끝 시간 계산
      */
+     // TODO: DataTransformer의 간격 끝 시간 계산 로직이 TemporalDataSetFillGaps와 중복됨
     private fun getIntervalEnd(intervalStart: LocalDateTime, targetTimeUnit: TimeUnitGroup): LocalDateTime {
         return when (targetTimeUnit) {
             TimeUnitGroup.MINUTE -> intervalStart.plusMinutes(1)

@@ -12,11 +12,9 @@ import com.hdil.saluschart.data.model.model.*
  * 
  * 이 파일은 HealthData를 ChartMark로 직접 변환하는 편의 메서드들을 포함합니다.
  * 내부적으로 HealthData → TemporalDataSet → Transform → ChartMark 과정을 거칩니다.
+ * 초보자용 모드에서 간편한 차트 제작을 위해 사용됩니다. 
  */
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Internal Helper Functions (TemporalDataSet 변환)
-// ═══════════════════════════════════════════════════════════════════════════
+// TODO: 파일 이름이 모호함 (transform은 다른 파일에서도 발생하므로), TemporalDataSetConvenience 등으로 파일 이름 바꿔야 할듯
 
 /**
  * TemporalDataSet에 대한 확장 함수 - 시간 단위 변환
@@ -35,20 +33,9 @@ internal fun TemporalDataSet.transform(
     )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HealthData → ChartMark 편의 변환 함수들
-// ═══════════════════════════════════════════════════════════════════════════
-// 
-// 참고: 모든 변환 함수는 기본적으로 시간 간격을 자동으로 채웁니다 (fillGaps = true).
-// 이는 누락된 날짜/시간을 0 값으로 표시하여 연속적인 차트를 생성합니다.
-// 이 동작을 비활성화하려면 fillGaps = false를 명시적으로 전달하세요.
-//
-// 예: exerciseData.transform(timeUnit = TimeUnitGroup.DAY, fillGaps = false)
-// ═══════════════════════════════════════════════════════════════════════════
-
 /**
- * StepCount 리스트를 직접 ChartMark로 변환하는 편의 함수
- * 
+ * HealthData → ChartMark 편의 변환 함수들
+ *
  * 내부적으로 HealthData → TemporalDataSet → Transform → ChartMark 과정을 자동 처리합니다.
  * 기본적으로 누락된 시간 포인트를 0으로 채웁니다.
  * 
@@ -57,6 +44,10 @@ internal fun TemporalDataSet.transform(
  * @param fillGaps 누락된 시간 포인트를 0으로 채울지 여부 (기본값: true)
  * @return ChartMark 리스트
  */
+
+ /**
+  * StepCount 리스트를 ChartMark로 변환하는 편의 함수
+  */
 @JvmName("stepCountTransform")
 fun List<StepCount>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
@@ -70,7 +61,6 @@ fun List<StepCount>.transform(
 
 /**
  * Exercise 리스트를 직접 ChartMark로 변환하는 편의 함수
- * 기본적으로 누락된 시간 포인트를 0으로 채웁니다.
  */
 @JvmName("exerciseTransform")
 fun List<Exercise>.transform(
@@ -87,7 +77,6 @@ fun List<Exercise>.transform(
  * Diet 리스트를 직접 ChartMark로 변환하는 편의 함수
  * 모든 속성(calories, protein, carbohydrate, fat)을 라벨에 포함하여 반환합니다.
  */
-// SJ_COMMENT: unused?
 @JvmName("dietTransform")
 fun List<Diet>.transform(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,
@@ -110,10 +99,10 @@ fun List<Diet>.transform(
 
 /**
  * Diet 리스트에서 특정 속성을 선택하여 ChartMark로 변환하는 편의 함수
+ * 속성별로 분리된 ChartMark 리스트를 반환
  * 
  * @param property 추출할 속성 ("calories", "protein", "carbohydrate", "fat")
  */
-// SJ_COMMENT: unused?
 @JvmName("dietTransformByProperty")
 fun List<Diet>.transformByProperty(
     property: String,
@@ -144,10 +133,10 @@ fun List<BloodPressure>.transform(
 
 /**
  * BloodPressure 리스트에서 특정 속성을 선택하여 ChartMark로 변환하는 편의 함수
+ * 속성별로 분리된 ChartMark 리스트를 반환
  * 
  * @param property "systolic" 또는 "diastolic"
  */
-// SJ_COMMENT: unused?
 @JvmName("bloodPressureTransformByProperty")
 fun List<BloodPressure>.transformByProperty(
     property: String, // "systolic" or "diastolic"
@@ -159,6 +148,11 @@ fun List<BloodPressure>.transformByProperty(
         .transform(timeUnit, aggregationType)
         .toChartMarksByProperty(property, fillGaps)
 }
+
+// TODO: dietTransformByProperty, bloodPressureTransformByProperty 함수는 필요없을수도 있음 
+// - 속성별로 분리해서 transform이 필요할 때 사용, 아니면 삭제
+// - (diet에서 calories 프로퍼티만 추출해서 데이터를 다루고 싶다든가... 이런 경우에만 사용)
+
 
 /**
  * BloodGlucose 리스트를 직접 ChartMark로 변환하는 편의 함수
@@ -204,16 +198,17 @@ fun List<HeartRate>.transformToChartMark(
         .toChartMarks(fillGaps)
 }
 
-//TODO: 지우기
+// TODO: Range bar chart에서 MIN_MAX 집계를 통해 RangeChartMark를 input하지 않으려면 사용할 필요 없음
+// - RangeBarChart.kt 파일의 코멘트 참고
 /**
  * HeartRate 리스트를 RangeChartMark로 변환하는 편의 함수 (MIN_MAX 집계용)
  * RangeBarChart 등에 사용하세요.
+ * HeartRate HealthData -> TemporalDataSet -> Transform(AggregationType.MIN_MAX) -> RangeChartMark 
  * 
  * @param timeUnit 변환할 시간 단위 (기본값: DAY)
  * @param fillGaps 누락된 시간 포인트를 0으로 채울지 여부 (기본값: true)
  * @return RangeChartMark 리스트
  */
-// SJ_COMMENT: unused?
 @JvmName("heartRateTransformToRangeChartMark")
 fun List<HeartRate>.transformToRangeChartMark(
     timeUnit: TimeUnitGroup = TimeUnitGroup.DAY,

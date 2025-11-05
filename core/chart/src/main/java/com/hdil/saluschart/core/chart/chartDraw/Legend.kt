@@ -42,6 +42,7 @@ fun ChartLegend(
     textSize: TextUnit = 12.sp,
     spacing: Dp = 8.dp
 ) {
+    // labels가 null인 경우 기본 레이블 생성
     val legendLabels = labels ?: chartData?.mapIndexed { i, point ->
         point.label ?: "항목 ${i + 1}"
     } ?: emptyList()

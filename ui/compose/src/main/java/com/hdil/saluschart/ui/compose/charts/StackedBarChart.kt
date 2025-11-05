@@ -51,39 +51,38 @@ fun StackedBarChart(
         Color(0xFFE91E63),
         Color(0xFFFFEB3B),
     ),
-    barWidthRatio: Float = 0.6f,
+    barWidthRatio: Float = 0.6f, // Ratio of bar width to space width (바 너비 / 한 칸 너비)
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
-
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.StackedBar = InteractionType.StackedBar.TOUCH_AREA,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)? = null,
-    // reference line
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
+    // Reference line
+    referenceLineType: ReferenceLineType = ReferenceLineType.NONE, // NONE, AVERAGE
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 2.dp,
     referenceLineStyle: LineStyle = LineStyle.DASHED,
     showReferenceLineLabel: Boolean = false,
-    referenceLineLabelFormat: String = "평균: %.0f",
-    referenceLineInteractive: Boolean = false,
+    referenceLineLabelFormat: String = "평균: %.0f", // Format for reference line label
+    referenceLineInteractive: Boolean = false, // Whether to make the reference line clickable
     onReferenceLineClick: (() -> Unit)? = null,
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
     showLabel: Boolean = false,
-    xLabelAutoSkip: Boolean = true,
-    maxXTicksLimit: Int? = null,
-    minY: Double? = null,
-    maxY: Double? = null,
-    yTickStep: Double? = null,
+    xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
+    maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
+    minY: Double? = null, // Minimum Y value for chart
+    maxY: Double? = null, // Maximum Y value for chart
+    yTickStep: Double? = null, // y-axis grid tick step (automatically calculated if null)
     unit: String = "",
     // Scroll/Page
-    windowSize: Int? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
-    pageSize: Int? = null,
+    windowSize: Int? = null, // number of visible items in scroll window (enables scrolling if not null)
+    contentPadding: PaddingValues = PaddingValues(16.dp), // Free-scroll paddings
+    pageSize: Int? = null, // number of items per page (enables paging if not null)
     unifyYAxisAcrossPages: Boolean = true,
-    initialPageIndex: Int? = null,
-    yAxisFixedWidth: Dp = 0.dp,
+    initialPageIndex: Int? = null, // initial page to show (last page if null)
+    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
 ) {
     if (data.isEmpty()) return
 
@@ -94,7 +93,11 @@ fun StackedBarChart(
 
     val chartType = ChartType.STACKED_BAR
 
-    // transform to stacked points (memoized)
+    // Transform ChartMark to StackedChartMark (memoized)
+    // TODO: 현재 ChartMark에서 StackedChartMark로 변환하는 과정 필수, 이에 input을 항상 List<ChartMark>로 고정
+    // 이는 StackedChartMark가 한 개의 x값에 대응하는 y value가 여러 개 (list) 포함되어 있기 때문
+    // 모든 chart type은 ChartMark를 input으로 통일하기 때문에, stacked bar chart에서 StackedChartMark를 사용하려면 .toStackedChartMarks() 를 통한 변환 필요
+    // (HealthData -> TemporalDataSet -> Transform -> ChartMark 형태 유지)
     val stackedData = remember(data) {
         data.toStackedChartMarks(
             segmentOrdering = { group: List<ChartMark> -> group.sortedByDescending { it.y } }
@@ -126,10 +129,10 @@ fun StackedBarChart(
         }
     }
 
-    // compute effective page size (0 = off)
+    // Compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
 
-    // enable paging if pageSize is provided and data exceeds page size
+    // Enable paging if pageSize is provided and data exceeds page size
     val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
 
     if (enablePaging) {
@@ -183,6 +186,8 @@ fun StackedBarChart(
             BoxWithConstraints {
                 val availableWidth = maxWidth
                 val marginHorizontal = 16.dp
+                
+                // Calculate canvas width for scrolling mode
                 val canvasWidth = if (useScrolling) {
                     val chartWidth = availableWidth - (marginHorizontal * 2)
                     val sectionsCount = (stackedData.size.toFloat() / windowSize!!.toFloat()).toInt()
@@ -192,6 +197,7 @@ fun StackedBarChart(
                 var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
 
                 Row(Modifier.fillMaxSize()) {
+                    // Left fixed axis pane
                     if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                         Canvas(
                             modifier = Modifier
@@ -209,9 +215,9 @@ fun StackedBarChart(
                         }
                     }
 
-                    // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                    // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
                     val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
-                    val endPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                    val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
                     Box(
                         modifier = Modifier
@@ -250,7 +256,7 @@ fun StackedBarChart(
 
                         val m = chartMetrics ?: return@Box
 
-                        // colored stacked segments (non-interactive) - precomputed bands
+                        // Colored stacked segments (non-interactive) - precomputed bands
                         segmentBands.forEachIndexed { segIndex, (mins, maxs) ->
                             if (maxs.zip(mins).any { (mx, mn) -> mx > mn }) {
                                 val c = colors.getOrNull(segIndex) ?: Color.Gray
@@ -273,6 +279,7 @@ fun StackedBarChart(
 
                         when (interactionType) {
                             InteractionType.StackedBar.TOUCH_AREA -> {
+                                // Draw visual bars with tooltip
                                 ChartDraw.Bar.BarMarker(
                                     data = stackedData,
                                     minValues = minBase,
@@ -285,6 +292,7 @@ fun StackedBarChart(
                                     showLabel = showLabel,
                                     unit = unit,
                                 )
+                                // Draw interactive touch area
                                 ChartDraw.Bar.BarMarker(
                                     data = stackedData,
                                     minValues = minBase,
@@ -302,6 +310,7 @@ fun StackedBarChart(
                                 )
                             }
                             InteractionType.StackedBar.BAR -> {
+                                // Draw interactive bars
                                 ChartDraw.Bar.BarMarker(
                                     data = stackedData,
                                     minValues = minBase,
@@ -320,6 +329,7 @@ fun StackedBarChart(
                             }
                         }
 
+                        // Draw reference line
                         if (referenceLineType != ReferenceLineType.NONE) {
                             chartMetrics?.let { m ->
                                 ReferenceLine.ReferenceLine(
@@ -341,6 +351,7 @@ fun StackedBarChart(
                         }
                     }
 
+                    // Right fixed axis pane
                     if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                         Canvas(
                             modifier = Modifier
@@ -361,6 +372,7 @@ fun StackedBarChart(
             }
         }
 
+        // Draw legend
         when (legendPosition) {
             LegendPosition.LEFT, LegendPosition.RIGHT -> {
                 Row(
@@ -396,6 +408,7 @@ fun StackedBarChart(
     }
 }
 
+// Function for fixed external Y-axis in paged stacked bar chart
 @Composable
 private fun FixedPagerYAxisStacked(
     totals: List<Double>,
@@ -419,6 +432,7 @@ private fun FixedPagerYAxisStacked(
             includeYAxisPadding = false,
             fixedTickStep = step
         )
+        // Call standalone y-axis drawing function
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
             metrics = m,
@@ -445,6 +459,8 @@ private fun CenteredLegend(
         )
     }
 }
+
+// Function for paged stacked bar chart
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StackedBarChartPagedInternal(
@@ -477,7 +493,7 @@ private fun StackedBarChartPagedInternal(
     xLabelAutoSkip: Boolean,
     maxXTicksLimit: Int? = null,
 ) {
-    // transform once
+    // Transform ChartMark to StackedChartMark
     val stackedData = remember(data) {
         data.toStackedChartMarks(segmentOrdering = { group -> group.sortedByDescending { it.y } })
     }
@@ -525,6 +541,7 @@ private fun StackedBarChartPagedInternal(
         }
     }
 
+    // Use global range if unified, otherwise use current page range
     val effectiveRange = globalRange ?: currentPageRange
     val minRounded = effectiveRange.minY
     val maxRounded = effectiveRange.maxY
@@ -538,7 +555,7 @@ private fun StackedBarChartPagedInternal(
 
         val chartArea: @Composable () -> Unit = {
             Row(Modifier.fillMaxSize()) {
-                // LEFT fixed external Y-axis
+                // Left fixed external Y-axis
                 if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     FixedPagerYAxisStacked(
                         totals = totals,
@@ -550,7 +567,7 @@ private fun StackedBarChartPagedInternal(
                     )
                 }
 
-                // Pages (no inner Y-axis)
+                // Pager
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.weight(1f).fillMaxHeight()
@@ -601,7 +618,7 @@ private fun StackedBarChartPagedInternal(
                     )
                 }
 
-                // RIGHT fixed external Y-axis
+                // Right fixed external Y-axis
                 if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     FixedPagerYAxisStacked(
                         totals = totals,

@@ -14,8 +14,8 @@ object ScatterPlotMath {
      * @param size Canvas의 전체 크기
      * @param metrics 차트 메트릭 정보
      * @return 화면 좌표로 변환된 Offset 목록
-     * - 카테고리형(정수, 연속) x값인 경우: Bar 차트와 동일하게 카테고리 중심에 정렬
-     * - 연속형(실수) x값인 경우: 기존 minX..maxX 연속 매핑 유지
+     * - 카테고리형(정수, 연속) x값인 경우: Bar 차트와 동일하게 카테고리 중심에 정렬 (모두 카테고리형으로 처리)
+     * - 연속형(실수) x값인 경우: 기존 minX..maxX 연속 매핑 유지 (사용 안 함)
      */
     fun mapScatterToCanvasPoints(data: List<ChartMark>, size: Size, metrics: ChartMath.ChartMetrics): List<Offset> {
         if (data.isEmpty()) return emptyList()
@@ -76,7 +76,7 @@ object ScatterPlotMath {
         // 유니크한 X 목록 및 정렬
         val uniqueXs = data.map { it.x }.distinct().sorted()
         val categoriesCount = uniqueXs.size
-        // Bar 스타일: 각 카테고리의 중심에 위치시키기 위해 0.5 step 보정
+        // 전체 차트 너비를 동일한 너비의 칸으로 나눈 후, 각 카테고리의 중심에 위치시키기 위해 0.5 step 보정
         val spacing = metrics.chartWidth / categoriesCount
         return data.map { point ->
             val idx = uniqueXs.binarySearch(point.x).let { if (it >= 0) it else 0 }

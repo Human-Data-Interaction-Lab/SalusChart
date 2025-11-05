@@ -52,33 +52,33 @@ fun ScatterPlot(
     pointColor: Color = com.hdil.saluschart.ui.theme.ChartColor.Default,
     pointType: PointType = PointType.Circle,
     pointSize: Dp = 8.dp,
-    minY: Double? = null,
-    maxY: Double? = null,
+    minY: Double? = null, // Minimum Y value for chart
+    maxY: Double? = null, // Maximum Y value for chart
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Scatter = InteractionType.Scatter.POINT,
-    // reference line
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
+    // Reference line
+    referenceLineType: ReferenceLineType = ReferenceLineType.NONE, // NONE, TREND
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 2.dp,
     referenceLineStyle: LineStyle = LineStyle.DASHED,
     showReferenceLineLabel: Boolean = false,
-    referenceLineLabelFormat: String = "평균: %.0f",
-    referenceLineInteractive: Boolean = false,
+    referenceLineLabelFormat: String = "평균: %.0f", // Format for reference line label
+    referenceLineInteractive: Boolean = false, // Whether to make the reference line clickable
     onReferenceLineClick: (() -> Unit)? = null,
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
-    xLabelAutoSkip: Boolean = true,
-    maxXTicksLimit: Int? = null,
-    yTickStep: Double? = null,
+    xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
+    maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
+    yTickStep: Double? = null, // y-axis grid tick step (automatically calculated if null)
     unit: String = "",
     // Scroll/Page
-    windowSize: Int? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
-    pageSize: Int? = null,
-    initialPageIndex: Int? = null,
-    yAxisFixedWidth: Dp = 0.dp,
+    windowSize: Int? = null, // number of visible items in scroll window (not null enables scrolling)
+    contentPadding: PaddingValues = PaddingValues(16.dp), // Free-scroll paddings
+    pageSize: Int? = null, // number of items per page (not null enables paging)
+    initialPageIndex: Int? = null, // initial page to show (last page if null)
+    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
 ) {
     if (data.isEmpty()) return
 
@@ -89,10 +89,10 @@ fun ScatterPlot(
 
     val chartType = ChartType.SCATTERPLOT
 
-    // compute effective page size (0 = off)
+    // Compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
 
-    // enable paging if pageSize is provided and data exceeds page size
+    // Enable paging if pageSize is provided and data exceeds page size
     val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
 
     if (enablePaging) {
@@ -152,7 +152,7 @@ fun ScatterPlot(
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
 
-            // 스크롤 모드에서 실제 표시할 데이터와 캔버스 너비 계산
+            // Calculate canvas width for scrolling mode
             val canvasWidth = if (useScrolling) {
                 val chartWidth = availableWidth - (marginHorizontal * 2)
                 val ws = requireNotNull(windowSize)
@@ -161,7 +161,7 @@ fun ScatterPlot(
             } else null
 
             Row(Modifier.fillMaxSize()) {
-                // LEFT fixed axis pane
+                // Left fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
@@ -179,8 +179,7 @@ fun ScatterPlot(
                     }
                 }
 
-                // Chart area
-                // Use 0.dp padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
+                // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
                 val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
                 val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
@@ -222,8 +221,7 @@ fun ScatterPlot(
                         if (showYAxis && !isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
-//                        ChartDraw.Line.drawLineXAxisLabels(
-                        // X축 라벨은 Bar 스타일로 중앙 정렬(막대 중심) 위치에 맞춰 그림
+                        // X-axis labels are drawn in Bar style with center alignment (bar center) positioning
                         ChartDraw.Bar.drawBarXAxisLabels(
                             ctx = drawContext,
                             labels = xLabels,
@@ -233,25 +231,10 @@ fun ScatterPlot(
                         )
                     }
 
-
-//                    ChartDraw.Scatter.PointMarker(
-//                        data = data,
-//                        points = canvasPoints,
-//                        values = yValues,
-//                        selectedPointIndex = selectedPointIndex,
-//                        onPointClick = null, // No point interaction in this mode
-//                        pointType = pointType,
-//                        interactive = false, // Visual only, no interactions
-//                        chartType = chartType,
-//                        showTooltipForIndex = selectedPointIndex,
-//                        canvasSize = canvasSize,
-//                        unit = unit,
-//                    )
-
                     // Conditional interaction based on interactionType parameter
                     when (interactionType) {
                         InteractionType.Scatter.POINT -> {
-                            // 포인트 직접 터치: 단일 선택 사용, 집합 선택 초기화
+                            // Direct point touch: use single selection, reset set selection
                             selectedIndices = null
                             ChartDraw.Scatter.PointMarker(
                                 data = data,
@@ -274,11 +257,11 @@ fun ScatterPlot(
                         }
 
                         InteractionType.Scatter.TOUCH_AREA -> {
-                            // 넓은 터치 영역: 카테고리(x 고유값)별로 전체 높이 스트립을 깔아 터치 감도를 높임
+                            // Wide touch area: lay full-height strips for each category (unique x) to increase touch sensitivity
                             val metrics = chartMetrics
                             if (metrics != null && canvasPoints.isNotEmpty()) {
-                                // 최적화: 카테고리 관련 계산을 remember로 캐싱
-                                // 고유 x값(카테고리)와 인덱스 매핑
+                                // Optimization: cache category-related calculations with remember
+                                // Map unique x values (categories) and indices
                                 val categoryData = remember(data) {
                                     val uniqueXs = data.map { it.x }.distinct().sorted()
                                     val catCount = uniqueXs.size
@@ -298,7 +281,7 @@ fun ScatterPlot(
                                 }
                                 val (uniqueXs, catCount, catMarks) = categoryData
 
-                                // 최적화: X값별 인덱스 맵을 사전 계산하여 클릭 시 빠른 조회
+                                // Optimization: precompute index map per X value for fast lookup on click
                                 val xToIndicesMap = remember(data) {
                                     data.indices.groupBy { data[it].x }
                                         .mapValues { it.value.toSet() }
@@ -313,8 +296,8 @@ fun ScatterPlot(
                                     barWidthRatio = 1.0f,
                                     interactive = true,
                                     onBarClick = { idx, _ ->
-                                        // 최적화: 사전 계산된 맵에서 O(1) 조회
-                                        // 동일 카테고리의 모든 포인트(1:N) 집합
+                                        // Optimization: O(1) lookup from precomputed map
+                                        // Set of all points (1:N) in same category
                                         val ux = uniqueXs.getOrNull(idx)
                                         val indicesInCat: Set<Int> = ux?.let { xToIndicesMap[it] } ?: emptySet()
                                         selectedPointIndex = null
@@ -326,7 +309,7 @@ fun ScatterPlot(
                                     unit = unit
                                 )
 
-                                // 포인트/툴팁 렌더링 (비인터랙티브 포인트 + 외부 선택 인덱스로 툴팁 표시)
+                                // Point/tooltip rendering (non-interactive points + tooltip display with external selected indices)
                                 ChartDraw.Scatter.PointMarker(
                                     data = data,
                                     points = canvasPoints,
@@ -346,7 +329,7 @@ fun ScatterPlot(
                                     unit = unit,
                                 )
                             } else {
-                                // 안전장치: 메트릭스가 아직 없으면 기본 비인터랙티브 렌더링
+                                // Fallback: if metrics not ready yet, render default non-interactive points
                                 ChartDraw.Scatter.PointMarker(
                                     data = data,
                                     points = canvasPoints,
@@ -369,7 +352,7 @@ fun ScatterPlot(
                         }
                     }
 
-                    // 기준선 표시
+                    // Draw reference line
                     if (referenceLineType != ReferenceLineType.NONE) {
                         chartMetrics?.let { metrics ->
                             ReferenceLine.ReferenceLine(
@@ -391,7 +374,7 @@ fun ScatterPlot(
                     }
                 }
 
-                // RIGHT fixed axis pane
+                // Right fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
                         modifier = Modifier
@@ -415,6 +398,7 @@ fun ScatterPlot(
     }
 }
 
+// Function for paged scatter plot
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScatterPlotPagedInternal(
@@ -462,6 +446,7 @@ private fun ScatterPlotPagedInternal(
         )
     }
 
+    // Compute max rounded value and effective tick step
     val maxRounded = yAxisRange.maxY
     val effectiveTickStep = yAxisRange.tickStep
 
@@ -472,7 +457,7 @@ private fun ScatterPlotPagedInternal(
         }
 
         Row(Modifier.fillMaxWidth()) {
-            // LEFT fixed external Y-axis
+            // Left fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 FixedPagerYAxisScatter(
                     maxY = maxRounded,
@@ -482,7 +467,7 @@ private fun ScatterPlotPagedInternal(
                 )
             }
 
-            // pages area
+            // Pager
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
@@ -525,7 +510,7 @@ private fun ScatterPlotPagedInternal(
                 )
             }
 
-            // RIGHT fixed external Y-axis
+            // Right fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                 FixedPagerYAxisScatter(
                     maxY = maxRounded,
@@ -538,6 +523,7 @@ private fun ScatterPlotPagedInternal(
     }
 }
 
+// Function for fixed external Y-axis in paged scatter plot
 @Composable
 private fun FixedPagerYAxisScatter(
     maxY: Double,
@@ -559,6 +545,7 @@ private fun FixedPagerYAxisScatter(
             includeYAxisPadding = false,
             fixedTickStep = step
         )
+        // Call standalone y-axis drawing function
         ChartDraw.drawYAxisStandalone(
             drawScope = this,
             metrics = m,

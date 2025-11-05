@@ -59,13 +59,11 @@ enum class LineStyle(internal val dashPattern: FloatArray?) {
     LONGDASH(floatArrayOf(20f, 10f))         // 긴 점선
 }
 
-
-
 /**
  * 기준선을 그리고 관리하는 객체
  */
 object ReferenceLine {
-
+// TODO : 추세선 interaction 일관성 부족 (average line은 touch interaction 가능하지만, trend line은 불가능)
     /**
      * 차트 데이터에서 평균값을 계산합니다.
      * 
@@ -279,10 +277,6 @@ object ReferenceLine {
             }
             
             // 레이블 표시 조건: showLabel이 true이거나 interactive이면서 pressed 상태일 때
-            /*
-            SJ_COMMENT
-            useRelativePositioning 파라미터 의미? 왜 항상 true로 설정하지?
-             */
             if (showLabel || (interactive && isPressed)) {
                 ReferenceLineLabel(
                     value = average,
@@ -290,8 +284,7 @@ object ReferenceLine {
                     color = color,
                     labelFormat = labelFormat,
                     metrics = metrics,
-                    yAxisPosition = yAxisPosition,
-                    useRelativePositioning = true
+                    yAxisPosition = yAxisPosition
                 )
             }
         }
@@ -309,8 +302,8 @@ object ReferenceLine {
         lineStyle: LineStyle,
         showLabel: Boolean,
         labelFormat: String,
-        interactive: Boolean,
-        onClick: (() -> Unit)?,
+        interactive: Boolean, // 현재 TrendLine은 인터랙티브 모드 사용 안함
+        onClick: (() -> Unit)?, // 현재 TrendLine은 클릭 이벤트 사용 안함
     ) {
         val (slope, intercept) = calculateTrendLine(data)
 
@@ -352,6 +345,7 @@ object ReferenceLine {
     /**
      * 기준선의 값 레이블을 표시합니다.
      */
+    // TODO: 고정값 (text size, padding, etc.) 수정 필요
     @Composable
     private fun ReferenceLineLabel(
         value: Float,
@@ -359,8 +353,7 @@ object ReferenceLine {
         color: Color,
         labelFormat: String,
         metrics: ChartMath.ChartMetrics,
-        yAxisPosition: YAxisPosition,
-        useRelativePositioning: Boolean = false
+        yAxisPosition: YAxisPosition
     ) {
         val density = LocalDensity.current
         val labelText = labelFormat.format(value)
@@ -372,30 +365,15 @@ object ReferenceLine {
             textSize.toPx() + (verticalPadding * 2).toPx()
         }
 
-        // Y축 위치와 같은 쪽에 레이블 위치
-        val labelX = if (useRelativePositioning) {
-            // For relative positioning, place label relative to the Box (which is already positioned)
-            when (yAxisPosition) {
-                YAxisPosition.LEFT -> -with(density) { 5.dp.toPx() }
-                YAxisPosition.RIGHT -> metrics.chartWidth + with(density) { 5.dp.toPx() }
-            }
-        } else {
-            // For absolute positioning, use metrics
-            when (yAxisPosition) {
-                YAxisPosition.LEFT -> metrics.paddingX - with(density) { 5.dp.toPx() }
-                YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth + with(density) { 5.dp.toPx() }
-            }
+        // Y축 위치와 같은 쪽에 레이블 배치 (부모 Box 기준 상대 좌표)
+        val labelX = when (yAxisPosition) {
+            YAxisPosition.LEFT -> -with(density) { 5.dp.toPx() }
+            YAxisPosition.RIGHT -> metrics.chartWidth + with(density) { 5.dp.toPx() }
         }
 
-        // 화면 경계 내에서 위치 조정
+        // 위치 조정
         val adjustedX = with(density) { labelX.toDp() }
-        val adjustedY = with(density) {
-            if (useRelativePositioning) {
-                yPosition.toDp() // Use position as-is for relative positioning
-            } else {
-                yPosition.toDp().coerceIn(20.dp, (metrics.chartHeight - 20f).toDp())
-            }
-        }
+        val adjustedY = with(density) { yPosition.toDp() }
 
         // 레이블을 기준선 위로 전체 높이만큼 이동
         val labelHeightOffset = with(density) { estimatedLabelHeight.toDp() }

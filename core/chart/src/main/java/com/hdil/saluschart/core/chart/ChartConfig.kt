@@ -1,5 +1,6 @@
 package com.hdil.saluschart.core.chart
 
+// TODO: 매우 오래된 코드, 변경 또는 삭제 필요
 data class ChartConfig(
     val chartType: ChartType = ChartType.LINE,
     val axis: Axis = Axis.XY,

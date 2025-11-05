@@ -1,11 +1,22 @@
 package com.hdil.saluschart.core.chart
 
+// BaseChartMark is the base interface for all chart marks
+// Sometimes used when multiple types of chart marks are used in the same chart
 interface BaseChartMark {
     val x: Double
     val y: Double
     val label: String?
 }
 
+/**
+ * 모든 차트에 사용되는 기본 데이터 포인트 클래스
+ * 
+ * @param x X축 위치 또는 인덱스
+ * @param y Y축 값
+ * @param label 라벨 
+ * @param color 색상 (null인 경우 기본 색상 팔레트 사용)
+ * @param isSelected 선택 상태 여부
+ */
 data class ChartMark(
     override val x: Double,
     override val y: Double,
@@ -20,6 +31,11 @@ data class ChartMark(
 
 /**
  * 범위 바 차트를 위한 데이터 포인트 클래스
+ * 
+ * @param x X축 위치 또는 인덱스
+ * @param minPoint 최소 값 데이터 포인트
+ * @param maxPoint 최대 값 데이터 포인트
+ * @param label 라벨
  */
 data class RangeChartMark(
     override val x: Double,
@@ -35,6 +51,10 @@ data class RangeChartMark(
 
 /**
  * 스택 바 차트를 위한 데이터 포인트 클래스
+ * 
+ * @param x X축 위치 또는 인덱스
+ * @param segments 세그먼트 목록 (ChartMark 리스트로 구성)
+ * @param label 라벨
  */
 data class StackedChartMark(
     override val x: Double,

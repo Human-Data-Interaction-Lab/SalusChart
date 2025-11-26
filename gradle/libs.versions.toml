@@ -15,6 +15,9 @@ runtimeAndroid = "1.9.0"
 runtime = "1.0.0-alpha05"
 foundation = "1.9.1"
 foundationLayout = "1.9.1"
+uiGraphics = "1.9.4"
+foundationVersion = "1.9.5"
+foundationLayoutVersion = "1.9.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -40,6 +43,9 @@ androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime
 androidx-runtime = { group = "androidx.xr.runtime", name = "runtime", version.ref = "runtime" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" }
+foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayoutVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

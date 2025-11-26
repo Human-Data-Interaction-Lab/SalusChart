@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -113,14 +114,12 @@ fun SingleMonthCalendarChart(
         DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
     )
     val (firstDayOfWeek, totalDays, weeks) = ChartMath.Calendar.computeCalendarMetrics(yearMonth)
-    val density = LocalDensity.current
-    val chartType = ChartType.CALENDAR
 
     // Tooltip state
     var chartRootBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var tooltipPoint by remember { mutableStateOf<com.hdil.saluschart.core.chart.BaseChartMark?>(null) }
     var tooltipAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
-    var tooltipSize by remember { mutableStateOf<IntSize?>(null) }
+    var tooltipSize by remember { mutableStateOf(IntSize.Zero) }
 
     Box(
         modifier = modifier
@@ -128,7 +127,6 @@ fun SingleMonthCalendarChart(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
-                        // Any tap dismisses current tooltip
                         tooltipPoint = null
                         tooltipAnchor = null
                     }
@@ -184,7 +182,6 @@ fun SingleMonthCalendarChart(
                                 yearMonth = yearMonth,
                                 onTapDay = { date, bounds, tappedEntry, _ ->
                                     if (tappedEntry != null) {
-                                        // ✅ Clear first, then set new tooltip
                                         tooltipPoint = null
                                         tooltipAnchor = null
 
@@ -195,7 +192,6 @@ fun SingleMonthCalendarChart(
                                             label = date.toString()
                                         )
                                         tooltipAnchor = bounds
-                                        tooltipSize = null
                                     }
                                 }
                             )
@@ -209,31 +205,47 @@ fun SingleMonthCalendarChart(
         val tip = tooltipPoint
         val anchor = tooltipAnchor
         val root = chartRootBounds
+
         if (tip != null && anchor != null && root != null) {
+            val density = LocalDensity.current
             val marginPx = with(density) { 8.dp.toPx() }
+
             val cx = (anchor.left + anchor.right) / 2f
             val bubbleBottomY = anchor.bottom
 
             val xLocal = cx - root.left
             val yLocal = bubbleBottomY - root.top + marginPx
 
-            val width = tooltipSize?.width ?: 0
-            val height = tooltipSize?.height ?: 0
-            val xPx = xLocal - width / 2f
-            val yPx = yLocal
+            val width = tooltipSize.width.toFloat()
+            val height = tooltipSize.height.toFloat()
+            val hasSize = width > 0f && height > 0f
+
+            val baseX = if (hasSize) xLocal - width / 2f else xLocal
+            val baseY = yLocal
 
             val maxX = (root.width - width).coerceAtLeast(0f)
             val maxY = (root.height - height).coerceAtLeast(0f)
-            val clampedX = xPx.coerceIn(0f, maxX)
-            val clampedY = yPx.coerceIn(0f, maxY)
+
+            val clampedX = baseX.coerceIn(0f, maxX)
+            val clampedY = baseY.coerceIn(0f, maxY)
+
+            val offset = IntOffset(clampedX.roundToInt(), clampedY.roundToInt())
 
             Box(
                 Modifier
                     .zIndex(10f)
-                    .offset { IntOffset(clampedX.roundToInt(), clampedY.roundToInt()) }
-                    .onGloballyPositioned { tooltipSize = it.size }
+                    .offset { offset }
+                    .onGloballyPositioned { coords ->
+                        tooltipSize = coords.size
+                    }
+                    .graphicsLayer {
+                        alpha = if (hasSize) 1f else 0f
+                    }
             ) {
-                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(ChartMark = tip, color = color)
+                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
+                    ChartMark = tip,
+                    color = color
+                )
             }
         }
     }

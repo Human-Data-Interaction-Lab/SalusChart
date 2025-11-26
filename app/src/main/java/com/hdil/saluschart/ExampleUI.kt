@@ -102,6 +102,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Sleep Session - Sleep Stage Chart",
         "Weight - Line Chart",
         "Body Fat - Line Chart",
+        "Body Fat 2 - Line Chart",
         "Blood Pressure - Scatter Plot",
         "Blood Glucose - Range Bar Chart",
         "Diet - Stacked Bar Chart FreeScroll",
@@ -154,6 +155,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Exercise - Bar Chart" -> BarChart_Exercise()
                 "Weight - Line Chart" -> LineChart_Weight()
                 "Body Fat - Line Chart" -> LineChart_BodyFat()
+                "Body Fat 2 - Line Chart" -> LineChart_BodyFat_2()
                 "Heart Rate - Line Chart" -> LineChart_HeartRate()
                 "Blood Pressure - Scatter Plot" -> ScatterPlot_BloodPressure()
                 "Diet - Stacked Bar Chart FreeScroll" -> StackedBarChart_1()
@@ -549,7 +551,7 @@ fun LineChart_Weight() {
                 },
                 lineColor = Primary_Purple,
                 strokeWidth = 12f,
-                showPoint = false,
+                showPoint = true,
                 pointRadius = Pair(6.dp, 3.dp),
                 showValue = false,
                 interactionType = InteractionType.Line.TOUCH_AREA,
@@ -588,6 +590,33 @@ fun LineChart_BodyFat() {
 }
 
 @Composable
+fun LineChart_BodyFat_2() {
+    LineChart(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        data = bodyFatHealthData.transform(
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.SUM
+        ),
+        title = "일별 체지방률 변화",
+        unit = "%",
+        yLabel = "활동량",
+        xLabel = "요일",
+        minY = 10.0,
+        maxY = 30.0,
+        lineColor = Primary_Purple,
+        showPoint = true,
+        pointRadius = Pair(8.dp, 4.dp),
+        strokeWidth = 4f,
+        interactionType = InteractionType.Line.TOUCH_AREA,
+        yAxisPosition = YAxisPosition.LEFT,
+        referenceLineType = ReferenceLineType.TREND,
+        showReferenceLineLabel = true,
+        referenceLineStyle = LineStyle.DASHDOT,
+        pageSize = 8
+    )
+}
+
+@Composable
 fun LineChart_HeartRate() {
     LineChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
@@ -598,7 +627,7 @@ fun LineChart_HeartRate() {
         title = "일별 심박수 평균 변화",
         unit = "bpm",
         lineColor = Color(0xFFE91E63),
-        showPoint = false,
+        showPoint = true,
         minY = 70.0,
         maxY = 90.0,
         interactionType = InteractionType.Line.TOUCH_AREA
@@ -1158,7 +1187,7 @@ fun SleepStageChart_1() {
         sleepSession = singleSleepSessionData,
         title = "Sleep Stage Analysis",
         showLabels = true,
-        showXAxis = false,
+        showXAxis = true,
         showYAxis = true,
         onStageClick = { index, tooltipText ->
             // Handle stage click if needed

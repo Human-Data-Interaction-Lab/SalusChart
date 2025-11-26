@@ -171,26 +171,19 @@ object BarChartDraw {
 
             // 바 X 위치 계산 - 차트 타입에 따라 다른 포지셔닝 로직 사용
             val (barWidth, barX) = if (useLineChartPositioning) {
-                // 라인차트에 사용되는 포지셔닝: 포인트 중심에 바 배치
-                // 주로 터치 영역일 때 사용
-                val pointSpacing = if (dataSize > 1) metrics.chartWidth / (dataSize - 1) else 0f
-                val pointX = metrics.paddingX + index * pointSpacing
 
-                // 첫 번째와 마지막 바는 차트 영역을 벗어나지 않도록 절반 너비로 설정
-                val isFirstOrLast = (index == 0 || index == dataSize - 1) && dataSize > 1
-                val widthMultiplier = if (isFirstOrLast) 0.5f else 1.0f
-                val barW = if (dataSize > 1) {
-                    pointSpacing * actualBarWidthRatio * widthMultiplier
-                } else {
-                    metrics.chartWidth * actualBarWidthRatio
-                }
+                val total = dataSize
 
-                // 첫 번째 바는 오른쪽으로만 확장, 마지막 바는 왼쪽으로만 확장 (차트 영역 벗어나지 않도록)
-                val barXPos = when {
-                    index == 0 && dataSize > 1 -> pointX // 첫 번째 바: 포인트에서 시작
-                    index == dataSize - 1 && dataSize > 1 -> pointX - barW // 마지막 바: 포인트에서 끝
-                    else -> pointX - barW / 2f // 중간 바들: 포인트 중심
-                }
+                // LineChart spacing rule: chartWidth / (N + 1)
+                val spacing = if (total > 0) metrics.chartWidth / total else 0f
+
+                val pointX = metrics.paddingX + (index + 0.5) * spacing
+
+                // Touch strip width = full spacing
+                val barW = spacing * actualBarWidthRatio
+
+                // Center bar on the point
+                val barXPos = pointX - barW / 2f
 
                 Pair(barW, barXPos)
             } else {

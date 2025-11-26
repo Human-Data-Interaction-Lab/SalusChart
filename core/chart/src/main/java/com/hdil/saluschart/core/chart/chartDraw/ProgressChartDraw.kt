@@ -1,6 +1,7 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -10,6 +11,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import kotlin.math.cos
+import kotlin.math.sin
 
 object ProgressChartDraw {
     
@@ -44,13 +47,13 @@ object ProgressChartDraw {
                 size = size, data = data, strokeWidth = strokeWidth
             )
 
-            // --- helpers
             fun lighten(c: Color, f: Float) = Color(
                 (c.red + (1f - c.red) * f).coerceIn(0f, 1f),
                 (c.green + (1f - c.green) * f).coerceIn(0f, 1f),
                 (c.blue + (1f - c.blue) * f).coerceIn(0f, 1f),
                 c.alpha
             )
+
             fun darken(c: Color, f: Float) = Color(
                 (c.red * (1f - f)).coerceIn(0f, 1f),
                 (c.green * (1f - f)).coerceIn(0f, 1f),
@@ -60,43 +63,107 @@ object ProgressChartDraw {
 
             data.forEachIndexed { idx, pt ->
                 if (idx >= ringRadii.size) return@forEachIndexed
-                val radius = ringRadii[idx]
-                val base   = colors.getOrElse(idx) { colors.first() }
 
-                // Track
+                val radius = ringRadii[idx]
+                val base = colors.getOrElse(idx) { colors.first() }
+
+                val ringRect = Rect(
+                    left = center.x - radius,
+                    top = center.y - radius,
+                    right = center.x + radius,
+                    bottom = center.y + radius
+                )
+
+                // 1) Background track
                 drawScope.drawArc(
                     color = base.copy(alpha = backgroundAlpha),
                     startAngle = 0f,
                     sweepAngle = 359.9f,
                     useCenter = false,
-                    topLeft = Offset(center.x - radius, center.y - radius),
-                    size = Size(radius * 2, radius * 2),
+                    topLeft = Offset(ringRect.left, ringRect.top),
+                    size = Size(ringRect.width, ringRect.height),
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
                 )
 
-                // Total sweep (allow >100%)
+                // 2) Progress
                 val raw = if (pt.max > 0.0) pt.current / pt.max else pt.progress
-                val sweepDeg = (raw * 360.0).coerceAtLeast(0.5).toFloat()  // ensure tiny head shows
+                val progress = raw.coerceIn(0.0, 2.0)
+                if (progress <= 0.0) return@forEachIndexed
 
-                // Full-ring gradient (light→dark around circle)
-                val brush = Brush.sweepGradient(
-                    0f to lighten(base, 0.4f),
-                    0.25f to base,
-                    0.75f to darken(base, 0.2f),
-                    1f to lighten(base, 0.4f),  // wrap smoothly
-                    center = center
-                )
+                val startAt = -90f
 
-                // Draw ONE arc — rounded caps handle both start + head
-                drawScope.drawArc(
-                    brush = brush,
-                    startAngle = -90f,                // 12 o’clock
-                    sweepAngle = sweepDeg,
-                    useCenter = false,
-                    topLeft = Offset(center.x - radius, center.y - radius),
-                    size = Size(radius * 2, radius * 2),
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
+                fun arcGradient(radius: Float, sweep: Float, tailDark: Boolean): Brush {
+                    val startRad = Math.toRadians(startAt.toDouble())
+                    val endRad = Math.toRadians((startAt + sweep).toDouble())
+
+                    val startPoint = Offset(
+                        x = center.x + radius * cos(startRad).toFloat(),
+                        y = center.y + radius * sin(startRad).toFloat()
+                    )
+                    val endPoint = Offset(
+                        x = center.x + radius * cos(endRad).toFloat(),
+                        y = center.y + radius * sin(endRad).toFloat()
+                    )
+
+                    val tailColor = if (tailDark) darken(base, 0.2f) else base
+                    val midColor = base
+                    val headColor = lighten(base, 0.35f)
+
+                    return Brush.linearGradient(
+                        colors = listOf(
+                            tailColor,
+                            midColor,
+                            headColor
+                        ),
+                        start = startPoint,
+                        end = endPoint
+                    )
+                }
+
+                if (progress <= 1.0) {
+                    // ---- 0–100%: single, softly-graded ring ----
+                    val sweep = (progress * 360.0).toFloat()
+                    val brush = arcGradient(radius, sweep, tailDark = true)
+
+                    drawScope.drawArc(
+                        brush = brush,
+                        startAngle = startAt,
+                        sweepAngle = sweep,
+                        useCenter = false,
+                        topLeft = Offset(ringRect.left, ringRect.top),
+                        size = Size(ringRect.width, ringRect.height),
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    )
+                } else {
+                    // ---- >100%: one full lap + extra lap on top (same radius) ----
+                    // First lap: full ring in base color
+                    drawScope.drawArc(
+                        color = base,
+                        startAngle = startAt,
+                        sweepAngle = 359.9f,
+                        useCenter = false,
+                        topLeft = Offset(ringRect.left, ringRect.top),
+                        size = Size(ringRect.width, ringRect.height),
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                    )
+
+                    // Extra portion (second lap): gradient arc with tail = base
+                    val extraRatio = (progress - 1.0).coerceIn(0.0, 1.0)
+                    if (extraRatio > 0.0) {
+                        val extraSweep = (extraRatio * 360.0).toFloat()
+                        val extraBrush = arcGradient(radius, extraSweep, tailDark = false)
+
+                        drawScope.drawArc(
+                            brush = extraBrush,
+                            startAngle = startAt,
+                            sweepAngle = extraSweep,
+                            useCenter = false,
+                            topLeft = Offset(ringRect.left, ringRect.top),
+                            size = Size(ringRect.width, ringRect.height),
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                        )
+                    }
+                }
             }
 
         } else {

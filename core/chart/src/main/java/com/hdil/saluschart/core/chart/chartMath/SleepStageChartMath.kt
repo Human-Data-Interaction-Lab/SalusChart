@@ -111,22 +111,30 @@ object SleepStageChartMath {
      */
     fun List<SleepStage>.toSleepStageRangeChartMarks(): List<RangeChartMark> {
         return mapIndexed { index, stage ->
-            val stageOrdinal = stage.stage.ordinal.toDouble()
-            // Use Double to preserve precision throughout the conversion
-            val startTimeMs = stage.startTime.toEpochMilli().toDouble()
-            val endTimeMs = stage.endTime.toEpochMilli().toDouble()
-            
+
+            // Map stages to Y positions (index)
+            val stageIndex = when(stage.stage) {
+                SleepStageType.DEEP  -> 0.0
+                SleepStageType.LIGHT -> 1.0   // Apple Core = Light
+                SleepStageType.REM   -> 2.0
+                SleepStageType.AWAKE -> 3.0
+                SleepStageType.UNKNOWN -> TODO()
+            }
+
+            val startTime = stage.startTime.toEpochMilli().toDouble()
+            val endTime = stage.endTime.toEpochMilli().toDouble()
+
             RangeChartMark(
-                x = stageOrdinal, // Sleep stage type for Y-axis positioning
+                x = startTime,   // Not used in our custom chart but keep API
                 minPoint = ChartMark(
-                    x = stageOrdinal, 
-                    y = startTimeMs, 
-                    label = "Stage ${index + 1}"
+                    x = startTime,
+                    y = stageIndex,
+                    label = stage.stage.name
                 ),
                 maxPoint = ChartMark(
-                    x = stageOrdinal, 
-                    y = endTimeMs, 
-                    label = "Stage ${index + 1}"
+                    x = endTime,
+                    y = stageIndex,
+                    label = stage.stage.name
                 ),
                 label = stage.stage.name
             )

@@ -57,39 +57,49 @@ object LineChartDraw {
         maxXTicksLimit: Int? = null,
         xLabelAutoSkip: Boolean = false
     ) {
-        // 라벨 감소 로직
-        val (displayLabels, displayIndices) = if (xLabelAutoSkip) {
-            // 자동 스킵: 텍스트 너비 기반으로 계산
-            ChartMath.computeAutoSkipLabels(
-                labels = labels,
-                textSize = textSize,
-                chartWidth = metrics.chartWidth,
-                maxXTicksLimit = maxXTicksLimit
-            )
-        } else {
-            // 모든 라벨 표시
-            Pair(labels, labels.indices.toList())
-        }
-        
-        val totalLabels = labels.size
-        val spacing = if (totalLabels > 1) metrics.chartWidth / (totalLabels - 1) else 0f
-        
+        val (displayLabels, displayIndices) =
+            if (xLabelAutoSkip) {
+                ChartMath.computeAutoSkipLabels(
+                    labels = labels,
+                    textSize = textSize,
+                    chartWidth = metrics.chartWidth,
+                    maxXTicksLimit = maxXTicksLimit
+                )
+            } else {
+                Pair(labels, labels.indices.toList())
+            }
+
+        val total = labels.size
+
+        val spacing = if (total > 1) metrics.chartWidth / total else 0f
+
+        val canvas = ctx.canvas.nativeCanvas
+        val canvasWidth = ctx.size.width
+        val y = metrics.paddingY + metrics.chartHeight + 50f
+
         displayLabels.forEachIndexed { displayIndex, label ->
-            // 원본 라벨 목록에서의 실제 인덱스를 사용
             val originalIndex = displayIndices[displayIndex]
-            val x = metrics.paddingX + originalIndex * spacing
-            ctx.canvas.nativeCanvas.drawText(
-                label,
-                x,
-                metrics.paddingY + metrics.chartHeight + 50f,
-                android.graphics.Paint().apply {
-                    color = android.graphics.Color.DKGRAY
-                    this.textSize = textSize
-                    if (centered) {
-                        textAlign = android.graphics.Paint.Align.CENTER
-                    }
-                }
-            )
+
+            val paint = android.graphics.Paint().apply {
+                color = android.graphics.Color.DKGRAY
+                this.textSize = textSize
+            }
+
+            val baseX = metrics.paddingX + (originalIndex + 0.5f) * spacing
+
+            if (centered) {
+                paint.textAlign = android.graphics.Paint.Align.CENTER
+
+                val textWidth = paint.measureText(label)
+                val half = textWidth / 2f
+                val clamped = baseX.coerceIn(half, canvasWidth - half)
+
+                canvas.drawText(label, clamped, y, paint)
+
+            } else {
+                paint.textAlign = android.graphics.Paint.Align.LEFT
+                canvas.drawText(label, baseX, y, paint)
+            }
         }
     }
 

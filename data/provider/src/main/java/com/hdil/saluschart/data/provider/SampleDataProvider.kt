@@ -480,49 +480,109 @@ object SampleDataProvider {
     )
 
     fun getSingleSleepSessionData(): SleepSession = SleepSession(
-        startTime = Instant.parse("2025-05-04T13:29:00Z"),
-        endTime   = Instant.parse("2025-05-04T21:09:00Z"),
+        startTime = Instant.parse("2025-05-04T19:00:00Z"),
+        endTime   = Instant.parse("2025-05-05T03:21:00Z"),
         stages = listOf(
-            SleepStage(Instant.parse("2025-05-04T13:29:00Z"), Instant.parse("2025-05-04T13:40:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T13:40:00Z"), Instant.parse("2025-05-04T14:05:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-04T14:05:00Z"), Instant.parse("2025-05-04T14:15:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T14:15:00Z"), Instant.parse("2025-05-04T14:19:00Z"), SleepStageType.AWAKE),
-            SleepStage(Instant.parse("2025-05-04T14:19:00Z"), Instant.parse("2025-05-04T14:30:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T14:30:00Z"), Instant.parse("2025-05-04T14:45:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-04T14:45:00Z"), Instant.parse("2025-05-04T15:00:00Z"), SleepStageType.LIGHT),
+            // ---- FIRST CYCLE (left cluster, with early Deep) ----
+            SleepStage(
+                Instant.parse("2025-05-04T19:00:00Z"),
+                Instant.parse("2025-05-04T19:20:00Z"),
+                SleepStageType.DEEP
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T19:20:00Z"),
+                Instant.parse("2025-05-04T20:00:00Z"),
+                SleepStageType.LIGHT         // Core block
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T20:00:00Z"),
+                Instant.parse("2025-05-04T20:20:00Z"),
+                SleepStageType.REM
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T20:20:00Z"),
+                Instant.parse("2025-05-04T21:10:00Z"),
+                SleepStageType.LIGHT         // back to Core
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T21:10:00Z"),
+                Instant.parse("2025-05-04T21:20:00Z"),
+                SleepStageType.AWAKE         // short wake spike
+            ),
 
-            SleepStage(Instant.parse("2025-05-04T15:00:00Z"), Instant.parse("2025-05-04T15:15:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-04T15:15:00Z"), Instant.parse("2025-05-04T15:19:00Z"), SleepStageType.AWAKE),
-            SleepStage(Instant.parse("2025-05-04T15:19:00Z"), Instant.parse("2025-05-04T15:31:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T15:31:00Z"), Instant.parse("2025-05-04T15:47:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-04T15:47:00Z"), Instant.parse("2025-05-04T16:00:00Z"), SleepStageType.LIGHT),
+            // ---- SECOND CYCLE (middle cluster) ----
+            SleepStage(
+                Instant.parse("2025-05-04T21:20:00Z"),
+                Instant.parse("2025-05-04T21:40:00Z"),
+                SleepStageType.LIGHT
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T21:40:00Z"),
+                Instant.parse("2025-05-04T22:10:00Z"),
+                SleepStageType.DEEP
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T22:10:00Z"),
+                Instant.parse("2025-05-04T22:40:00Z"),
+                SleepStageType.LIGHT
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T22:40:00Z"),
+                Instant.parse("2025-05-04T23:00:00Z"),
+                SleepStageType.REM
+            ),
+            SleepStage(
+                Instant.parse("2025-05-04T23:00:00Z"),
+                Instant.parse("2025-05-04T23:40:00Z"),
+                SleepStageType.LIGHT
+            ),
 
-            SleepStage(Instant.parse("2025-05-04T16:00:00Z"), Instant.parse("2025-05-04T16:20:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-04T16:20:00Z"), Instant.parse("2025-05-04T16:28:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T16:28:00Z"), Instant.parse("2025-05-04T16:32:00Z"), SleepStageType.AWAKE),
-            SleepStage(Instant.parse("2025-05-04T16:32:00Z"), Instant.parse("2025-05-04T16:43:00Z"), SleepStageType.LIGHT),
+            // ---- THIRD CYCLE (right cluster) ----
+            SleepStage(
+                Instant.parse("2025-05-04T23:40:00Z"),
+                Instant.parse("2025-05-05T00:10:00Z"),
+                SleepStageType.DEEP
+            ),
+            SleepStage(
+                Instant.parse("2025-05-05T00:10:00Z"),
+                Instant.parse("2025-05-05T00:40:00Z"),
+                SleepStageType.LIGHT
+            ),
+            SleepStage(
+                Instant.parse("2025-05-05T00:40:00Z"),
+                Instant.parse("2025-05-05T01:10:00Z"),
+                SleepStageType.REM
+            ),
+            SleepStage(
+                Instant.parse("2025-05-05T01:10:00Z"),
+                Instant.parse("2025-05-05T01:40:00Z"),
+                SleepStageType.LIGHT
+            ),
+            SleepStage(
+                Instant.parse("2025-05-05T01:40:00Z"),
+                Instant.parse("2025-05-05T02:10:00Z"),
+                SleepStageType.REM
+            ),
+            SleepStage(
+                Instant.parse("2025-05-05T02:10:00Z"),
+                Instant.parse("2025-05-05T02:40:00Z"),
+                SleepStageType.LIGHT
+            ),
 
-            SleepStage(Instant.parse("2025-05-04T16:43:00Z"), Instant.parse("2025-05-04T17:00:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-04T17:00:00Z"), Instant.parse("2025-05-04T17:13:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T17:13:00Z"), Instant.parse("2025-05-04T17:31:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-04T17:31:00Z"), Instant.parse("2025-05-04T17:39:00Z"), SleepStageType.LIGHT),
-
-            SleepStage(Instant.parse("2025-05-04T17:39:00Z"), Instant.parse("2025-05-04T17:43:00Z"), SleepStageType.AWAKE),
-            SleepStage(Instant.parse("2025-05-04T17:43:00Z"), Instant.parse("2025-05-04T17:55:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T17:55:00Z"), Instant.parse("2025-05-04T18:13:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-04T18:13:00Z"), Instant.parse("2025-05-04T18:25:00Z"), SleepStageType.LIGHT),
-
-            SleepStage(Instant.parse("2025-05-04T18:25:00Z"), Instant.parse("2025-05-04T18:45:00Z"), SleepStageType.DEEP),
-            SleepStage(Instant.parse("2025-05-04T18:45:00Z"), Instant.parse("2025-05-04T18:57:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T18:57:00Z"), Instant.parse("2025-05-04T19:01:00Z"), SleepStageType.AWAKE),
-            SleepStage(Instant.parse("2025-05-04T19:01:00Z"), Instant.parse("2025-05-04T19:13:00Z"), SleepStageType.LIGHT),
-
-            SleepStage(Instant.parse("2025-05-04T19:13:00Z"), Instant.parse("2025-05-04T19:33:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-04T19:33:00Z"), Instant.parse("2025-05-04T19:47:00Z"), SleepStageType.LIGHT),
-            SleepStage(Instant.parse("2025-05-04T19:47:00Z"), Instant.parse("2025-05-04T20:07:00Z"), SleepStageType.REM),
-            SleepStage(Instant.parse("2025-05-04T20:07:00Z"), Instant.parse("2025-05-04T21:09:00Z"), SleepStageType.LIGHT)
+            // wind-down towards wake
+            SleepStage(
+                Instant.parse("2025-05-05T02:40:00Z"),
+                Instant.parse("2025-05-05T03:05:00Z"),
+                SleepStageType.LIGHT
+            ),
+            SleepStage(
+                Instant.parse("2025-05-05T03:05:00Z"),
+                Instant.parse("2025-05-05T03:21:00Z"),
+                SleepStageType.AWAKE
+            )
         )
     )
+
 
     fun getMultipleSleepSessionData(): List<SleepSession> = listOf(
         SleepSession(

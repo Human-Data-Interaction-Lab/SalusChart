@@ -13,22 +13,29 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.ChartMark
@@ -260,7 +267,6 @@ fun ScatterPlot(
                             // Wide touch area: lay full-height strips for each category (unique x) to increase touch sensitivity
                             val metrics = chartMetrics
                             if (metrics != null && canvasPoints.isNotEmpty()) {
-                                // Optimization: cache category-related calculations with remember
                                 // Map unique x values (categories) and indices
                                 val categoryData = remember(data) {
                                     val uniqueXs = data.map { it.x }.distinct().sorted()
@@ -281,12 +287,13 @@ fun ScatterPlot(
                                 }
                                 val (uniqueXs, catCount, catMarks) = categoryData
 
-                                // Optimization: precompute index map per X value for fast lookup on click
+                                // Precompute index map per X value for fast lookup on click
                                 val xToIndicesMap = remember(data) {
                                     data.indices.groupBy { data[it].x }
                                         .mapValues { it.value.toSet() }
                                 }
 
+                                // 1) Touch area bars (transparent)
                                 ChartDraw.Bar.BarMarker(
                                     data = catMarks,
                                     minValues = List(catCount) { metrics.minY },
@@ -296,12 +303,15 @@ fun ScatterPlot(
                                     barWidthRatio = 1.0f,
                                     interactive = true,
                                     onBarClick = { idx, _ ->
-                                        // Optimization: O(1) lookup from precomputed map
-                                        // Set of all points (1:N) in same category
+                                        // Set of all points (1:N) in same category (same x)
                                         val ux = uniqueXs.getOrNull(idx)
                                         val indicesInCat: Set<Int> = ux?.let { xToIndicesMap[it] } ?: emptySet()
                                         selectedPointIndex = null
-                                        selectedIndices = if (indicesInCat.isNotEmpty() && selectedIndices == indicesInCat) null else indicesInCat
+                                        selectedIndices = if (indicesInCat.isNotEmpty() && selectedIndices == indicesInCat) {
+                                            null       // tap again to deselect
+                                        } else {
+                                            indicesInCat
+                                        }
                                     },
                                     chartType = chartType,
                                     isTouchArea = true,
@@ -309,7 +319,7 @@ fun ScatterPlot(
                                     unit = unit
                                 )
 
-                                // Point/tooltip rendering (non-interactive points + tooltip display with external selected indices)
+                                // 2) Draw points ONLY (no tooltips from PointMarker)
                                 ChartDraw.Scatter.PointMarker(
                                     data = data,
                                     points = canvasPoints,
@@ -321,13 +331,23 @@ fun ScatterPlot(
                                     pointType = pointType,
                                     chartType = chartType,
                                     showTooltipForIndex = null,
-                                    showTooltipForIndices = selectedIndices,
+                                    showTooltipForIndices = null,   // <<< turn OFF built-in multi-tooltips
                                     pointRadius = pointSize,
                                     innerRadius = 0.dp,
                                     interactive = false,
                                     canvasSize = canvasSize,
                                     unit = unit,
                                 )
+
+                                // 3) Single combined tooltip over the selected x
+                                if (!selectedIndices.isNullOrEmpty()) {
+                                    ScatterCombinedTooltip(
+                                        indices = selectedIndices!!,
+                                        data = data,
+                                        points = canvasPoints,
+                                        unit = unit,
+                                    )
+                                }
                             } else {
                                 // Fallback: if metrics not ready yet, render default non-interactive points
                                 ChartDraw.Scatter.PointMarker(
@@ -395,6 +415,83 @@ fun ScatterPlot(
         }
 
         Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+@Composable
+private fun ScatterCombinedTooltip(
+    indices: Set<Int>,
+    data: List<ChartMark>,
+    points: List<Offset>,
+    unit: String,
+) {
+    if (indices.isEmpty() || points.isEmpty()) return
+
+    val density = LocalDensity.current
+    val dotColor = MaterialTheme.colorScheme.primary
+
+    // Use the first selected index as the anchor point on the canvas
+    val sorted = indices.sorted()
+    val anchorIndex = sorted.firstOrNull() ?: return
+    if (anchorIndex !in points.indices || anchorIndex !in data.indices) return
+
+    val anchorPoint = points[anchorIndex]
+    val marks = sorted.mapNotNull { data.getOrNull(it) }
+
+    val anchorXDp = with(density) { anchorPoint.x.toDp() }
+    val anchorYDp = with(density) { anchorPoint.y.toDp() }
+
+    val tooltipWidth = 190.dp
+    val baseHeight = 52.dp
+    val perLineHeight = 20.dp
+    val tooltipHeight = baseHeight + perLineHeight * marks.size
+
+    var offsetX = anchorXDp - tooltipWidth / 10
+    var offsetY = anchorYDp - tooltipHeight + 100.dp
+
+    // Simple clamping so it doesn’t go off-screen to the top/left
+    if (offsetX < 0.dp) offsetX = 0.dp
+    if (offsetY < 0.dp) offsetY = 0.dp
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Surface(
+            modifier = Modifier.offset(x = offsetX, y = offsetY),
+            shape = RoundedCornerShape(16.dp),
+            tonalElevation = 4.dp,
+            shadowElevation = 4.dp,
+            color = Color.White
+        ) {
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                // Top line: use the label from the first mark
+                Text(
+                    text = marks.firstOrNull()?.label.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // One row per value
+                marks.forEach { mark ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        // Little colored dot
+                        Canvas(modifier = Modifier.size(6.dp)) {
+                            drawCircle(color = dotColor)
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "${mark.y.toInt()}$unit",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

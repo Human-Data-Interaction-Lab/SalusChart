@@ -2,8 +2,6 @@ package com.hdil.saluschart.data.provider
 
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ProgressChartMark
-import com.hdil.saluschart.core.util.AggregationType
-import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.HeartRate
 import com.hdil.saluschart.data.model.model.HeartRateSample
 import com.hdil.saluschart.data.model.model.BloodPressure
@@ -23,6 +21,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -147,7 +146,7 @@ object SampleDataProvider {
         Exercise(Instant.parse("2025-05-16T18:47:00Z"), Instant.parse("2025-05-16T19:35:00Z"), 432.0)
     )
 
-    fun getHeartRateData(): List<HeartRate> = listOf(
+    fun getHeartRateDataBase(): List<HeartRate> = listOf(
         // ===== 2025-05-04 =====
         HeartRate(
             startTime = Instant.parse("2025-05-04T00:00:00Z"),
@@ -1214,5 +1213,82 @@ object SampleDataProvider {
             ChartMark(x = index.toDouble(), y = values[index], label = label)
         }
     }
+
+    // -----------------------------------------------
+    // HELPER: build hourly point values for heart rate
+    // -----------------------------------------------
+    fun buildHourlyPointValues(
+        samples: List<HeartRateSample>,
+        zoneId: ZoneId = ZoneId.of("UTC")
+    ): List<List<Double>> {
+        if (samples.isEmpty()) return emptyList()
+        val firstInstant = samples.minByOrNull { s -> s.time }?.time
+            ?: return emptyList()
+
+        val firstDate = firstInstant
+            .atZone(zoneId)
+            .toLocalDate()
+
+        val startOfDay = firstDate.atStartOfDay(zoneId).toInstant()
+
+        // Group samples by (hour offset from startOfDay: 0..23)
+        val grouped: Map<Int, List<HeartRateSample>> = samples.groupBy { s ->
+            val hours = ChronoUnit.HOURS.between(startOfDay, s.time).toInt()
+            hours.coerceIn(0, 23)
+        }
+
+        // Build dense list: index 0..23, each is a list of bpm values
+        return (0..23).map { hour ->
+            grouped[hour]?.map { it.beatsPerMinute.toDouble() } ?: emptyList()
+        }
+    }
+
+    // Create many samples between startTime and endTime, using the
+    // min/max of the original block as the range.
+    private fun densifyHeartRateBlock(
+        block: HeartRate,
+        samplesPerHour: Int = 12        // 12 = every 5 minutes
+    ): HeartRate {
+        if (block.samples.isEmpty()) return block
+
+        val start = block.startTime
+        val end = block.endTime
+
+        // Use existing data to define realistic range
+        val minBpm: Int = block.samples.minOf { it.beatsPerMinute }
+        val maxBpm = block.samples.maxOf { it.beatsPerMinute }
+
+        val totalMinutes = ChronoUnit.MINUTES.between(start, end).toInt()
+        if (totalMinutes <= 0) return block
+
+        val stepMinutes = (60.0 / samplesPerHour).toInt().coerceAtLeast(1)
+        val count = totalMinutes / stepMinutes
+        if (count <= 0) return block
+
+        // Seed based on start time so it looks stable every run
+        val random = Random(start.epochSecond)
+
+        val samples = (0 until count).map { i ->
+            val t = start.plus(stepMinutes.toLong() * i, ChronoUnit.MINUTES)
+
+            // random bpm between min and max (inclusive)
+            val bpm = random.nextInt(from = minBpm, until = (maxBpm + 1).toInt())
+
+            HeartRateSample(
+                time = t,
+                beatsPerMinute = bpm
+            )
+        }
+
+        return block.copy(samples = samples)
+    }
+
+    fun getHeartRateData(): List<HeartRate> {
+        return getHeartRateDataBase().map { block ->
+            densifyHeartRateBlock(block, samplesPerHour = 4)
+        }
+    }
+
+
 
 }

@@ -1,19 +1,21 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawContext
@@ -21,11 +23,18 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
+
+data class TooltipSpec(
+    val chartMark: BaseChartMark,
+    val offset: Offset
+)
 
 object BarChartDraw {
     /**
@@ -124,9 +133,14 @@ object BarChartDraw {
         segmentIndex: Int? = null,
         showLabel: Boolean = false,
         unit: String = "",
+        barCornerRadiusFraction: Float = 0f,
+        barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+        roundTopOnly: Boolean = true,
+        onTooltipSpec: ((TooltipSpec?) -> Unit)? = null,
     ) {
         val density = LocalDensity.current
-
+        var tooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
+        var computedTooltip: TooltipSpec? = null
         // 터치 영역용인 경우 자동으로 파라미터 설정
         val actualBarWidthRatio = if (isTouchArea) 1.0f else barWidthRatio
         val actualInteractive = if (isTouchArea) true else interactive
@@ -206,18 +220,25 @@ object BarChartDraw {
             val shouldShowTooltip = when {
                 isTouchArea -> false // 터치 영역용이므로 툴팁 표시 안함
                 chartType in listOf(ChartType.BAR, ChartType.RANGE_BAR, ChartType.STACKED_BAR) -> {
-                    if (actualInteractive) {
+                    if (showTooltipForIndex != null) {
+                        showTooltipForIndex == index
+                    } else if (actualInteractive) {
                         clickedBarIndex == index
                     } else {
-                        showTooltipForIndex == index
+                        false
                     }
                 }
                 else -> false // LINE, SCATTERPLOT 등에서는 툴팁 표시 안함
             }
 
             if (shouldShowTooltip) {
-                tooltipData = data[index]
-                tooltipOffset = Offset(barX.toFloat(), barY.toFloat())
+                computedTooltip = TooltipSpec(
+                    chartMark = data[index],
+                    offset = Offset(
+                        x = barX.toFloat() + barWidth.toFloat() / 2f,
+                        y = barY.toFloat()
+                    )
+                )
             }
 
             val actualColor = if (isTouchArea) {
@@ -238,27 +259,91 @@ object BarChartDraw {
                 }
             }
 
+            // pixel sizes as Float (barWidth is already Float, barHeight is Double)
+            val barWidthPx = barWidth.toFloat()
+            val barHeightPx = barHeight.toFloat()
+
+            // Helper: convert a "fraction of bar width" into a safe Dp radius
+            fun fractionToCornerDp(fraction: Float): Dp {
+                if (isTouchArea) return 0.dp
+                if (fraction <= 0f) return 0.dp
+                if (barHeightPx <= 0f || barWidthPx <= 0f) return 0.dp
+
+                val radiusPx = (barWidthPx * fraction)
+                    // Keep it sane: cannot exceed half of width or half of height
+                    .coerceAtMost(barWidthPx / 2f)
+                    .coerceAtMost(barHeightPx / 2f)
+
+                return with(density) { radiusPx.toDp() }
+            }
+
+            // Choose per-corner fractions if provided; otherwise fall back to existing behavior
+            val fractions = barCornerRadiusFractions ?: run {
+                if (roundTopOnly) {
+                    BarCornerRadiusFractions(
+                        topStart = barCornerRadiusFraction,
+                        topEnd = barCornerRadiusFraction,
+                        bottomStart = 0f,
+                        bottomEnd = 0f
+                    )
+                } else {
+                    BarCornerRadiusFractions(
+                        topStart = barCornerRadiusFraction,
+                        topEnd = barCornerRadiusFraction,
+                        bottomStart = barCornerRadiusFraction,
+                        bottomEnd = barCornerRadiusFraction
+                    )
+                }
+            }
+
+            // Convert to Dp per corner
+            val topStartDp = fractionToCornerDp(fractions.topStart)
+            val topEndDp = fractionToCornerDp(fractions.topEnd)
+            val bottomStartDp = fractionToCornerDp(fractions.bottomStart)
+            val bottomEndDp = fractionToCornerDp(fractions.bottomEnd)
+
+            // Build shape only if any corner > 0
+            val hasAnyCorner =
+                topStartDp > 0.dp || topEndDp > 0.dp || bottomStartDp > 0.dp || bottomEndDp > 0.dp
+
+            val shape = if (!isTouchArea && hasAnyCorner) {
+                RoundedCornerShape(
+                    topStart = topStartDp,
+                    topEnd = topEndDp,
+                    bottomStart = bottomStartDp,
+                    bottomEnd = bottomEndDp
+                )
+            } else null
+
+            // 기본 modifier
+            var barModifier = Modifier
+                .offset(x = barXDp, y = barYDp)
+                .size(width = barWidthDp, height = barHeightDp)
+
+            barModifier =
+                if (shape != null) {
+                    barModifier
+                        .clip(shape)
+                        .background(color = actualColor, shape = shape)
+                } else {
+                    barModifier.background(color = actualColor)
+                }
+
+            barModifier = barModifier.clickable(enabled = (onBarClick != null)) {
+                if (actualInteractive) {
+                    clickedBarIndex = if (clickedBarIndex == index) null else index
+                }
+                onBarClick?.invoke(index, tooltipText)
+            }
+
             Box(
-                modifier = Modifier
-                    .offset(x = barXDp, y = barYDp)
-                    .size(width = barWidthDp, height = barHeightDp)
-                    .background(color = actualColor)
-                    .clickable {
-                        if (actualInteractive) {
-                            // 클릭된 바 인덱스 토글
-                            clickedBarIndex = if (clickedBarIndex == index) null else index
-                            // 외부 클릭 이벤트 처리
-                            onBarClick?.invoke(index, tooltipText)
-                        }
-                    },
+                modifier = barModifier,
                 contentAlignment = Alignment.TopCenter
             ) {
-
                 // label 표시 여부 결정
                 if (showLabel) {
                     Box(
-                        modifier = Modifier
-                            .offset(0.dp, (0).dp) // 바 위에 표시
+                        modifier = Modifier.offset(0.dp, 0.dp) // 바 위에 표시
                     ) {
                         Text(
                             text = maxValue.toInt().toString(),
@@ -266,25 +351,19 @@ object BarChartDraw {
                             fontSize = 12.sp,
                             textAlign = TextAlign.Center,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .align(Alignment.Center),
-                            maxLines = 1, // 한 줄로 제한하여 수평 확장 유도
-                            softWrap = false // 텍스트 래핑 비활성화
+                            modifier = Modifier.align(Alignment.Center),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
             }
         }
-        // 툴팁 표시 (바 박스 외부에 독립적으로 배치)
-        if (tooltipData != null && tooltipOffset != null) {
-            val xDp = with(density) { tooltipOffset.x.toDp() }
-            val yDp = with(density) { tooltipOffset.y.toDp() }
-            ChartTooltip(
-                ChartMark = tooltipData,
-                unit = unit,
-                modifier = Modifier.offset(x = xDp, y = yDp - 80.dp),
-                color = color
-            )
+
+        tooltipSpec = computedTooltip
+
+        SideEffect {
+            onTooltipSpec?.invoke(tooltipSpec)
         }
     }
 }

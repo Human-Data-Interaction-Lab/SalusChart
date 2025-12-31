@@ -1,5 +1,6 @@
 package com.hdil.saluschart.ui.compose.charts
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -26,20 +28,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
+import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
+import com.hdil.saluschart.core.chart.chartDraw.TooltipSpec
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.ui.theme.ChartColor
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -82,7 +88,10 @@ fun BarChart(
     unifyYAxisAcrossPages: Boolean = true,
     initialPageIndex: Int? = null,          // initial page to show (last page if null)
     yAxisFixedWidth: Dp = 0.dp,             // Padding between the chart and the y-axis
-) {
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = false,
+    ) {
     if (data.isEmpty()) return
 
     // Validate that scrolling and paging modes are not both enabled
@@ -125,7 +134,10 @@ fun BarChart(
             unit = unit,
             yAxisFixedWidth = yAxisFixedWidth,
             maxXTicksLimit = maxXTicksLimit,
-            xLabelAutoSkip = xLabelAutoSkip
+            xLabelAutoSkip = xLabelAutoSkip,
+            barCornerRadiusFraction = barCornerRadiusFraction,
+            barCornerRadiusFractions = barCornerRadiusFractions,
+            roundTopOnly = roundTopOnly,
         )
         return
     }
@@ -158,6 +170,8 @@ fun BarChart(
 
             var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
             var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
+            var tooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
+            val parentWidthDp = maxWidth
 
             Row(Modifier.fillMaxSize()) {
                 // Left fixed axis pane
@@ -241,8 +255,12 @@ fun BarChart(
                                     interactive = false,
                                     chartType = chartType,
                                     showTooltipForIndex = selectedBarIndex,
+                                    onTooltipSpec = { tooltipSpec = it },
                                     showLabel = showLabel,
-                                    unit = unit
+                                    unit = unit,
+                                    barCornerRadiusFraction = barCornerRadiusFraction,
+                                    barCornerRadiusFractions = barCornerRadiusFractions,
+                                    roundTopOnly = roundTopOnly,
                                 )
                             }
                             // Draw interactive touch area
@@ -274,11 +292,17 @@ fun BarChart(
                                     barWidthRatio = barWidthRatio,
                                     interactive = true,
                                     onBarClick = { index, _ ->
+                                        selectedBarIndex = if (selectedBarIndex == index) null else index
                                         onBarClick?.invoke(index, data.getOrNull(index)?.y ?: 0.0)
                                     },
+                                    showTooltipForIndex = selectedBarIndex,
+                                    onTooltipSpec = { tooltipSpec = it },
                                     chartType = chartType,
                                     showLabel = showLabel,
-                                    unit = unit
+                                    unit = unit,
+                                    barCornerRadiusFraction = barCornerRadiusFraction,
+                                    barCornerRadiusFractions = barCornerRadiusFractions,
+                                    roundTopOnly = roundTopOnly,
                                 )
                             }
                         }
@@ -301,6 +325,46 @@ fun BarChart(
                                 yAxisPosition = yAxisPosition,
                                 interactive = referenceLineInteractive,
                                 onClick = onReferenceLineClick
+                            )
+                        }
+                    }
+                    tooltipSpec?.let { spec ->
+                        val density = LocalDensity.current
+                        val parentWidthPx = with(density) { parentWidthDp.toPx() }
+
+                        // instant + smooth: estimated width
+                        val estimatedWidthPx = with(density) { 160.dp.toPx() }
+                        var measuredWidthPx by remember(spec) { mutableStateOf<Float?>(null) }
+                        val tooltipWidthPx = measuredWidthPx ?: estimatedWidthPx
+
+                        val anchorXPx = spec.offset.x
+                        val anchorYPx = spec.offset.y
+                        val gapPx = with(density) { 8.dp.toPx() }
+
+                        val wouldOverflowRight = anchorXPx + tooltipWidthPx + gapPx > parentWidthPx
+                        val targetXPx = if (wouldOverflowRight) {
+                            anchorXPx - tooltipWidthPx - gapPx
+                        } else {
+                            anchorXPx + gapPx
+                        }
+
+                        val animatedX by animateFloatAsState(targetValue = targetXPx, label = "barTooltipX")
+
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .zIndex(999f)
+                        ) {
+                            ChartTooltip(
+                                ChartMark = spec.chartMark,
+                                unit = unit,
+                                color = barColor,
+                                modifier = Modifier
+                                    .offset(
+                                        x = with(density) { animatedX.toDp() },
+                                        y = with(density) { anchorYPx.toDp() } - 80.dp
+                                    )
+                                    .onSizeChanged { measuredWidthPx = it.width.toFloat() }
                             )
                         }
                     }
@@ -362,7 +426,10 @@ private fun BarChartPagedInternal(
     outerPadding: PaddingValues = PaddingValues(0.dp),
     yAxisFixedWidth: Dp = 0.dp,
     maxXTicksLimit: Int? = null,
-    xLabelAutoSkip: Boolean
+    xLabelAutoSkip: Boolean,
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = true,
 ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
@@ -446,7 +513,10 @@ private fun BarChartPagedInternal(
                         top = 0.dp,
                         bottom = 0.dp
                     ),
-                    unit = unit
+                    unit = unit,
+                    barCornerRadiusFraction = barCornerRadiusFraction,
+                    barCornerRadiusFractions = barCornerRadiusFractions,
+                    roundTopOnly = roundTopOnly,
                 )
             }
 

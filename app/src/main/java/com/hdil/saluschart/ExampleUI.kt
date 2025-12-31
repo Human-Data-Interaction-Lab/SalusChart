@@ -42,14 +42,15 @@ import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
-import com.hdil.saluschart.core.transform.toHeartRateTemporalDataSet
-import com.hdil.saluschart.core.transform.toRangeChartMarks
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.core.transform.transform
 import com.hdil.saluschart.core.transform.transformToChartMark
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.MassUnit
 import com.hdil.saluschart.data.provider.SampleDataProvider
+import com.hdil.saluschart.data.provider.SampleDataProvider.buildHourlyPointValues
+import com.hdil.saluschart.data.provider.SampleDataProvider.getHeartRateData
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
@@ -70,6 +71,7 @@ import com.hdil.saluschart.ui.theme.Primary_Purple
 import com.hdil.saluschart.ui.theme.Teel
 import com.hdil.saluschart.ui.theme.Yellow
 import java.time.YearMonth
+import java.time.ZoneId
 
 // Note: Sample data moved to SampleDataProvider for better organization
 
@@ -97,7 +99,10 @@ fun ExampleUI(modifier: Modifier = Modifier) {
     val chartType = listOf(
         "Step Count - Bar Chart",
         "Exercise - Bar Chart",
+        "Step Count - Rounded Bar Chart",
+        "Exercise - Rounded Bar Chart",
         "Heart Rate - Range Bar Chart",
+        "Heart Rate - Range Bar Chart (with dots)",
         "Heart Rate - Line Chart",
         "Sleep Session - Sleep Stage Chart",
         "Weight - Line Chart",
@@ -153,6 +158,8 @@ fun ExampleUI(modifier: Modifier = Modifier) {
             when (selectedChartType) {
                 "Step Count - Bar Chart" -> BarChart_StepCount()
                 "Exercise - Bar Chart" -> BarChart_Exercise()
+                "Step Count - Rounded Bar Chart" -> RoundedBarChart_StepCount()
+                "Exercise - Rounded Bar Chart" -> RoundedBarChart_Exercise()
                 "Weight - Line Chart" -> LineChart_Weight()
                 "Body Fat - Line Chart" -> LineChart_BodyFat()
                 "Body Fat 2 - Line Chart" -> LineChart_BodyFat_2()
@@ -162,6 +169,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Diet - Stacked Bar Chart Paged" -> StackedBarChart_Paged_LeftAxis()
                 "Heart Rate - Range Bar Basic Chart" -> RangeBarChart_1()
                 "Heart Rate - Range Bar Chart" -> RangeBarChart_HeartRate()
+                "Heart Rate - Range Bar Chart (with dots)" -> VerticalRangePlot_HeartRate()
                 "Blood Glucose - Range Bar Chart" -> RangeBarChart_BloodGlucose()
                 "Minimal Charts" -> Minimal_Chart()
                 "CalendarChart 1" -> CalendarChart_1()
@@ -383,6 +391,231 @@ fun BarChart_Exercise() {
             referenceLineType = ReferenceLineType.AVERAGE,
             showReferenceLineLabel = true,
             unit = "분",
+        )
+    }
+}
+
+@Composable
+fun RoundedBarChart_StepCount() {
+    var selectedTimeUnit by remember { mutableStateOf("Hour") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val timeUnitOptions = listOf("Hour", "Day")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Time Unit Selection Dropdown
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "시간 단위:",
+                modifier = Modifier.padding(end = 8.dp),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clickable { expanded = !expanded }
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedTimeUnit,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Time Unit Dropdown",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    timeUnitOptions.forEach { timeUnit ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = timeUnit,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            onClick = {
+                                selectedTimeUnit = timeUnit
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Step Count Bar Chart
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = stepCountHealthData.transform(
+                timeUnit = when (selectedTimeUnit) {
+                    "Hour" -> TimeUnitGroup.HOUR
+                    "Day" -> TimeUnitGroup.DAY
+                    else -> TimeUnitGroup.HOUR
+                },
+                aggregationType = when (selectedTimeUnit) {
+                    "Hour" -> AggregationType.SUM
+                    "Day" -> AggregationType.SUM
+                    else -> AggregationType.SUM
+                }
+            ),
+            unit = "걸음",
+            xLabel = when (selectedTimeUnit) {
+                "Hour" -> "시간"
+                "Day" -> "날짜"
+                else -> "시간"
+            },
+            yLabel = "걸음수",
+            title = "걸음수 데이터 ($selectedTimeUnit 단위)",
+            barColor = Primary_Purple,
+            barWidthRatio = 0.8f,
+            xLabelTextSize = 28f,
+            tooltipTextSize = 32f,
+            interactionType = InteractionType.Bar.TOUCH_AREA,
+            pageSize  = when (selectedTimeUnit) {
+                "Hour" -> 24
+                "Day" -> null
+                else -> 12
+            },
+            unifyYAxisAcrossPages = true,
+            yTickStep = when (selectedTimeUnit) {
+                "Hour" -> 400.0
+                "Day" -> 4000.0
+                else -> 1000.0
+            },
+            maxY = when (selectedTimeUnit) {
+                "Hour" -> null
+                "Day" -> 24000.0
+                else -> null
+            }, // 임시 (tooltip 잘 보이기 위해)
+            showLabel = false,
+            xLabelAutoSkip = true,
+            yAxisPosition = YAxisPosition.RIGHT,
+            barCornerRadiusFractions = BarCornerRadiusFractions(
+                topStart = 0.1f,
+                topEnd = 0.5f,
+                bottomStart = 0.2f,
+                bottomEnd = 0.0f
+            ),
+            barCornerRadiusFraction = 0.5f,
+            roundTopOnly = true,
+        )
+    }
+}
+
+@Composable
+fun RoundedBarChart_Exercise() {
+    var selectedFillGaps by remember { mutableStateOf("Fill Gaps") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val fillGapsOptions = listOf("Fill Gaps", "No Fill Gaps")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Fill Gaps Selection Dropdown
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "간격 채우기:",
+                modifier = Modifier.padding(end = 8.dp),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clickable { expanded = !expanded }
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedFillGaps,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Fill Gaps Dropdown",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    fillGapsOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp
+                                )
+                            },
+                            onClick = {
+                                selectedFillGaps = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Exercise Bar Chart
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = exerciseHealthData.transform(
+                timeUnit = TimeUnitGroup.DAY,
+                aggregationType = AggregationType.DURATION_SUM,
+                fillGaps = selectedFillGaps == "Fill Gaps"
+            ),
+            title = "일별 운동 시간 (${if (selectedFillGaps == "Fill Gaps") "간격 채움" else "간격 비움"})",
+            barColor = Primary_Purple,
+            yAxisPosition = YAxisPosition.LEFT,
+            showLabel = true,
+            windowSize = 7,
+//            pageSize = 7,
+            interactionType = InteractionType.Bar.TOUCH_AREA,
+            referenceLineType = ReferenceLineType.AVERAGE,
+            showReferenceLineLabel = true,
+            unit = "분",
+            barCornerRadiusFractions = BarCornerRadiusFractions(
+                topStart = 0.5f,
+                topEnd = 0.1f,
+                bottomStart = 0.0f,
+                bottomEnd = 0.3f
+            ),
+            barCornerRadiusFraction = 0.5f,
+            roundTopOnly = false,
         )
     }
 }
@@ -1013,6 +1246,50 @@ fun RangeBarChart_HeartRate() {
         pageSize = 24,
     )
 }
+@Composable
+fun VerticalRangePlot_HeartRate() {
+    val rangeData = heartRateHealthData.transform(
+        timeUnit = TimeUnitGroup.HOUR,
+        aggregationType = AggregationType.MIN_MAX
+    )
+
+    val allHeartRateBlocks = remember { getHeartRateData() }
+
+    val zoneId = ZoneId.of("UTC")
+
+    val samplesForFirstDay = remember(allHeartRateBlocks) {
+        val firstDate = allHeartRateBlocks.first().startTime
+            .atZone(zoneId)
+            .toLocalDate()
+
+        allHeartRateBlocks
+            .filter { it.startTime.atZone(zoneId).toLocalDate() == firstDate }
+            .flatMap { it.samples }
+    }
+
+    val pointValues = remember(samplesForFirstDay) {
+        buildHourlyPointValues(samplesForFirstDay, zoneId)
+    }
+
+    RangeBarChart(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp),
+        data = rangeData,
+        title = "심박수 범위 (일간)",
+        yLabel = "심박수 (bpm)",
+        xLabel = "시간",
+        barWidthRatio = 0.45f,
+        barColor = Color(0xFFE91E63),
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "bpm",
+        pageSize = 24,
+        pointValues = pointValues,
+        pointColor = Color(0xFFE91E63),
+        pointRadius = 3.dp
+    )
+}
+
 @Composable
 fun RangeBarChart_BloodGlucose() {
     RangeBarChart(

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -61,12 +62,18 @@ import kotlin.math.roundToInt
 data class CalendarEntry(
     val date: LocalDate,
     val value: Float,
-    val color: Color? = null
+    val color: Color? = null,
+    val rings: List<ProgressChartMark>? = null
 )
 
 enum class BubbleType {
     CIRCLE, // 단일 월 데이터
     RECTANGLE // 여러 월 데이터
+}
+
+enum class CellMarkerType {
+    BUBBLE,
+    MINI_RINGS
 }
 
 /**
@@ -77,6 +84,7 @@ fun CalendarChart(
     modifier: Modifier = Modifier,
     entries: List<CalendarEntry>,
     yearMonth: YearMonth = YearMonth.now(),
+    markerType: CellMarkerType = CellMarkerType.BUBBLE,
     bubbleType: BubbleType = BubbleType.CIRCLE,
     maxBubbleSize: Float = 10f,
     minBubbleSize: Float = 6f,
@@ -87,6 +95,7 @@ fun CalendarChart(
         modifier = modifier,
         entries = entries,
         yearMonth = yearMonth,
+        markerType = markerType,
         bubbleType = bubbleType,
         maxBubbleSize = maxBubbleSize,
         minBubbleSize = minBubbleSize,
@@ -102,6 +111,7 @@ fun SingleMonthCalendarChart(
     modifier: Modifier = Modifier,
     entries: List<CalendarEntry>,
     yearMonth: YearMonth = YearMonth.now(),
+    markerType: CellMarkerType = CellMarkerType.BUBBLE,
     bubbleType: BubbleType,
     maxBubbleSize: Float,
     minBubbleSize: Float,
@@ -169,18 +179,21 @@ fun SingleMonthCalendarChart(
                             } else null
 
                             CalendarCellComposable(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(1f).height(60.dp),
                                 dayOfMonth = dayOfMonth,
                                 totalDays = totalDays,
                                 isWeekend = day == 0,
                                 entry = entry,
                                 maxValue = maxValue,
+                                markerType = markerType,
                                 bubbleType = bubbleType,
                                 minBubbleSize = minBubbleSize,
                                 maxBubbleSize = maxBubbleSize,
                                 color = color,
                                 yearMonth = yearMonth,
                                 onTapDay = { date, bounds, tappedEntry, _ ->
+                                    if (markerType == CellMarkerType.MINI_RINGS) return@CalendarCellComposable
+
                                     if (tappedEntry != null) {
                                         tooltipPoint = null
                                         tooltipAnchor = null
@@ -262,6 +275,7 @@ private fun CalendarCellComposable(
     isWeekend: Boolean,
     entry: CalendarEntry?,
     maxValue: Float,
+    markerType: CellMarkerType,
     bubbleType: BubbleType,
     minBubbleSize: Float,
     maxBubbleSize: Float,
@@ -271,15 +285,16 @@ private fun CalendarCellComposable(
 ) {
     var cellBounds by remember { mutableStateOf<Rect?>(null) }
 
-    // compute the bubble radius dp once so we can pass it out
-    val bubbleRadiusDp: Float = if (entry != null) {
-        ChartMath.Calendar.calculateBubbleSize(
-            value = entry.value,
-            maxValue = maxValue,
-            minSize = minBubbleSize,
-            maxSize = maxBubbleSize
-        )
-    } else 0f
+    val bubbleRadiusDp: Float = remember(entry, maxValue, minBubbleSize, maxBubbleSize) {
+        if (entry != null) {
+            ChartMath.Calendar.calculateBubbleSize(
+                value = entry.value,
+                maxValue = maxValue,
+                minSize = minBubbleSize,
+                maxSize = maxBubbleSize
+            )
+        } else 0f
+    }
 
     Box(
         modifier = modifier
@@ -288,85 +303,96 @@ private fun CalendarCellComposable(
             .pointerInput(dayOfMonth, entry) {
                 detectTapGestures(onTap = {
                     if (dayOfMonth in 1..totalDays) {
-                        cellBounds?.let { onTapDay(yearMonth.atDay(dayOfMonth), it, entry, bubbleRadiusDp) }
+                        cellBounds?.let {
+                            onTapDay(yearMonth.atDay(dayOfMonth), it, entry, bubbleRadiusDp)
+                        }
                     }
                 })
             },
         contentAlignment = Alignment.Center
     ) {
-        if (dayOfMonth in 1..totalDays) {
-            if (bubbleType == BubbleType.CIRCLE) {
-                Column(
-                    modifier = Modifier.fillMaxSize().fillMaxHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // 상단: 날짜 텍스트
-                    Text(
-                        text = dayOfMonth.toString(),
-                        fontSize = 12.sp,
-                        color = if (isWeekend) Color.Red else Color.Black,
-                        textAlign = TextAlign.Center
-                    )
+        if (dayOfMonth !in 1..totalDays) return@Box
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = dayOfMonth.toString(),
+                fontSize = 12.sp,
+                color = if (isWeekend) Color.Red else Color.Black,
+                textAlign = TextAlign.Center
+            )
 
-                    // 중앙: 데이터 포인트(원)
-                    entry?.let { dataEntry ->
-                        val bubbleRadius = ChartMath.Calendar.calculateBubbleSize(
-                            value = dataEntry.value,
-                            maxValue = maxValue,
-                            minSize = minBubbleSize,
-                            maxSize = maxBubbleSize
-                        )
-                        val bubbleColor = ChartMath.Calendar.calculateBubbleColor(
-                            color = dataEntry.color ?: color,
-                            value = dataEntry.value,
-                            maxValue = maxValue,
-                            minSize = minBubbleSize,
-                            maxSize = maxBubbleSize
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size((bubbleRadius * 2).dp)
-                                .clip(CircleShape)
-                                .background(bubbleColor)
-                        )
+            Spacer(Modifier.height(6.dp))
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                when (markerType) {
+                    CellMarkerType.BUBBLE -> {
+                        if (bubbleType == BubbleType.CIRCLE) {
+                            entry?.let { dataEntry ->
+                                val bubbleRadius = ChartMath.Calendar.calculateBubbleSize(
+                                    value = dataEntry.value,
+                                    maxValue = maxValue,
+                                    minSize = minBubbleSize,
+                                    maxSize = maxBubbleSize
+                                )
+                                val bubbleColor = ChartMath.Calendar.calculateBubbleColor(
+                                    color = dataEntry.color ?: color,
+                                    value = dataEntry.value,
+                                    maxValue = maxValue,
+                                    minSize = minBubbleSize,
+                                    maxSize = maxBubbleSize
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .size((bubbleRadius * 2).dp)
+                                        .clip(CircleShape)
+                                        .background(bubbleColor)
+                                )
+                            }
+                        } else {
+                            entry?.let { dataEntry ->
+                                val bubbleColor = ChartMath.Calendar.calculateBubbleColor(
+                                    color = dataEntry.color ?: color,
+                                    value = dataEntry.value,
+                                    maxValue = maxValue,
+                                    minSize = minBubbleSize,
+                                    maxSize = maxBubbleSize
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size((maxBubbleSize * 2).dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(bubbleColor)
+                                )
+                            }
+                        }
                     }
-                        ?: Spacer(modifier = Modifier.height((maxBubbleSize * 2).dp)) // 데이터 없을 때 공간 확보
-                }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize().fillMaxHeight(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // 중앙: 데이터 포인트(사각형)
-                    entry?.let { dataEntry ->
-                        val bubbleRadius = ChartMath.Calendar.calculateBubbleSize(
-                            value = dataEntry.value,
-                            maxValue = maxValue,
-                            minSize = minBubbleSize,
-                            maxSize = maxBubbleSize
-                        )
-                        val bubbleColor = ChartMath.Calendar.calculateBubbleColor(
-                            color = dataEntry.color ?: color,
-                            value = dataEntry.value,
-                            maxValue = maxValue,
-                            minSize = minBubbleSize,
-                            maxSize = maxBubbleSize
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(bubbleColor)
-                        )
-                    }?: Spacer(modifier = Modifier.height((maxBubbleSize * 2).dp)) // 데이터 없을 때 공간 확보
-                    // 상단: 날짜 텍스트
-                    Text(
-                        text = dayOfMonth.toString(),
-                        fontSize = 12.sp,
-                        color = if (isWeekend) Color.Red else Color.Black,
-                        textAlign = TextAlign.Center
-                    )
+
+                    CellMarkerType.MINI_RINGS -> {
+                        val rings = entry?.rings
+                        if (!rings.isNullOrEmpty()) {
+                            val ringColors = listOf(
+                                Color(0xFFE91E63),
+                                Color(0xFF4CAF50),
+                                Color(0xFF9C27B0),
+                            )
+                            val strokePx = with(LocalDensity.current) { 2.dp.toPx() }
+
+                            MiniActivityRings(
+                                modifier = Modifier.size(64.dp),
+                                rings = rings,
+                                colors = ringColors,
+                                strokeWidth = with(LocalDensity.current) { 3.dp.toPx() }
+                            )
+
+                        }
+                    }
                 }
             }
         }
@@ -382,6 +408,7 @@ fun PagedCalendarChart(
     initialYearMonth: YearMonth,
     entriesForMonth: (YearMonth) -> List<CalendarEntry>,
     bubbleType: BubbleType = BubbleType.CIRCLE,
+    markerType: CellMarkerType = CellMarkerType.BUBBLE,
     maxBubbleSize: Float = 10f,
     minBubbleSize: Float = 6f,
     color: Color = MaterialTheme.colorScheme.primary,
@@ -424,6 +451,7 @@ fun PagedCalendarChart(
                 modifier = Modifier.fillMaxSize(),
                 entries = entries,
                 yearMonth = pageYm,
+                markerType = markerType,
                 bubbleType = bubbleType,
                 maxBubbleSize = maxBubbleSize,
                 minBubbleSize = minBubbleSize,

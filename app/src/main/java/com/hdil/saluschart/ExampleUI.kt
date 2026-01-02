@@ -54,15 +54,22 @@ import com.hdil.saluschart.data.provider.SampleDataProvider.getHeartRateData
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
 import com.hdil.saluschart.ui.compose.charts.CalendarChart
+import com.hdil.saluschart.ui.compose.charts.CellMarkerType
+import com.hdil.saluschart.ui.compose.charts.GaugeSegment
+import com.hdil.saluschart.ui.compose.charts.HorizontalRangeBarChart
+import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarChartList
+import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarRow
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
 import com.hdil.saluschart.ui.compose.charts.MinimalGaugeChart
 import com.hdil.saluschart.ui.compose.charts.MinimalLineChart
 import com.hdil.saluschart.ui.compose.charts.MinimalRangeBarChart
+import com.hdil.saluschart.ui.compose.charts.MultiSegmentGaugeChart
 import com.hdil.saluschart.ui.compose.charts.PagedCalendarChart
 import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
+import com.hdil.saluschart.ui.compose.charts.RangeGaugeChart
 import com.hdil.saluschart.ui.compose.charts.ScatterPlot
 import com.hdil.saluschart.ui.compose.charts.SleepStageChart
 import com.hdil.saluschart.ui.compose.charts.StackedBarChart
@@ -72,6 +79,7 @@ import com.hdil.saluschart.ui.theme.Teel
 import com.hdil.saluschart.ui.theme.Yellow
 import java.time.YearMonth
 import java.time.ZoneId
+import kotlin.math.abs
 
 // Note: Sample data moved to SampleDataProvider for better organization
 
@@ -115,11 +123,16 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "CalendarChart 1",
         "CalendarChart 2",
         "CalendarChart with Paging",
+        "CalendarChart with Activity Rings",
         "PieChart 1",
         "DonutChart 1",
         "Progress Bar Chart",
         "Progress Ring Chart",
         "Sleep Session - Sleep Stage Chart",
+        "Sleep Consistency - Horizontal Range Bar Chart",
+        "Nutrition - Horizontal Stacked Bar Chart",
+        "Heart Rate - Range Gauge Chart",
+        "Fitness Level - Multi Segment Gauge Chart"
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Diet - Stacked Bar Chart FreeScroll") }
@@ -175,11 +188,16 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "CalendarChart 1" -> CalendarChart_1()
                 "CalendarChart 2" -> CalendarChart_2()
                 "CalendarChart with Paging" -> CalendarChart_3()
+                "CalendarChart with Activity Rings" -> CalendarChart_4()
                 "PieChart 1" -> PieChart_1()
                 "DonutChart 1" -> DonutChart_1()
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
                 "Sleep Session - Sleep Stage Chart" -> SleepStageChart_1()
+                "Sleep Consistency - Horizontal Range Bar Chart" -> HorizontalRangeBarChart()
+                "Nutrition - Horizontal Stacked Bar Chart" -> HorizontalStackedBarChart()
+                "Heart Rate - Range Gauge Chart" -> RangeGaugeChart()
+                "Fitness Level - Multi Segment Gauge Chart" -> MultiSegmentGauge_Fitness()
                 else -> Text("Unknown Chart Type")
             }
         }
@@ -883,10 +901,14 @@ fun PieChart_1() {
 
 @Composable
 fun CalendarChart_1() {
+    val ym = remember(entries) {
+        entries.firstOrNull()?.date?.let { YearMonth.from(it) } ?: YearMonth.now()
+    }
+
     CalendarChart(
         modifier = Modifier.fillMaxWidth().height(600.dp),
         entries = entries,
-        yearMonth = yearMonth,
+        yearMonth = ym,
         color = Primary_Purple,
         maxBubbleSize = 10f,
         minBubbleSize = 6f
@@ -895,10 +917,14 @@ fun CalendarChart_1() {
 
 @Composable
 fun CalendarChart_2() {
+    val ym = remember(entries) {
+        entries.firstOrNull()?.date?.let { YearMonth.from(it) } ?: YearMonth.now()
+    }
+
     CalendarChart(
         modifier = Modifier.width(300.dp).height(500.dp),
         entries = entries,
-        yearMonth = yearMonth,
+        yearMonth = ym,
         color = Primary_Purple,
         bubbleType = BubbleType.RECTANGLE,
         maxBubbleSize = 10f,
@@ -924,6 +950,27 @@ fun CalendarChart_3() {
         minBubbleSize = 6f
     )
 }
+
+@Composable
+fun CalendarChart_4() {
+    val yearMonth = remember { YearMonth.now() }
+
+    val ringEntries = remember(yearMonth) {
+        SampleDataProvider.getCalendarActivityRingEntries(yearMonth)
+    }
+
+    CalendarChart(
+        modifier = Modifier.fillMaxWidth().height(600.dp),
+        entries = ringEntries,
+        yearMonth = yearMonth,
+        color = Primary_Purple,
+        maxBubbleSize = 10f,
+        minBubbleSize = 6f,
+        markerType = CellMarkerType.MINI_RINGS,
+        bubbleType = BubbleType.CIRCLE
+    )
+}
+
 
 
 @Composable
@@ -1475,6 +1522,116 @@ fun SleepStageChart_1() {
     )
 }
 
+@Composable
+fun HorizontalRangeBarChart() {
+    val rangeMarks = remember {
+        (3..9).map { day ->
+            RangeChartMark(
+                x = day.toDouble(),
+                minPoint = com.hdil.saluschart.core.chart.ChartMark(x = day.toDouble(), y = 1.0 + (day % 3) * 0.5, label = "$day"),
+                maxPoint = com.hdil.saluschart.core.chart.ChartMark(x = day.toDouble(), y = 7.5 - (day % 2) * 0.3, label = "$day"),
+                label = day.toString()
+            )
+        }
+    }
+
+    HorizontalRangeBarChart(
+        title = "수면 규칙성",
+        datePeriodText = "11월 3일 - 9일",
+        data = rangeMarks,
+        minX = 0.0,
+        maxX = 8.0,
+        rowLabels = listOf("3","4","5","6","7","8","9"),
+        bottomStartLabel = "오전\n12:00",
+        bottomEndLabel = "오전\n8:00",
+        isGood = { mark ->
+            // example: treat duration >= 6h as good
+            val dur = abs(mark.maxPoint.y - mark.minPoint.y)
+            dur >= 6.0
+        }
+    )
+
+}
+
+@Composable
+fun HorizontalStackedBarChart() {
+    val rows = remember {
+        listOf(
+            HorizontalStackedBarRow(
+                title = "탄수화물",
+                unit = "g",
+                total = 287.4f,
+                segments = listOf(131.0f, 87.3f, 40.1f),
+                segmentLabels = listOf("부대찌개", "토마토파스타", "붕어빵"),
+                trackMax = 300f
+            ),
+
+                    HorizontalStackedBarRow(
+                title = "포화 지방",
+                unit = "g",
+                total = 18.4f,
+                segments = listOf(15.2f, 2.6f, 0.6f),
+                segmentLabels = listOf("부대찌개", "붕어빵", "토마토파스타"),
+                trackMax = 45f
+            ),
+            HorizontalStackedBarRow(
+                title = "나트륨",
+                unit = "mg",
+                total = 3775.3f,
+                segments = listOf(2913f, 672.3f, 190f),
+                segmentLabels = listOf("부대찌개", "토마토파스타", "붕어빵"),
+                trackMax = 5000f
+            )
+        )
+    }
+
+    HorizontalStackedBarChartList(
+        title = "영양정보",
+        datePeriodText = "11월 3일 - 9일",
+        rows = rows,
+        onRowClick = { _, _, _ -> }
+    )
+}
+
+@Composable
+fun RangeGaugeChart() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        RangeGaugeChart(
+            minValue = 40f,
+            maxValue = 120f,
+            rangeStart = 54f,
+            rangeEnd = 98f,
+            recentValue = 75f,
+            unit = "bpm",
+            recentLabel = "최근기록 오후 3:40",
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+fun MultiSegmentGauge_Fitness() {
+    val segments = listOf(
+        GaugeSegment(120f, 282f, Color(0xFF0AA7FF)), // blue
+        GaugeSegment(282f, 434f, Color(0xFF7ADB2A)), // green
+        GaugeSegment(434f, 616f, Color(0xFFFFC400)), // yellow
+        GaugeSegment(616f, 746f, Color(0xFFFF8A3D))  // orange
+    )
+
+    MultiSegmentGaugeChart(
+        title = "적절함",
+        value = 374f,
+        minValue = 120f,
+        maxValue = 746f,
+        segments = segments,
+        tickValues = listOf(120f, 282f, 434f, 616f, 746f),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
 
 @Preview(showBackground = true)
 @Composable

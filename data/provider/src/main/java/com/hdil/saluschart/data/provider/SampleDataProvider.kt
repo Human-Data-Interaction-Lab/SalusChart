@@ -1,5 +1,6 @@
 package com.hdil.saluschart.data.provider
 
+import android.graphics.Color
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.data.model.model.HeartRate
@@ -23,6 +24,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.random.Random
 
 
@@ -1164,6 +1166,17 @@ object SampleDataProvider {
         ChartMark(x = 6.0, y = 125.0, label = "일")
     )
 
+    fun getNutritionHorizontalStackedRows(): List<HorizontalStackedBarRow> = listOf(
+        HorizontalStackedBarRow(
+            title = "포화 지방",
+            unit = "g",
+            total = 18.4f,
+            target = 15f,
+            segments = listOf(15.2f, 2.6f, 0.5f),
+            segmentLabels = listOf("부대찌개", "슈크림 붕어빵", "토마토파스타")
+        )
+    )
+
     /**
      * Sample progress data for Apple Watch-style activity rings
      */
@@ -1172,6 +1185,57 @@ object SampleDataProvider {
         ProgressChartMark(x = 1.0, current = 20.0, max = 60.0, label = "Exercise", unit = "min"),
         ProgressChartMark(x = 2.0, current = 7.0, max = 10.0, label = "Stand", unit = "h")
     )
+
+    fun getCalendarActivityRingEntries(yearMonth: YearMonth): List<CalendarEntry> {
+        val totalDays = yearMonth.lengthOfMonth()
+
+        return (1..totalDays).map { day ->
+            val date = yearMonth.atDay(day)
+
+            fun wave(d: Int, period: Double, offset: Double): Double {
+                val t = (d / period) + offset
+                return 0.7 + 0.5 * sin(t) // roughly 0.2..1.2
+            }
+
+            val moveRatio = wave(day, 4.5, 0.0).coerceIn(0.0, 1.6)
+            val exRatio   = wave(day, 6.0, 1.0).coerceIn(0.0, 1.6)
+            val stRatio   = wave(day, 9.0, 2.0).coerceIn(0.0, 1.6)
+
+            val moveMax = 2000.0
+            val exMax   = 60.0
+            val stMax   = 10.0
+
+            val move = ProgressChartMark(
+                x = 0.0,
+                current = moveMax * moveRatio,
+                max = moveMax,
+                label = "Move",
+                unit = "KJ"
+            )
+            val exercise = ProgressChartMark(
+                x = 1.0,
+                current = exMax * exRatio,
+                max = exMax,
+                label = "Exercise",
+                unit = "min"
+            )
+            val stand = ProgressChartMark(
+                x = 2.0,
+                current = stMax * stRatio,
+                max = stMax,
+                label = "Stand",
+                unit = "h"
+            )
+
+            val bubbleValue = (move.progress * 100.0).toFloat()
+
+            CalendarEntry(
+                date = date,
+                value = bubbleValue,
+                rings = listOf(move, exercise, stand)
+            )
+        }
+    }
 
     /**
      * Sample calendar entries for calendar charts

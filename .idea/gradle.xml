@@ -19,6 +19,7 @@
             <option value="$PROJECT_DIR$/data" />
             <option value="$PROJECT_DIR$/data/model" />
             <option value="$PROJECT_DIR$/data/provider" />
+            <option value="$PROJECT_DIR$/sample" />
             <option value="$PROJECT_DIR$/ui" />
             <option value="$PROJECT_DIR$/ui/compose" />
             <option value="$PROJECT_DIR$/ui/theme" />

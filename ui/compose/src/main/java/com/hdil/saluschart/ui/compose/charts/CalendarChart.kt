@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -53,6 +55,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 
@@ -130,6 +133,8 @@ fun SingleMonthCalendarChart(
     var tooltipPoint by remember { mutableStateOf<com.hdil.saluschart.core.chart.BaseChartMark?>(null) }
     var tooltipAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var tooltipSize by remember { mutableStateOf(IntSize.Zero) }
+    var ringsTooltipLines by remember { mutableStateOf<List<String>?>(null) }
+    var ringsTooltipTitle by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = modifier
@@ -139,6 +144,8 @@ fun SingleMonthCalendarChart(
                     onTap = {
                         tooltipPoint = null
                         tooltipAnchor = null
+                        ringsTooltipLines = null
+                        ringsTooltipTitle = null
                     }
                 )
             }
@@ -179,7 +186,7 @@ fun SingleMonthCalendarChart(
                             } else null
 
                             CalendarCellComposable(
-                                modifier = Modifier.weight(1f).height(60.dp),
+                                modifier = Modifier.weight(1f).height(76.dp),
                                 dayOfMonth = dayOfMonth,
                                 totalDays = totalDays,
                                 isWeekend = day == 0,
@@ -192,19 +199,44 @@ fun SingleMonthCalendarChart(
                                 color = color,
                                 yearMonth = yearMonth,
                                 onTapDay = { date, bounds, tappedEntry, _ ->
-                                    if (markerType == CellMarkerType.MINI_RINGS) return@CalendarCellComposable
 
                                     if (tappedEntry != null) {
                                         tooltipPoint = null
                                         tooltipAnchor = null
 
-                                        val rounded = tappedEntry.value.roundToInt().toDouble()
-                                        tooltipPoint = com.hdil.saluschart.core.chart.ChartMark(
-                                            x = date.dayOfMonth.toDouble(),
-                                            y = rounded,
-                                            label = date.toString()
-                                        )
-                                        tooltipAnchor = bounds
+                                        if (markerType == CellMarkerType.MINI_RINGS) {
+                                            val rings = tappedEntry.rings.orEmpty()
+                                            val move = rings.getOrNull(0)
+                                            val exercise = rings.getOrNull(1)
+                                            val stand = rings.getOrNull(2)
+
+                                            fun fmt(title: String, m: com.hdil.saluschart.core.chart.ProgressChartMark?): String {
+                                                if (m == null) return "$title: -"
+                                                val cur = m.current
+                                                val max = m.max
+                                                return "$title: ${cur.toInt()}/${max.toInt()}"
+                                            }
+
+                                            ringsTooltipTitle = date.toString() // or "Activity Rings"
+                                            ringsTooltipLines = listOf(
+                                                fmt("Move", move),
+                                                fmt("Exercise", exercise),
+                                                fmt("Stand", stand)
+                                            )
+                                            tooltipAnchor = bounds
+
+                                            // Important: don't show the normal ChartTooltip
+                                            tooltipPoint = null
+                                            return@CalendarCellComposable
+                                        } else {
+                                            val rounded = tappedEntry.value.roundToInt().toDouble()
+                                            tooltipPoint = com.hdil.saluschart.core.chart.ChartMark(
+                                                x = date.dayOfMonth.toDouble(),
+                                                y = rounded,
+                                                label = date.toString()
+                                            )
+                                            tooltipAnchor = bounds
+                                        }
                                     }
                                 }
                             )
@@ -218,8 +250,10 @@ fun SingleMonthCalendarChart(
         val tip = tooltipPoint
         val anchor = tooltipAnchor
         val root = chartRootBounds
+        val ringLines = ringsTooltipLines
+        val ringTitle = ringsTooltipTitle
 
-        if (tip != null && anchor != null && root != null) {
+        if (anchor != null && root != null && (tip != null || ringLines != null)) {
             val density = LocalDensity.current
             val marginPx = with(density) { 8.dp.toPx() }
 
@@ -248,17 +282,66 @@ fun SingleMonthCalendarChart(
                 Modifier
                     .zIndex(10f)
                     .offset { offset }
-                    .onGloballyPositioned { coords ->
-                        tooltipSize = coords.size
-                    }
-                    .graphicsLayer {
-                        alpha = if (hasSize) 1f else 0f
-                    }
+                    .onGloballyPositioned { coords -> tooltipSize = coords.size }
+                    .graphicsLayer { alpha = if (hasSize) 1f else 0f }
             ) {
-                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
-                    ChartMark = tip,
-                    color = color
-                )
+                if (ringLines != null && ringTitle != null) {
+                    MultiLineTooltip(
+                        title = ringTitle,
+                        lines = ringLines,
+                        color = color
+                    )
+                } else if (tip != null) {
+                    com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
+                        ChartMark = tip,
+                        color = color
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MultiLineTooltip(
+    title: String,
+    lines: List<String>,
+    modifier: Modifier = Modifier,
+    color: Color = Color(0xFF5A5A5A),
+) {
+    androidx.compose.material3.Card(
+        modifier = modifier,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.Black
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            lines.forEach { line ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // bullet
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .background(color, shape = CircleShape)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = line,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.Black
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
             }
         }
     }
@@ -382,15 +465,31 @@ private fun CalendarCellComposable(
                                 Color(0xFF4CAF50),
                                 Color(0xFF9C27B0),
                             )
-                            val strokePx = with(LocalDensity.current) { 2.dp.toPx() }
 
-                            MiniActivityRings(
-                                modifier = Modifier.size(64.dp),
-                                rings = rings,
-                                colors = ringColors,
-                                strokeWidth = with(LocalDensity.current) { 3.dp.toPx() }
-                            )
+                            BoxWithConstraints(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val density = LocalDensity.current
 
+                                // Available space inside this marker box
+                                val maxW = constraints.maxWidth.toFloat()
+                                val maxH = constraints.maxHeight.toFloat()
+
+                                // Keep some breathing room so rings don't touch edges
+                                val paddingPx = with(density) { 2.dp.toPx() }
+
+                                // Make ring as large as possible within the marker area
+                                val ringSizePx = (min(maxW, maxH) - paddingPx * 2f).coerceAtLeast(0f)
+                                val ringSizeDp = with(density) { ringSizePx.toDp() }
+
+                                MiniActivityRings(
+                                    modifier = Modifier.size(ringSizeDp),
+                                    rings = rings,
+                                    colors = ringColors,
+                                    strokeWidth = with(density) { 3.2.dp.toPx() }
+                                )
+                            }
                         }
                     }
                 }

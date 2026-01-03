@@ -28,6 +28,13 @@ import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.toStackedChartMarks
 import kotlin.math.ceil
 import kotlin.math.min
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.zIndex
+import kotlin.math.roundToInt
 
 private fun ceilToStep(v: Double, step: Double): Double {
     if (step <= 0.0) return v
@@ -186,15 +193,23 @@ fun StackedBarChart(
             BoxWithConstraints {
                 val availableWidth = maxWidth
                 val marginHorizontal = 16.dp
-                
+
                 // Calculate canvas width for scrolling mode
                 val canvasWidth = if (useScrolling) {
                     val chartWidth = availableWidth - (marginHorizontal * 2)
-                    val sectionsCount = (stackedData.size.toFloat() / windowSize!!.toFloat()).toInt()
+                    val sectionsCount =
+                        (stackedData.size.toFloat() / windowSize.toFloat()).toInt().coerceAtLeast(1)
                     chartWidth * sectionsCount
                 } else null
 
                 var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
+
+                var tooltipSpec by remember {
+                    mutableStateOf<com.hdil.saluschart.core.chart.chartDraw.TooltipSpec?>(null)
+                }
+                var tooltipSize by remember { mutableStateOf<androidx.compose.ui.unit.IntSize>(androidx.compose.ui.unit.IntSize.Zero) }
+
+                val density = LocalDensity.current
 
                 Row(Modifier.fillMaxSize()) {
                     // Left fixed axis pane
@@ -215,9 +230,10 @@ fun StackedBarChart(
                         }
                     }
 
-                    // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
-                    val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
-                    val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                    val startPad =
+                        if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                    val endPad =
+                        if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
                     Box(
                         modifier = Modifier
@@ -256,7 +272,6 @@ fun StackedBarChart(
 
                         val m = chartMetrics ?: return@Box
 
-                        // Colored stacked segments (non-interactive) - precomputed bands
                         segmentBands.forEachIndexed { segIndex, (mins, maxs) ->
                             if (maxs.zip(mins).any { (mx, mn) -> mx > mn }) {
                                 val c = colors.getOrNull(segIndex) ?: Color.Gray
@@ -274,12 +289,10 @@ fun StackedBarChart(
                             }
                         }
 
-                        // Build min base list once for interaction layers
                         val minBase = List(stackedData.size) { m.minY }
 
                         when (interactionType) {
                             InteractionType.StackedBar.TOUCH_AREA -> {
-                                // Draw visual bars with tooltip
                                 ChartDraw.Bar.BarMarker(
                                     data = stackedData,
                                     minValues = minBase,
@@ -291,8 +304,9 @@ fun StackedBarChart(
                                     showTooltipForIndex = selectedBarIndex,
                                     showLabel = showLabel,
                                     unit = unit,
+                                    onTooltipSpec = { tooltipSpec = it }
                                 )
-                                // Draw interactive touch area
+
                                 ChartDraw.Bar.BarMarker(
                                     data = stackedData,
                                     minValues = minBase,
@@ -310,7 +324,6 @@ fun StackedBarChart(
                                 )
                             }
                             InteractionType.StackedBar.BAR -> {
-                                // Draw interactive bars
                                 ChartDraw.Bar.BarMarker(
                                     data = stackedData,
                                     minValues = minBase,
@@ -329,23 +342,62 @@ fun StackedBarChart(
                             }
                         }
 
-                        // Draw reference line
                         if (referenceLineType != ReferenceLineType.NONE) {
-                            chartMetrics?.let { m ->
-                                ReferenceLine.ReferenceLine(
-                                    modifier = Modifier.fillMaxSize(),
-                                    data = stackedData,
-                                    metrics = m,
-                                    chartType = chartType,
-                                    referenceLineType = referenceLineType,
-                                    color = referenceLineColor,
-                                    strokeWidth = referenceLineStrokeWidth,
-                                    lineStyle = referenceLineStyle,
-                                    showLabel = showReferenceLineLabel,
-                                    labelFormat = referenceLineLabelFormat,
-                                    yAxisPosition = yAxisPosition,
-                                    interactive = referenceLineInteractive,
-                                    onClick = onReferenceLineClick
+                            ReferenceLine.ReferenceLine(
+                                modifier = Modifier.fillMaxSize(),
+                                data = stackedData,
+                                metrics = m,
+                                chartType = chartType,
+                                referenceLineType = referenceLineType,
+                                color = referenceLineColor,
+                                strokeWidth = referenceLineStrokeWidth,
+                                lineStyle = referenceLineStyle,
+                                showLabel = showReferenceLineLabel,
+                                labelFormat = referenceLineLabelFormat,
+                                yAxisPosition = yAxisPosition,
+                                interactive = referenceLineInteractive,
+                                onClick = onReferenceLineClick
+                            )
+                        }
+
+                        val spec = tooltipSpec
+                        if (spec != null) {
+                            val marginPx = with(density) { 8.dp.toPx() }
+
+                            // Tooltip anchor in chart px space
+                            val tipX = spec.offset.x
+                            val gapPx = with(density) { 10.dp.toPx() }
+                            val tipY = spec.offset.y - tooltipSize.height.toFloat() - gapPx
+
+                            val w = tooltipSize.width.toFloat()
+                            val h = tooltipSize.height.toFloat()
+                            val hasSize = w > 0f && h > 0f
+
+                            val baseX = if (hasSize) tipX - w / 2f else tipX
+                            val baseY = tipY
+
+                            // Clamp inside the chart drawing region
+                            val maxX = (m.paddingX + m.chartWidth - w).coerceAtLeast(0f)
+                            val maxY = (m.paddingY + m.chartHeight - h).coerceAtLeast(0f)
+
+                            val clampedX = baseX.coerceIn(0f, maxX)
+                            val clampedY = baseY.coerceIn(0f, maxY)
+
+                            val offset = androidx.compose.ui.unit.IntOffset(
+                                clampedX.toInt(),
+                                clampedY.toInt()
+                            )
+
+                            Box(
+                                Modifier
+                                    .zIndex(10f)
+                                    .offset { offset }
+                                    .onGloballyPositioned { coords -> tooltipSize = coords.size }
+                                    .graphicsLayer { alpha = if (hasSize) 1f else 0f }
+                            ) {
+                                com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
+                                    ChartMark = spec.chartMark,
+                                    color = Color.Black
                                 )
                             }
                         }

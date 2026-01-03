@@ -1,14 +1,13 @@
 package com.hdil.saluschart.data.provider
 
-import android.graphics.Color
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ProgressChartMark
-import com.hdil.saluschart.data.model.model.HeartRate
-import com.hdil.saluschart.data.model.model.HeartRateSample
-import com.hdil.saluschart.data.model.model.BloodPressure
 import com.hdil.saluschart.data.model.model.BloodGlucose
+import com.hdil.saluschart.data.model.model.BloodPressure
 import com.hdil.saluschart.data.model.model.BodyFat
 import com.hdil.saluschart.data.model.model.Exercise
+import com.hdil.saluschart.data.model.model.HeartRate
+import com.hdil.saluschart.data.model.model.HeartRateSample
 import com.hdil.saluschart.data.model.model.Mass
 import com.hdil.saluschart.data.model.model.SleepSession
 import com.hdil.saluschart.data.model.model.SleepStage

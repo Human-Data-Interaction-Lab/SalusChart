@@ -3,25 +3,20 @@ package com.hdil.saluschart.ui.compose.charts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.ChartMark
-import com.hdil.saluschart.core.chart.chartDraw.BarChartDraw
-import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
+import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 
 /**
  * 미니멀 바 차트 - 위젯이나 스마트워치 등 작은 화면용
@@ -40,6 +35,10 @@ fun MinimalBarChart(
     data: List<ChartMark>,
     color: Color = Color.Blue,
     padding: Float = 4f,
+    barWidthRatio: Float = 0.8f,
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = true,
     referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
     referenceLineColor: Color = Color.Red,
     referenceLineStrokeWidth: Dp = 1.dp,
@@ -80,9 +79,12 @@ fun MinimalBarChart(
                 maxValues = yValues,
                 metrics = metrics,
                 color = color,
-                barWidthRatio = 0.8f,
+                barWidthRatio = barWidthRatio,
                 interactive = false,
-                chartType = chartType
+                chartType = chartType,
+                barCornerRadiusFraction = barCornerRadiusFraction,
+                barCornerRadiusFractions = barCornerRadiusFractions,
+                roundTopOnly = roundTopOnly,
             )
         }
         

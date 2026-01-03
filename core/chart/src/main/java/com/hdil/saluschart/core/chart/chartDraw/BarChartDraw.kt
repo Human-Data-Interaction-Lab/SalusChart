@@ -232,11 +232,21 @@ object BarChartDraw {
             }
 
             if (shouldShowTooltip) {
+                val anchorY = if (chartType == ChartType.STACKED_BAR) {
+                    val totalValue = maxValues.getOrNull(index) ?: 0.0
+                    val denom = (metrics.maxY - metrics.minY).takeIf { it != 0.0 } ?: 1.0
+                    val yTopScreen =
+                        metrics.chartHeight - ((totalValue - metrics.minY) / denom) * metrics.chartHeight
+                    (metrics.paddingY + yTopScreen).toFloat()
+                } else {
+                    barY.toFloat()
+                }
+
                 computedTooltip = TooltipSpec(
                     chartMark = data[index],
                     offset = Offset(
                         x = barX.toFloat() + barWidth.toFloat() / 2f,
-                        y = barY.toFloat()
+                        y = anchorY
                     )
                 )
             }

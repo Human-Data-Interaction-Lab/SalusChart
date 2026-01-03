@@ -3,19 +3,14 @@ package com.hdil.saluschart.ui.compose.charts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.core.chart.toRangeChartMarks
 
 /**
@@ -40,15 +35,21 @@ fun MinimalRangeBarChart(
     modifier: Modifier = Modifier,
     data: List<ChartMark>,
     color: Color = Color.Blue,
+    barWidthRatio: Float = 0.8f,
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = true,
 ) {
     if (data.isEmpty()) return
     val chartType = ChartType.MINIMAL_RANGE_BAR
 
-    // Transform ChartMarks to RangeChartMarks automatically
-    val rangeData = data.toRangeChartMarks(
-        minValueSelector = { group -> group.minByOrNull { it.y } ?: group.first() },
-        maxValueSelector = { group -> group.maxByOrNull { it.y } ?: group.first() }
-    )
+    // Transform ChartMarks -> RangeChartMarks
+    val rangeData = remember(data) {
+        data.toRangeChartMarks(
+            minValueSelector = { group -> group.minByOrNull { it.y } ?: group.first() },
+            maxValueSelector = { group -> group.maxByOrNull { it.y } ?: group.first() }
+        )
+    }
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 
@@ -66,9 +67,12 @@ fun MinimalRangeBarChart(
                 maxValues = rangeData.map { it.maxPoint.y },
                 metrics = metrics,
                 color = color,
-                barWidthRatio = 0.8f,
+                barWidthRatio = barWidthRatio,
                 interactive = false,
                 chartType = chartType,
+                barCornerRadiusFraction = barCornerRadiusFraction,
+                barCornerRadiusFractions = barCornerRadiusFractions,
+                roundTopOnly = roundTopOnly,
             )
         }
     }

@@ -18,10 +18,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,12 +33,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
+import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
@@ -60,10 +66,17 @@ import com.hdil.saluschart.ui.compose.charts.HorizontalRangeBarChart
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarChartList
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarRow
 import com.hdil.saluschart.ui.compose.charts.LineChart
+import com.hdil.saluschart.ui.compose.charts.MiniActivityRings
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
 import com.hdil.saluschart.ui.compose.charts.MinimalGaugeChart
+import com.hdil.saluschart.ui.compose.charts.MinimalGaugeSegment
+import com.hdil.saluschart.ui.compose.charts.MinimalHorizontalStackedBar
+import com.hdil.saluschart.ui.compose.charts.MinimalLadderChart
 import com.hdil.saluschart.ui.compose.charts.MinimalLineChart
+import com.hdil.saluschart.ui.compose.charts.MinimalMultiSegmentGauge
+import com.hdil.saluschart.ui.compose.charts.MinimalProgressBar
 import com.hdil.saluschart.ui.compose.charts.MinimalRangeBarChart
+import com.hdil.saluschart.ui.compose.charts.MinimalSleepChart
 import com.hdil.saluschart.ui.compose.charts.MultiSegmentGaugeChart
 import com.hdil.saluschart.ui.compose.charts.PagedCalendarChart
 import com.hdil.saluschart.ui.compose.charts.PieChart
@@ -71,8 +84,12 @@ import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
 import com.hdil.saluschart.ui.compose.charts.RangeGaugeChart
 import com.hdil.saluschart.ui.compose.charts.ScatterPlot
+import com.hdil.saluschart.ui.compose.charts.SleepColumn
+import com.hdil.saluschart.ui.compose.charts.SleepSegment
 import com.hdil.saluschart.ui.compose.charts.SleepStageChart
 import com.hdil.saluschart.ui.compose.charts.StackedBarChart
+import com.hdil.saluschart.ui.compose.charts.StackedBarSegment
+import com.hdil.saluschart.ui.compose.charts.markerColorForRatio
 import com.hdil.saluschart.ui.theme.Orange
 import com.hdil.saluschart.ui.theme.Primary_Purple
 import com.hdil.saluschart.ui.theme.Teel
@@ -1011,6 +1028,13 @@ fun ScatterPlot_BloodPressure() {
 
 @Composable
 fun Minimal_Chart() {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(bottom = 24.dp) // prevents last card from being cut off
+    ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1024,7 +1048,7 @@ fun Minimal_Chart() {
                 .background(
                     color = Color.White
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
                 ,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
         ) {
@@ -1054,7 +1078,10 @@ fun Minimal_Chart() {
                 MinimalBarChart(
                     data = ChartMarks,
                     color = Primary_Purple,
-                    referenceLineType = ReferenceLineType.AVERAGE
+                    referenceLineType = ReferenceLineType.AVERAGE,
+//                    barWidthRatio = 0.85f,
+//                    barCornerRadiusFraction = 0.6f,
+//                    roundTopOnly = false
                 )
             }
         }
@@ -1072,7 +1099,7 @@ fun Minimal_Chart() {
                 .background(
                     color = Color.White
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
             ,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
         ) {
@@ -1107,7 +1134,9 @@ fun Minimal_Chart() {
             }
         }
     }
-    Card(
+    ActivityRingsCard()
+        MinimalProgressBarCard()
+        Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 16.dp),
@@ -1120,7 +1149,7 @@ fun Minimal_Chart() {
                 .background(
                     color = Color.White
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
             ,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
         ) {
@@ -1150,6 +1179,8 @@ fun Minimal_Chart() {
                 MinimalRangeBarChart(
                     data = rangeData,
                     color = Orange,
+                    barCornerRadiusFraction = 0.6f,
+                    roundTopOnly = false,
                 )
             }
         }
@@ -1167,7 +1198,7 @@ fun Minimal_Chart() {
                 .background(
                     color = Color.White
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
             ,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
         ) {
@@ -1206,6 +1237,626 @@ fun Minimal_Chart() {
                     containerMax = 120.0, // 정상 심박수 범위 끝
                     containerColor = Color.LightGray,
                     rangeColor = Orange,
+                )
+            }
+        }
+    }
+    CardioFitnessMinimalCard()
+
+    SleepMinimalCard()
+
+        MinimalStackedBarCard()
+
+        MinimalMultiSegmentGaugeCard()
+
+    }
+}
+
+@Composable
+private fun ActivityRingsCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT: title + 3 columns
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "오늘 활동",
+                        color = Color.Black,
+                        letterSpacing = 0.2.sp
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                val move = 115
+                val exercise = 7
+                val stand = 6
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ActivityMetricColumn(
+                        title = "Move",
+                        titleColor = Color(0xFFE53935),
+                        value = move.toString(),
+                        unit = "kcal",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    VerticalDivider()
+
+                    ActivityMetricColumn(
+                        title = "Exercise",
+                        titleColor = Color(0xFF00C853),
+                        value = exercise.toString(),
+                        unit = "분",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    VerticalDivider()
+
+                    ActivityMetricColumn(
+                        title = "Stand",
+                        titleColor = Color(0xFF00B0FF),
+                        value = stand.toString(),
+                        unit = "시간",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // RIGHT: rings
+            Box(
+                modifier = Modifier
+                    .size(56.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val rings = remember {
+                    listOf(
+                        ProgressChartMark(x = 0.0, current = 115.0, max = 200.0, label = "Move", unit = "kcal"),
+                        ProgressChartMark(x = 1.0, current = 7.0,   max = 30.0,  label = "Exercise", unit = "min"),
+                        ProgressChartMark(x = 2.0, current = 6.0,   max = 12.0,  label = "Stand", unit = "h"),
+                    )
+                }
+                val ringColors = remember {
+                    listOf(
+                        Color(0xFFFF2D55), // move (pink/red)
+                        Color(0xFF32D74B), // exercise (green)
+                        Color(0xFF00C7FF)  // stand (cyan)
+                    )
+                }
+
+                val density = LocalDensity.current
+                val strokeWidthPx = with(density) { 6.dp.toPx() }
+
+                MiniActivityRings(
+                    modifier = Modifier.size(54.dp),
+                    rings = rings,
+                    colors = ringColors,
+                    strokeWidth = strokeWidthPx,
+                    maxLaps = 2,
+                    trackAlpha = 0.20f,
+                    gapRatio = 0.14f,
+                    startAngle = -90f
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityMetricColumn(
+    modifier: Modifier = Modifier,
+    title: String,
+    titleColor: Color,
+    value: String,
+    unit: String
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = title,
+            color = titleColor,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp
+        )
+        Spacer(Modifier.height(2.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = value,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                letterSpacing = (-0.5).sp
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = unit,
+                color = Color(0xFF9B9B9B),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun VerticalDivider(
+    height: Dp = 50.dp,
+    thickness: Dp = 1.dp,
+    sidePadding: Dp = 12.dp
+) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = sidePadding)
+            .height(height)
+            .width(thickness)
+            .background(Color(0xFFE6E6E6))
+    )
+}
+
+@Composable
+fun SleepMinimalCard() {
+    // Placeholder values
+    val hours = 6
+    val mins = 38
+    val sleepTeal = Color(0xFF00B7B2)
+
+    val sleepColumns = remember {
+        fun main(v: Float) = SleepSegment(v, sleepTeal.copy(alpha = 1.00f))
+        fun light(v: Float) = SleepSegment(v, sleepTeal.copy(alpha = 0.85f))
+        fun gap(v: Float) = SleepSegment(v, sleepTeal.copy(alpha = 0.65f))
+
+        listOf(
+            // Day 1 – long sleep, tiny interruption
+            SleepColumn(listOf(
+                main(78f),
+                gap(12f),
+                light(18f)
+            )),
+
+            // Day 2 – clean, continuous night
+            SleepColumn(listOf(
+                main(92f)
+            )),
+
+            // Day 3 – slightly fragmented
+            SleepColumn(listOf(
+                light(22f),
+                main(58f),
+                gap(12f),
+                light(14f)
+            )),
+
+            // Day 4 – very solid sleep
+            SleepColumn(listOf(
+                main(88f)
+            )),
+
+            // Day 5 – wake-up in the middle
+            SleepColumn(listOf(
+                main(46f),
+                gap(24f),
+                main(34f)
+            )),
+
+            // Day 6 – short early wake
+            SleepColumn(listOf(
+                light(18f),
+                main(72f)
+            )),
+
+            // Day 7 – moderate sleep
+            SleepColumn(listOf(
+                main(64f),
+                gap(15f),
+                light(20f)
+            )),
+        )
+    }
+
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT: title + value (match your other cards)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
+                Text(
+                    text = "오늘 수면",
+                    color = Color.Black,
+                    letterSpacing = 0.2.sp
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = hours.toString(),
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        letterSpacing = (-1).sp
+                    )
+                    Text(
+                        text = " 시간",
+                        color = Color(0xFF9B9B9B),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                    )
+
+                    Spacer(Modifier.width(10.dp))
+
+                    Text(
+                        text = mins.toString(),
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        letterSpacing = (-1).sp
+                    )
+                    Text(
+                        text = " 분",
+                        color = Color(0xFF9B9B9B),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                    )
+                }
+            }
+
+            // RIGHT: wider chart area
+            Box(
+                modifier = Modifier
+                    .width(96.dp)
+                    .height(60.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                MinimalSleepChart(
+                    modifier = Modifier.fillMaxSize(),
+                    columns = sleepColumns,
+                    barWidthRatio = 0.55f,
+                    columnGapRatio = 0.15f,
+                    segmentGapRatio = 0.28f,
+                    cornerRadiusRatio = 0.95f,
+                    trackAlpha = 0f
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CardioFitnessMinimalCard() {
+    // Example values
+    val title = "유산소 피트니스"
+    val status = "평균 이하"
+    val vo2 = 35.7
+
+    // Ladder position config
+    val selectedBand = 1      // 0=top, 1=middle, 2=bottom
+    val markerRatio = 0.58f   // 0..1 across the bar
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT: text
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 10.dp)
+            ) {
+                Text(
+                    text = title,
+                    color = Color.Black,
+                    letterSpacing = 0.2.sp
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Text(
+                    text = status,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Text(
+                    text = "$vo2 VO₂ max",
+                    color = Color(0xFF9B9B9B),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+            }
+
+            // RIGHT: ladder chart
+            Box(
+                modifier = Modifier
+                    .width(90.dp)
+                    .height(56.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                MinimalLadderChart(
+                    modifier = Modifier.fillMaxSize(),
+                    bandCount = 4,
+                    selectedBandIndex = selectedBand,
+                    markerRatio = markerRatio,
+                    trackColor = Color(0xFFEDEDED),
+                    selectedColor = Color(0xFFF6A5B6),
+                    markerColor = Color(0xFFE91E63)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MinimalStackedBarCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT: title / value
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 10.dp)
+            ) {
+                Text(
+                    text = "스트레스",
+                    color = Color.Black,
+                    letterSpacing = 0.2.sp
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "높음",
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "오늘 평균",
+                    color = Color(0xFF9B9B9B),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp
+                )
+            }
+
+            // RIGHT: the stacked bar + bubble
+            Box(
+                modifier = Modifier
+                    .width(120.dp)
+                    .height(52.dp),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                val segments = remember {
+                    listOf(
+                        StackedBarSegment(0.35f, Color(0xFF7CE7A0)), // light green
+                        StackedBarSegment(0.45f, Color(0xFF00C853)), // green
+                        StackedBarSegment(0.10f, Color(0xFFFF8A3D)), // orange
+                        StackedBarSegment(0.10f, Color(0xFFEFEFEF))  // remainder-ish
+                    )
+                }
+
+                MinimalHorizontalStackedBar(
+                    modifier = Modifier.fillMaxSize(),
+                    segments = segments,
+                    trackColor = Color(0xFFEDEDED),
+                    selectedSegmentIndex = 2, // points to orange
+                    label = "높음",
+                    bubbleColor = Color(0xFFD6F5DF),
+                    bubbleTextColor = Color(0xFF0A7A32),
+                    barHeight = 12.dp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MinimalProgressBarCard() {
+    val progress = 0.78f
+    val title = "오늘 걸음 수"
+    val valueText = "4,680"
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT: title / value
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 10.dp)
+            ) {
+                Text(
+                    text = title,
+                    color = Color.Black,
+                    letterSpacing = 0.2.sp
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = valueText,
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 22.sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "/6,000 걸음",
+                    color = Color(0xFF9B9B9B),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+            }
+
+            // RIGHT: progress bar + bubble
+            Box(
+                modifier = Modifier
+                    .width(160.dp)
+                    .height(52.dp),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                MinimalProgressBar(
+                    modifier = Modifier.fillMaxSize(),
+                    progress = progress,
+                    label = "78%",
+                    trackColor = Color(0xFFEDEDED),
+                    fillColor = Color(0xFF00C853),
+                    bubbleColor = Color(0xFFD6F5DF),
+                    bubbleTextColor = Color(0xFF0A7A32),
+                    barHeight = 12.dp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MinimalMultiSegmentGaugeCard() {
+    // Dummy example values
+    val title = "최종당화산물 지수"
+    val status = "보통"
+    val desc = "오늘 기준"
+
+    // Marker position (0..1)
+    val markerRatio = 0.45f
+
+    val segments = remember {
+        listOf(
+            MinimalGaugeSegment(0.25f, Color(0xFF10A5F5)), // blue
+            MinimalGaugeSegment(0.25f, Color(0xFF8BEA3B)), // green
+            MinimalGaugeSegment(0.25f, Color(0xFFFFC629)), // yellow
+            MinimalGaugeSegment(0.25f, Color(0xFFFF8A1D))  // orange
+        )
+    }
+
+    val markerColor = remember(markerRatio, segments) {
+        markerColorForRatio(markerRatio, segments)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT text area
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 10.dp)
+            ) {
+                Text(
+                    text = title,
+                    color = Color.Black,
+                    letterSpacing = 0.2.sp
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = status,
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = desc,
+                    color = Color(0xFF9B9B9B),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp
+                )
+            }
+
+            // RIGHT gauge
+            Box(
+                modifier = Modifier
+                    .width(120.dp)
+                    .height(52.dp)
+                    .padding(top = 32.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                MinimalMultiSegmentGauge(
+                    modifier = Modifier.fillMaxSize(),
+                    segments = segments,
+                    markerRatio = markerRatio,
+                    barHeight = 14.dp,
+                    markerWidth = 36.dp,
+                    markerHeight = 20.dp,
+                    markerColor = markerColor
                 )
             }
         }
@@ -1333,7 +1984,9 @@ fun VerticalRangePlot_HeartRate() {
         pageSize = 24,
         pointValues = pointValues,
         pointColor = Color(0xFFE91E63),
-        pointRadius = 3.dp
+        pointRadius = 3.dp,
+        barCornerRadiusFraction = 0.5f,
+        roundTopOnly = false,
     )
 }
 

@@ -30,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
@@ -48,6 +47,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.TooltipSpec
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.core.chart.toRangeChartMarks
 import com.hdil.saluschart.ui.theme.ChartColor
 
@@ -80,6 +80,9 @@ fun RangeBarChart(
     pointValues: List<List<Double>>? = null,  // one list per x index; null = no points
     pointColor: Color = barColor,
     pointRadius: Dp = 3.dp,
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = true,
 
     // Scroll/Page
     windowSize: Int? = null, // visible items in scroll window
@@ -145,6 +148,9 @@ fun RangeBarChart(
             showTitle = showTitle,
             showYAxis = showYAxis,
             unit = unit,
+            barCornerRadiusFraction = barCornerRadiusFraction,
+            barCornerRadiusFractions = barCornerRadiusFractions,
+            roundTopOnly = roundTopOnly,
             // scale/paging
             pageSize = requestedPageSize,
             unifyYAxisAcrossPages = unifyYAxisAcrossPages,
@@ -281,10 +287,11 @@ fun RangeBarChart(
                                     interactive = false,
                                     chartType = chartType,
                                     unit = unit,
-                                    barCornerRadiusFraction = 0.5f,
-                                    roundTopOnly = false,
                                     showTooltipForIndex = selectedIndex,
-                                    onTooltipSpec = { tooltipSpec = it }
+                                    onTooltipSpec = { tooltipSpec = it },
+                                    barCornerRadiusFraction = barCornerRadiusFraction,
+                                    barCornerRadiusFractions = barCornerRadiusFractions,
+                                    roundTopOnly = roundTopOnly,
                                 )
                                 // Draw interactive touch area
                                 ChartDraw.Bar.BarMarker(
@@ -295,12 +302,13 @@ fun RangeBarChart(
                                     chartType = chartType,
                                     isTouchArea = true,
                                     unit = unit,
-                                    barCornerRadiusFraction = 0.5f,
-                                    roundTopOnly = false,
                                     onBarClick = { idx, _ ->
                                         selectedIndex = if (selectedIndex == idx) null else idx
                                         onBarClick?.invoke(idx, rangeData[idx])
-                                    }
+                                    },
+                                    barCornerRadiusFraction = barCornerRadiusFraction,
+                                    barCornerRadiusFractions = barCornerRadiusFractions,
+                                    roundTopOnly = roundTopOnly,
                                 )
                             }
                         }
@@ -321,10 +329,11 @@ fun RangeBarChart(
                                     },
                                     chartType = chartType,
                                     unit = unit,
-                                    barCornerRadiusFraction = 0.5f,
-                                    roundTopOnly = false,
                                     showTooltipForIndex = selectedIndex,
-                                    onTooltipSpec = { tooltipSpec = it }
+                                    onTooltipSpec = { tooltipSpec = it },
+                                    barCornerRadiusFraction = barCornerRadiusFraction,
+                                    barCornerRadiusFractions = barCornerRadiusFractions,
+                                    roundTopOnly = roundTopOnly,
                                 )
                             }
                         }
@@ -517,7 +526,11 @@ private fun RangeBarChartPagedInternal(
     initialPageIndex: Int?,
     outerPadding: PaddingValues,
     yAxisFixedWidth: Dp = 0.dp,
-) {
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = true,
+
+    ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
     }
@@ -606,6 +619,9 @@ private fun RangeBarChartPagedInternal(
                     pointValues = pointValues,
                     pointColor = pointColor,
                     pointRadius = pointRadius,
+                    barCornerRadiusFraction = barCornerRadiusFraction,
+                    barCornerRadiusFractions = barCornerRadiusFractions,
+                    roundTopOnly = roundTopOnly,
                 )
             }
 

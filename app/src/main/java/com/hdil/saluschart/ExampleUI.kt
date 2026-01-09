@@ -1566,7 +1566,7 @@ fun CardioFitnessMinimalCard() {
 
     // Ladder position config
     val selectedBand = 1      // 0=top, 1=middle, 2=bottom
-    val markerRatio = 0.58f   // 0..1 across the bar
+    val markerRatio = 0.5f   // 0..1 across the bar
 
     Card(
         modifier = Modifier
@@ -1785,7 +1785,7 @@ fun MinimalMultiSegmentGaugeCard() {
     val desc = "오늘 기준"
 
     // Marker position (0..1)
-    val markerRatio = 0.45f
+    val markerRatio = 0.35f
 
     val segments = remember {
         listOf(
@@ -2269,19 +2269,21 @@ fun RangeGaugeChart() {
 @Composable
 fun MultiSegmentGauge_Fitness() {
     val segments = listOf(
-        GaugeSegment(120f, 282f, Color(0xFF0AA7FF)), // blue
-        GaugeSegment(282f, 434f, Color(0xFF7ADB2A)), // green
-        GaugeSegment(434f, 616f, Color(0xFFFFC400)), // yellow
-        GaugeSegment(616f, 746f, Color(0xFFFF8A3D))  // orange
+        GaugeSegment(0f, 0f, Color(0xFF0AA7FF)),
+        GaugeSegment(0f, 0f, Color(0xFF7ADB2A)),
+        GaugeSegment(0f, 0f, Color(0xFFFFC400)),
+        GaugeSegment(0f, 0f, Color(0xFFFF8A3D))
     )
 
     MultiSegmentGaugeChart(
         title = "적절함",
-        value = 374f,
+        value = 342f,
         minValue = 120f,
-        maxValue = 746f,
+        maxValue = 646f,
         segments = segments,
-        tickValues = listOf(120f, 282f, 434f, 616f, 746f),
+
+        tickValues = listOf(120f, 302f, 334f, 516f, 646f),
+
         modifier = Modifier.fillMaxWidth()
     )
 }

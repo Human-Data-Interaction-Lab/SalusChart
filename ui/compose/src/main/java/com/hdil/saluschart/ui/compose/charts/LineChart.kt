@@ -389,7 +389,7 @@ fun LineChart(
                             val yClamped = yPlaced.coerceIn(0f, maxY.toFloat())
 
                             ChartTooltip(
-                                ChartMark = data[i],
+                                chartMark = data[i],
                                 unit = unit,
                                 modifier = Modifier
                                     .offset { IntOffset(xClamped.toInt(), yClamped.toInt()) }

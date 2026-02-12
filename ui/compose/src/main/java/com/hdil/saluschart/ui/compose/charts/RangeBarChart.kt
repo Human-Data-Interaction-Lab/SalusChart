@@ -2,7 +2,6 @@ package com.hdil.saluschart.ui.compose.charts
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -27,17 +26,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
@@ -48,97 +46,96 @@ import com.hdil.saluschart.core.chart.chartDraw.TooltipSpec
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
-import com.hdil.saluschart.core.chart.toRangeChartMarks
+import com.hdil.saluschart.core.chart.toRangeChartMarksByXGroup
 import com.hdil.saluschart.ui.theme.ChartColor
 
-// TODO: unused?
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun Float.roundUpToStep(step: Float): Float =
-    (kotlin.math.ceil(this / step) * step).toFloat()
+/**
+ * Displays a range bar chart where each x-position is represented by a vertical bar spanning
+ * from a minimum value to a maximum value.
+ *
+ * Supports:
+ * - Optional paging mode (via [pageSize])
+ * - Optional free scrolling mode (via [windowSize])
+ * - Tap interaction on bars (see [interactionType] and [onBarClick])
+ * - Optional overlay points per x-position (see [pointValues])
+ *
+ * Notes:
+ * - Paging mode ([pageSize]) and scrolling mode ([windowSize]) are mutually exclusive.
+ * - Tapping the selected bar again clears the selection.
+ *
+ * @param modifier Modifier applied to the chart container.
+ * @param data Chart data. Each entry is a [RangeChartMark] representing min/max values for one x-position.
+ * @param xLabel X-axis label displayed at the bottom when not blank.
+ * @param yLabel Y-axis label displayed at the side when not blank.
+ * @param title Title displayed above the chart when [showTitle] is true.
+ * @param barColor Color used to draw range bars.
+ * @param barWidthRatio Ratio of bar width to each slot width.
+ * @param yAxisPosition Side on which the Y-axis is drawn.
+ * @param interactionType Determines whether interaction is handled on the bar shape itself or via a larger touch area.
+ * @param onBarClick Optional callback invoked when a bar is selected. Provides (index, mark).
+ * @param showTitle Whether to display [title].
+ * @param showYAxis Whether to draw the Y-axis and horizontal grid labels (depends on internal mode/layout).
+ * @param xLabelAutoSkip If true, automatically skips x-axis labels when they would overlap.
+ * @param maxXTicksLimit Optional max number of x-axis labels to render.
+ * @param yTickStep Optional fixed tick step for the y-axis grid. If null, ticks are computed automatically.
+ * @param unit Unit suffix used in tooltip/value formatting (e.g., "mg/dL", "bpm").
+ * @param pointValues Optional overlay points drawn for each x-position (one list per bar index).
+ * @param pointColor Color used to draw overlay points.
+ * @param pointRadius Radius of overlay points.
+ * @param barCornerRadiusFraction Corner radius fraction applied uniformly to bar corners (recommended 0.0–0.5).
+ * @param barCornerRadiusFractions Optional per-corner radius configuration. Takes priority over [barCornerRadiusFraction].
+ * @param roundTopOnly If true, only the top corners are rounded for bars.
+ * @param windowSize Enables free scrolling when provided and smaller than the data size. Represents number of visible items.
+ * @param contentPadding Padding applied around the chart content.
+ * @param pageSize Enables paging when provided and smaller than the data size. Represents items per page.
+ * @param initialPageIndex Optional initial page index (if null, defaults to the last page).
+ * @param yAxisFixedWidth Width reserved for an external/fixed Y-axis pane in modes that support it.
+ */
 
-@OptIn(ExperimentalFoundationApi::class)
+@JvmName("RangeBarChartRangeMarks")
 @Composable
 fun RangeBarChart(
     modifier: Modifier = Modifier,
-    data: List<BaseChartMark>, // Use BaseChartMark to support both ChartMark and RangeChartMark
+    data: List<RangeChartMark>,
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Range Bar Chart",
     barColor: Color = ChartColor.Default,
-    barWidthRatio: Float = 0.6f, // Ratio of bar width to space width (바 너비 / 한 칸 너비)
+    barWidthRatio: Float = 0.6f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
     onBarClick: ((Int, RangeChartMark) -> Unit)? = null,
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
-    xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
-    maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
-    yTickStep: Double? = null, // y-axis grid tick step (automatically calculated if null)
+    xLabelAutoSkip: Boolean = true,
+    maxXTicksLimit: Int? = null,
+    yTickStep: Double? = null,
     unit: String = "",
-
-    pointValues: List<List<Double>>? = null,  // one list per x index; null = no points
+    pointValues: List<List<Double>>? = null,
     pointColor: Color = barColor,
     pointRadius: Dp = 3.dp,
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
     roundTopOnly: Boolean = true,
-
-    // Scroll/Page
-    windowSize: Int? = null, // visible items in scroll window
-    contentPadding: PaddingValues = PaddingValues(16.dp), // Free-scroll paddings
-    pageSize: Int? = null, // items per page
-    unifyYAxisAcrossPages: Boolean = true,
-    initialPageIndex: Int? = null, // initial page to show (last page if null)
-    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
+    windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    pageSize: Int? = null,
+    initialPageIndex: Int? = null,
+    yAxisFixedWidth: Dp = 0.dp,
 ) {
     if (data.isEmpty()) return
 
-    // Validate that scrolling and paging modes are not both enabled
-    require(!(windowSize != null && pageSize != null)) {
+    require(windowSize == null || pageSize == null) {
         "Cannot enable both scrolling mode (windowSize) and paging mode (pageSize) simultaneously"
     }
 
-    val chartType = ChartType.RANGE_BAR
-
-    // TODO: RangeChartMark 직접 input하는 경우는 TemporalDataSetToChartMark.kt 파일의 toRangeChartMarks 함수 사용할 때 한정
-    // - Range bar chart 이외 모든 함수는 ChartMark만 input으로 함 (따라서 RangeChartMark input은 일관성 부족)
-
-    // Convert data to RangeChartMark if needed
-    val rangeData = remember(data) {
-        when {
-            data.all { it is RangeChartMark } -> {
-                // Data is already RangeChartMark, cast directly
-                data.map { it as RangeChartMark }
-            }
-            data.all { it is ChartMark } -> {
-                // Data is ChartMark, convert using toRangeChartMarks
-                // TODO: 이 함수는 ChartMarkExtensions.kt 파일에 있는 toRangeChartMarks 함수임 (ChartMark list -> RangeChartMark list)
-                // - 위에서 설명한 TemporalDataSetToChartMark.kt 파일의 toRangeChartMarks 함수와 이름이 같고 기능이 다름 (MIN_MAX 집계된 TemporalDataSet -> RangeChartMark list)
-                // - BloodGlucose 범위 차트 등 제작할 때 MIN_MAX transformation 위해서 추가한 함수이므로, 일반 ChartMark list -> RangeChartMark list 변환 시에는 사용하지 않음
-                // - 둘 중 하나의 방법만 사용하길 권장
-                (data as List<ChartMark>).toRangeChartMarks(
-                    minValueSelector = { g -> g.minByOrNull { it.y } ?: g.first() },
-                    maxValueSelector = { g -> g.maxByOrNull { it.y } ?: g.first() }
-                )
-            }
-            else -> {
-                require (false) { "Data must be either all ChartMark or all RangeChartMark" }
-                emptyList<RangeChartMark>() // Unreachable, but required for compilation
-            }
-        }
-    }
-
-    // Compute effective page size (0 = off)
     val requestedPageSize = (pageSize ?: 0).coerceAtLeast(0)
-
-    // Enable paging if pageSize is provided and data exceeds page size
-    val enablePaging = requestedPageSize > 0 && rangeData.size > requestedPageSize
+    val enablePaging = requestedPageSize > 0 && data.size > requestedPageSize
 
     if (enablePaging) {
         RangeBarChartPagedInternal(
             modifier = modifier,
-            data = rangeData,
+            data = data,
             title = title,
             barColor = barColor,
             barWidthRatio = barWidthRatio,
@@ -147,25 +144,153 @@ fun RangeBarChart(
             onBarClick = onBarClick,
             showTitle = showTitle,
             showYAxis = showYAxis,
+            maxXTicksLimit = maxXTicksLimit,
+            xLabelAutoSkip = xLabelAutoSkip,
             unit = unit,
-            barCornerRadiusFraction = barCornerRadiusFraction,
-            barCornerRadiusFractions = barCornerRadiusFractions,
-            roundTopOnly = roundTopOnly,
-            // scale/paging
+            pointValues = pointValues,
+            pointColor = pointColor,
+            pointRadius = pointRadius,
             pageSize = requestedPageSize,
-            unifyYAxisAcrossPages = unifyYAxisAcrossPages,
             yTickStep = yTickStep,
             initialPageIndex = initialPageIndex,
             outerPadding = contentPadding,
             yAxisFixedWidth = yAxisFixedWidth,
-            maxXTicksLimit = maxXTicksLimit,
-            xLabelAutoSkip = xLabelAutoSkip,
-            pointValues = pointValues,
-            pointColor = pointColor,
-            pointRadius = pointRadius,
+            barCornerRadiusFraction = barCornerRadiusFraction,
+            barCornerRadiusFractions = barCornerRadiusFractions,
+            roundTopOnly = roundTopOnly,
         )
         return
     }
+
+    RangeBarChartContent(
+        modifier = modifier,
+        rangeData = data,
+        xLabel = xLabel,
+        yLabel = yLabel,
+        title = title,
+        barColor = barColor,
+        barWidthRatio = barWidthRatio,
+        yAxisPosition = yAxisPosition,
+        interactionType = interactionType,
+        onBarClick = onBarClick,
+        showTitle = showTitle,
+        showYAxis = showYAxis,
+        xLabelAutoSkip = xLabelAutoSkip,
+        maxXTicksLimit = maxXTicksLimit,
+        yTickStep = yTickStep,
+        unit = unit,
+        pointValues = pointValues,
+        pointColor = pointColor,
+        pointRadius = pointRadius,
+        barCornerRadiusFraction = barCornerRadiusFraction,
+        barCornerRadiusFractions = barCornerRadiusFractions,
+        roundTopOnly = roundTopOnly,
+        windowSize = windowSize,
+        contentPadding = contentPadding,
+        yAxisFixedWidth = yAxisFixedWidth,
+    )
+}
+
+@JvmName("RangeBarChartChartMarks")
+@Composable
+fun RangeBarChart(
+    modifier: Modifier = Modifier,
+    data: List<ChartMark>,
+    xLabel: String = "Time",
+    yLabel: String = "Value",
+    title: String = "Range Bar Chart",
+    barColor: Color = ChartColor.Default,
+    barWidthRatio: Float = 0.6f,
+    yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
+    interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
+    onBarClick: ((Int, RangeChartMark) -> Unit)? = null,
+    showTitle: Boolean = true,
+    showYAxis: Boolean = true,
+    xLabelAutoSkip: Boolean = true,
+    maxXTicksLimit: Int? = null,
+    yTickStep: Double? = null,
+    unit: String = "",
+    pointValues: List<List<Double>>? = null,
+    pointColor: Color = barColor,
+    pointRadius: Dp = 3.dp,
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = true,
+    windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    pageSize: Int? = null,
+    initialPageIndex: Int? = null,
+    yAxisFixedWidth: Dp = 0.dp,
+) {
+    val rangeData = remember(data) {
+        data.toRangeChartMarksByXGroup(
+            minValueSelector = { group -> group.minByOrNull { it.y } ?: group.first() },
+            maxValueSelector = { group -> group.maxByOrNull { it.y } ?: group.first() }
+        )
+    }
+
+    RangeBarChart(
+        modifier = modifier,
+        data = rangeData,
+        xLabel = xLabel,
+        yLabel = yLabel,
+        title = title,
+        barColor = barColor,
+        barWidthRatio = barWidthRatio,
+        yAxisPosition = yAxisPosition,
+        interactionType = interactionType,
+        onBarClick = onBarClick,
+        showTitle = showTitle,
+        showYAxis = showYAxis,
+        xLabelAutoSkip = xLabelAutoSkip,
+        maxXTicksLimit = maxXTicksLimit,
+        yTickStep = yTickStep,
+        unit = unit,
+        pointValues = pointValues,
+        pointColor = pointColor,
+        pointRadius = pointRadius,
+        barCornerRadiusFraction = barCornerRadiusFraction,
+        barCornerRadiusFractions = barCornerRadiusFractions,
+        roundTopOnly = roundTopOnly,
+        windowSize = windowSize,
+        contentPadding = contentPadding,
+        pageSize = pageSize,
+        initialPageIndex = initialPageIndex,
+        yAxisFixedWidth = yAxisFixedWidth,
+    )
+}
+
+@Composable
+private fun RangeBarChartContent(
+    modifier: Modifier,
+    rangeData: List<RangeChartMark>,
+    xLabel: String,
+    yLabel: String,
+    title: String,
+    barColor: Color,
+    barWidthRatio: Float,
+    yAxisPosition: YAxisPosition,
+    interactionType: InteractionType.RangeBar,
+    onBarClick: ((Int, RangeChartMark) -> Unit)?,
+    showTitle: Boolean,
+    showYAxis: Boolean,
+    xLabelAutoSkip: Boolean,
+    maxXTicksLimit: Int?,
+    yTickStep: Double?,
+    unit: String,
+    pointValues: List<List<Double>>?,
+    pointColor: Color,
+    pointRadius: Dp,
+    barCornerRadiusFraction: Float,
+    barCornerRadiusFractions: BarCornerRadiusFractions?,
+    roundTopOnly: Boolean,
+    windowSize: Int?,
+    contentPadding: PaddingValues,
+    yAxisFixedWidth: Dp,
+) {
+    if (rangeData.isEmpty()) return
+
+    val chartType = ChartType.RANGE_BAR
 
     val useScrolling = windowSize != null && windowSize < rangeData.size
     val isFixedYAxis = showYAxis && useScrolling
@@ -175,6 +300,11 @@ fun RangeBarChart(
         if (showTitle) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
+        }
+
+        // Axis titles
+        if (showYAxis) {
+            Spacer(Modifier.height(4.dp))
         }
 
         BoxWithConstraints {
@@ -196,7 +326,7 @@ fun RangeBarChart(
             var tooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
 
             Row(Modifier.fillMaxSize()) {
-                // Left fixed axis pane
+                // Left fixed axis pane (used only when scrolling + showYAxis)
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
@@ -214,31 +344,33 @@ fun RangeBarChart(
                     }
                 }
 
-                // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
-                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
-                val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                // Padding rules around the chart canvas:
+                // - If Y-axis is hidden, no extra padding.
+                // - If Y-axis is fixed on one side, no extra padding on that side.
+                val startPad =
+                    if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                val endPad =
+                    if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .let { if (useScrolling) it.horizontalScroll(scrollState, overscrollEffect = null) else it }
                         .padding(start = startPad, end = endPad)
-                        .onGloballyPositioned { coords ->
-                            val p = coords.positionInWindow()
-                        }
                 ) {
-                Canvas(
+                    // Grid + axis + x labels (Canvas layer)
+                    Canvas(
                         modifier = if (useScrolling) {
                             Modifier.width(canvasWidth!!).fillMaxHeight()
                         } else {
                             Modifier.fillMaxSize()
                         }
                     ) {
-                        // Use generic computeMetrics so we can control tick step & padding
                         val valuesForScale = buildList {
                             addAll(rangeData.map { it.minPoint.y })
                             addAll(rangeData.map { it.maxPoint.y })
                         }
+
                         val metrics = ChartMath.computeMetrics(
                             size = size,
                             values = valuesForScale,
@@ -248,7 +380,8 @@ fun RangeBarChart(
                             includeYAxisPadding = !isFixedYAxis,
                             fixedTickStep = yTickStep
                         )
-                        chartMetrics = metrics
+
+                        if (chartMetrics != metrics) chartMetrics = metrics
 
                         ChartDraw.drawGrid(
                             drawScope = this,
@@ -257,9 +390,11 @@ fun RangeBarChart(
                             yAxisPosition = yAxisPosition,
                             drawLabels = showYAxis && !isFixedYAxis
                         )
+
                         if (showYAxis && !isFixedYAxis) {
                             ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                         }
+
                         ChartDraw.Bar.drawBarXAxisLabels(
                             ctx = drawContext,
                             labels = labels,
@@ -269,14 +404,14 @@ fun RangeBarChart(
                         )
                     }
 
-                    // Range bars & interaction
+                    // Range bars & interaction (Composable layer)
                     val minValues = rangeData.map { it.minPoint.y }
                     val maxValues = rangeData.map { it.maxPoint.y }
 
                     when (interactionType) {
                         InteractionType.RangeBar.TOUCH_AREA -> {
-                            // Draw visual bars
                             chartMetrics?.let { m ->
+                                // Visual bars (non-interactive)
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
                                     minValues = minValues,
@@ -293,7 +428,8 @@ fun RangeBarChart(
                                     barCornerRadiusFractions = barCornerRadiusFractions,
                                     roundTopOnly = roundTopOnly,
                                 )
-                                // Draw interactive touch area
+
+                                // Transparent full-height touch strips
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
                                     minValues = List(rangeData.size) { m.minY },
@@ -312,9 +448,10 @@ fun RangeBarChart(
                                 )
                             }
                         }
+
                         InteractionType.RangeBar.BAR -> {
-                            // Draw interactive bars
                             chartMetrics?.let { m ->
+                                // Bars handle interaction directly
                                 ChartDraw.Bar.BarMarker(
                                     data = rangeData,
                                     minValues = minValues,
@@ -338,7 +475,8 @@ fun RangeBarChart(
                             }
                         }
                     }
-                    // Overlay points
+
+                    // Overlay points (Canvas layer)
                     if (!pointValues.isNullOrEmpty()) {
                         chartMetrics?.let { m ->
                             val radiusPx = with(LocalDensity.current) { pointRadius.toPx() }
@@ -347,10 +485,9 @@ fun RangeBarChart(
 
                             val slotWidth = m.chartWidth / dataSize.toFloat()
                             val activeIndex = selectedIndex
-                            Canvas(
-                                modifier = Modifier.matchParentSize()
-                            ) {
-                                pointValues!!.forEachIndexed { index, values ->
+
+                            Canvas(modifier = Modifier.matchParentSize()) {
+                                pointValues.forEachIndexed { index, values ->
                                     if (index >= dataSize) return@forEachIndexed
 
                                     val barMin = minValues[index]
@@ -359,9 +496,7 @@ fun RangeBarChart(
                                     val centerX = m.paddingX + slotWidth * (index + 0.5f)
 
                                     val dotColor =
-                                        if (activeIndex == null) {
-                                            pointColor
-                                        } else if (index == activeIndex) {
+                                        if (activeIndex == null || index == activeIndex) {
                                             pointColor
                                         } else {
                                             pointColor.copy(alpha = 0.2f)
@@ -372,22 +507,13 @@ fun RangeBarChart(
                                         val maxY = m.maxY
 
                                         fun valueToYPx(value: Double): Float {
-                                            val ratio = if (maxY == minY) 0f else ((value - minY) / (maxY - minY)).toFloat()
+                                            val ratio =
+                                                if (maxY == minY) 0f
+                                                else ((value - minY) / (maxY - minY)).toFloat()
                                             return m.chartHeight * (1f - ratio)
                                         }
 
                                         val yDot = valueToYPx(v)
-
-                                        val yTopBar = valueToYPx(barMax)
-                                        val yBottomBar = valueToYPx(barMin)
-
-                                        val overlapPadPx = radiusPx + 8f
-
-                                        val overlapsBar =
-                                            yDot >= (yTopBar - overlapPadPx) &&
-                                                    yDot <= (yBottomBar + overlapPadPx)
-
-                                        if (overlapsBar) return@forEach
 
                                         drawCircle(
                                             color = dotColor,
@@ -399,13 +525,13 @@ fun RangeBarChart(
                             }
                         }
                     }
+
+                    // Tooltip overlay
                     tooltipSpec?.let { spec ->
                         val density = LocalDensity.current
                         val parentWidthPx = with(density) { parentWidthDp.toPx() }
 
-                        // Start with an estimate so we can place immediately (no delay)
                         val estimatedWidthPx = with(density) { 160.dp.toPx() }
-
                         var measuredWidthPx by remember(spec) { mutableStateOf<Float?>(null) }
                         val tooltipWidthPx = measuredWidthPx ?: estimatedWidthPx
 
@@ -429,7 +555,7 @@ fun RangeBarChart(
                                 .zIndex(999f)
                         ) {
                             ChartTooltip(
-                                ChartMark = spec.chartMark,
+                                chartMark = spec.chartMark,
                                 unit = unit,
                                 color = barColor,
                                 modifier = Modifier
@@ -441,7 +567,23 @@ fun RangeBarChart(
                             )
                         }
                     }
+
+                    // X-axis label
+                    if (xLabel.isNotBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .padding(bottom = 4.dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Text(
+                                text = xLabel,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                 }
+
                 // Right fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                     Canvas(
@@ -460,9 +602,29 @@ fun RangeBarChart(
                     }
                 }
             }
+
+            // Y-axis label
+            if (showYAxis && yLabel.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+            }
         }
+
         Spacer(Modifier.height(4.dp))
     }
+}
+
+@Composable
+private fun AxisLabelX(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+}
+
+@Composable
+private fun AxisLabelY(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        modifier = modifier.graphicsLayer(rotationZ = -90f)
+    )
 }
 
 // Function for fixed external Y-axis in paged range bar chart
@@ -498,9 +660,6 @@ private fun FixedPagerYAxisRange(
     }
 }
 
-// TODO: unifyYAxisAcrossPages 의미?
-// Function for paged range bar chart
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RangeBarChartPagedInternal(
     modifier: Modifier,
@@ -516,12 +675,11 @@ private fun RangeBarChartPagedInternal(
     maxXTicksLimit: Int? = null,
     xLabelAutoSkip: Boolean,
     unit: String,
-    pointValues: List<List<Double>>? = null,  // one list per x index; null = no points
+    pointValues: List<List<Double>>? = null, // one list per x index; null = no points
     pointColor: Color = barColor,
     pointRadius: Dp = 3.dp,
     // scale/paging
     pageSize: Int,
-    unifyYAxisAcrossPages: Boolean,
     yTickStep: Double?,
     initialPageIndex: Int?,
     outerPadding: PaddingValues,
@@ -529,15 +687,14 @@ private fun RangeBarChartPagedInternal(
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
     roundTopOnly: Boolean = true,
-
-    ) {
+) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
     }
     val firstPage = initialPageIndex ?: (pageCount - 1).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = firstPage, pageCount = { pageCount })
 
-    // Compute unified Y-axis range using the lighter function (no pixel calculations)
+    // Compute unified Y-axis range (shared across pages)
     val yAxisRange = remember(data, yTickStep) {
         val minValues = data.map { it.minPoint.y }
         val maxValues = data.map { it.maxPoint.y }
@@ -551,7 +708,6 @@ private fun RangeBarChartPagedInternal(
         )
     }
 
-    // Compute min/max rounded values and effective tick step
     val minRounded = yAxisRange.minY
     val maxRounded = yAxisRange.maxY
     val effectiveTickStep = yAxisRange.tickStep
@@ -574,26 +730,28 @@ private fun RangeBarChartPagedInternal(
                 )
             }
 
-            // Pager
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
             ) { page ->
                 val start = page * pageSize
                 val end = kotlin.math.min(start + pageSize, data.size)
-                val slice = data.subList(start, end)
 
-                // Convert RangeChartMark back to ChartMark for the function call
-                val sliceAsChartMarks = slice.flatMap { rangePoint ->
-                    listOf(rangePoint.minPoint, rangePoint.maxPoint)
+                val pageSlice = data.subList(start, end)
+
+                // Slice points to match visible bars
+                val pagePoints = pointValues?.let { pts ->
+                    if (pts.size >= end) pts.subList(start, end) else pts.drop(start).take(end - start)
                 }
 
-                // Render a normal RangeBarChart page:
-                // - no inner scroll (windowSize = null)
-                // - unified scale with the external axis
-                RangeBarChart(
+                // Render the page directly
+                RangeBarChartContent(
                     modifier = Modifier.fillMaxSize(),
-                    data = sliceAsChartMarks,
+                    rangeData = pageSlice,
+                    xLabel = "",                 // keep the page clean; outer container can show a label later
+                    yLabel = "",
                     title = title,
                     barColor = barColor,
                     barWidthRatio = barWidthRatio,
@@ -603,25 +761,20 @@ private fun RangeBarChartPagedInternal(
                         { localIdx, rangePoint -> cb(start + localIdx, rangePoint) }
                     },
                     showTitle = false,
-                    showYAxis = false,                    // external axis handles it
-                    maxXTicksLimit = maxXTicksLimit,
+                    showYAxis = false,            // external axis handles it
                     xLabelAutoSkip = xLabelAutoSkip,
+                    maxXTicksLimit = maxXTicksLimit,
                     yTickStep = effectiveTickStep,
-                    windowSize = null,                    // no inner scroll
-                    contentPadding = PaddingValues(
-                        start = if (yAxisPosition == YAxisPosition.LEFT) 0.dp else 0.dp,
-                        end = if (yAxisPosition == YAxisPosition.RIGHT) 0.dp else 0.dp,
-                        top = 0.dp,
-                        bottom = 0.dp
-                    ),
-                    pageSize = null,                      // don't recurse
                     unit = unit,
-                    pointValues = pointValues,
+                    pointValues = pagePoints,
                     pointColor = pointColor,
                     pointRadius = pointRadius,
                     barCornerRadiusFraction = barCornerRadiusFraction,
                     barCornerRadiusFractions = barCornerRadiusFractions,
                     roundTopOnly = roundTopOnly,
+                    windowSize = null,            // no inner scroll per page
+                    contentPadding = PaddingValues(0.dp),
+                    yAxisFixedWidth = 0.dp,
                 )
             }
 

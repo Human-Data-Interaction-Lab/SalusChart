@@ -2,7 +2,12 @@ package com.hdil.saluschart.core.chart.chartDraw
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -19,26 +24,37 @@ import com.hdil.saluschart.core.chart.BaseChartMark
 import kotlin.math.roundToInt
 
 /**
- * 차트 툴팁을 표시하는 컴포저블
+ * Tooltip composable used by charts to display information about a selected data point.
  *
- * @param ChartMark 표시할 데이터 포인트
- * @param unit 데이터 단위 (예: "kg", "lb", "bpm" 등)
- * @param backgroundColor 툴팁 배경색
- * @param textColor 텍스트 색상
- * @param customText 커스텀 툴팁 텍스트 (null이 아니면 기본 로직 대신 사용)
- * @param modifier 모디파이어
+ * The tooltip shows:
+ * - An optional label (if the mark provides one)
+ * - A colored indicator dot
+ * - A value string derived from the mark type, unless [customText] is provided
+ *
+ * If [customText] is not null, it takes priority over all default formatting logic.
+ *
+ * @param chartMark The selected chart mark to display.
+ * @param unit Optional unit suffix appended to values (e.g., "kg", "bpm", "min").
+ * @param backgroundColor Tooltip background color.
+ * @param textColor Tooltip text color.
+ * @param customText Optional custom tooltip text. When provided, default formatting is skipped.
+ * @param color Color of the indicator dot (used for non-stacked marks).
+ * @param segmentColors Optional list of colors for stacked marks. If provided, it is used to color
+ * each segment row indicator in [com.hdil.saluschart.core.chart.StackedChartMark].
+ * @param modifier Modifier applied to the tooltip container (useful for positioning).
  */
+
 @Composable
 fun ChartTooltip(
-    ChartMark: BaseChartMark,
+    chartMark: BaseChartMark,
     unit: String = "",
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
     customText: String? = null,
-    color: Any = Color.Black,
+    color: Color = Color.Black,
+    segmentColors: List<Color>? = null,
     modifier: Modifier = Modifier
 ) {
-
     Box(
         modifier = modifier
             .shadow(
@@ -61,7 +77,7 @@ fun ChartTooltip(
         Column(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            ChartMark.label?.let { label ->
+            chartMark.label?.let { label ->
                 Text(
                     text = label,
                     fontSize = 13.sp,
@@ -94,7 +110,7 @@ fun ChartTooltip(
                 }
             } else {
                 // Custom text for RangeChartMark and StackedChartMark
-                when (ChartMark) {
+                when (chartMark) {
                     is com.hdil.saluschart.core.chart.RangeChartMark -> {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -109,7 +125,7 @@ fun ChartTooltip(
                                     )
                             )
                             Text(
-                                text = "${ChartMark.minPoint.y.roundToInt()}$unit ~ ${ChartMark.maxPoint.y.roundToInt()}$unit", // Custom text format: '100 kg ~ 120 kg'
+                                text = "${chartMark.minPoint.y.roundToInt()}$unit ~ ${chartMark.maxPoint.y.roundToInt()}$unit", // Custom text format: '100 kg ~ 120 kg'
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = textColor.copy(alpha = 0.9f),
@@ -119,7 +135,7 @@ fun ChartTooltip(
                     }
 
                     is com.hdil.saluschart.core.chart.StackedChartMark -> {
-                        ChartMark.segments.asReversed().forEachIndexed { index, segment ->
+                        chartMark.segments.asReversed().forEachIndexed { index, segment ->
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -128,7 +144,7 @@ fun ChartTooltip(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .background(
-                                            color = (color as? List<Color>)?.getOrNull(index) ?: Color.Black,
+                                            color = segmentColors?.getOrNull(index) ?: Color.Black,
                                             shape = CircleShape
                                         )
                                 )
@@ -162,9 +178,9 @@ fun ChartTooltip(
                             )
                             Text(
                                 text = if (unit.isNotEmpty()) {
-                                    "${ChartMark.y.roundToInt()}$unit"
+                                    "${chartMark.y.roundToInt()}$unit"
                                 } else {
-                                    ChartMark.y.roundToInt().toString()
+                                    chartMark.y.roundToInt().toString()
                                 },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,

@@ -245,7 +245,7 @@ fun HorizontalStackedBarChartList(
                     .zIndex(999f)
             ) {
                 ChartTooltip(
-                    ChartMark = t.mark,
+                    chartMark = t.mark,
                     unit = rows.getOrNull(t.mark.x.toInt())?.unit ?: "",
                     color = t.dotColor,
                     modifier = Modifier

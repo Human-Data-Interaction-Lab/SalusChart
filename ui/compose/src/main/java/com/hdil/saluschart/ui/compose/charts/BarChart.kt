@@ -356,7 +356,7 @@ fun BarChart(
                                 .zIndex(999f)
                         ) {
                             ChartTooltip(
-                                ChartMark = spec.chartMark,
+                                chartMark = spec.chartMark,
                                 unit = unit,
                                 color = barColor,
                                 modifier = Modifier

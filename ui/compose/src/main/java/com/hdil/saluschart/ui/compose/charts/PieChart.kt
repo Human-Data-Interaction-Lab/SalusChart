@@ -185,7 +185,7 @@ fun PieChart(
                     // 툴팁 표시
                     if (showTooltip && selectedSectionIndex >= 0 && selectedSectionIndex < data.size) {
                         ChartTooltip(
-                            ChartMark = data[selectedSectionIndex],
+                            chartMark = data[selectedSectionIndex],
                             modifier = Modifier.offset {
                                 tooltipPosition
                             },
@@ -305,7 +305,7 @@ fun PieChart(
                     // 툴팁 표시
                     if (showTooltip && selectedSectionIndex >= 0 && selectedSectionIndex < data.size) {
                         ChartTooltip(
-                            ChartMark = data[selectedSectionIndex],
+                            chartMark = data[selectedSectionIndex],
                             modifier = Modifier.offset {
                                 tooltipPosition
                             },

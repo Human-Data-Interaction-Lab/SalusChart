@@ -381,7 +381,7 @@ fun HorizontalRangeBarChart(
                             .zIndex(999f)
                     ) {
                         ChartTooltip(
-                            ChartMark = spec.chartMark,
+                            chartMark = spec.chartMark,
                             unit = tooltipUnit,
                             color = goodColor,
                             modifier = Modifier

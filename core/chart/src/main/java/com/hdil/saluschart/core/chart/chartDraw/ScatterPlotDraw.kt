@@ -217,7 +217,7 @@ object ScatterPlotDraw {
                 val xDp = with(density) { offset.x.toDp() }
                 val yDp = with(density) { offset.y.toDp() }
                 ChartTooltip(
-                    ChartMark = mark,
+                    chartMark = mark,
                     modifier = Modifier.offset(x = xDp - pointRadius, y = yDp + pointRadius),
                     unit = unit,
                     color = color

@@ -166,7 +166,7 @@ fun List<BloodGlucose>.transform(
     if (aggregationType == AggregationType.MIN_MAX) {
         return this.toTemporalDataSet()
             .transform(timeUnit, aggregationType)
-            .toRangeChartMarks(fillGaps)
+            .toRangeChartMarksFromMinMax(fillGaps)
     } else {
         return this.toTemporalDataSet()
             .transform(timeUnit, aggregationType)
@@ -216,7 +216,7 @@ fun List<HeartRate>.transformToRangeChartMark(
 ): List<RangeChartMark> {
     return this.toTemporalDataSet()
         .transform(timeUnit, AggregationType.MIN_MAX)
-        .toRangeChartMarks(fillGaps)
+        .toRangeChartMarksFromMinMax(fillGaps)
 }
 
 /**
@@ -233,7 +233,7 @@ fun List<HeartRate>.transform(
     if (aggregationType == AggregationType.MIN_MAX){
         return this.toTemporalDataSet()
             .transform(timeUnit, aggregationType)
-            .toRangeChartMarks(fillGaps)
+            .toRangeChartMarksFromMinMax(fillGaps)
     }
     else {
         return this.toTemporalDataSet()

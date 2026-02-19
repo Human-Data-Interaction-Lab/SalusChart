@@ -223,7 +223,7 @@ object SleepStageChartDraw {
             } else Color.Black
 
             ChartTooltip(
-                ChartMark = tooltipData,
+                chartMark = tooltipData,
                 unit = unit,
                 customText = customTooltipText,
                 modifier = Modifier.offset(x = xDp, y = yDp - 80.dp),

@@ -11,7 +11,7 @@ import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
-import com.hdil.saluschart.core.chart.toRangeChartMarks
+import com.hdil.saluschart.core.chart.toRangeChartMarksByXGroup
 
 /**
  * 미니멀 범위 바 차트 - 위젯이나 스마트워치 등 작은 화면용
@@ -45,7 +45,7 @@ fun MinimalRangeBarChart(
 
     // Transform ChartMarks -> RangeChartMarks
     val rangeData = remember(data) {
-        data.toRangeChartMarks(
+        data.toRangeChartMarksByXGroup(
             minValueSelector = { group -> group.minByOrNull { it.y } ?: group.first() },
             maxValueSelector = { group -> group.maxByOrNull { it.y } ?: group.first() }
         )

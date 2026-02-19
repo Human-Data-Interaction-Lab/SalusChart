@@ -396,7 +396,7 @@ fun StackedBarChart(
                                     .graphicsLayer { alpha = if (hasSize) 1f else 0f }
                             ) {
                                 com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
-                                    ChartMark = spec.chartMark,
+                                    chartMark = spec.chartMark,
                                     color = Color.Black
                                 )
                             }

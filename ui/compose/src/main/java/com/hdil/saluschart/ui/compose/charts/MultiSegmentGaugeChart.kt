@@ -103,10 +103,14 @@ fun MultiSegmentGaugeChart(
         } ?: segments.firstOrNull()
     }
 
-    // Value label color: slightly darker version of segment where marker is
-    val valueColor: Color = remember(value, segments) {
-        if (value == null) Color(0xFF6F6F6F)
-        else darken(segmentForValue(value)?.color ?: Color(0xFF7ADB2A), 0.82f)
+    val valueColor: Color = remember(value, segments, tickValues) {
+        if (value == null) {
+            Color(0xFF6F6F6F)
+        } else {
+            val idx = bandIndexForValue(value, tickValues)
+            val bandColor = segments.getOrNull(idx)?.color ?: Color(0xFF7ADB2A)
+            darken(bandColor, 0.82f)
+        }
     }
 
     Surface(
@@ -161,7 +165,14 @@ fun MultiSegmentGaugeChart(
                         val layout = textMeasurer.measure(label, style = labelStyle)
                         val textWdp = with(density) { layout.size.width.toDp() }
 
-                        val xDp = barW * ratio(value)
+                        val barWPx = with(density) { barW.toPx() }
+                        val vxPx = valueToXEqualBands(
+                            v = value,
+                            ticks = tickValues,
+                            barW = barWPx
+                        )
+                        val xDp = with(density) { vxPx.toDp() }
+
                         val leftDp = (xDp - textWdp / 2f).coerceIn(0.dp, barW - textWdp)
 
                         Text(
@@ -191,24 +202,25 @@ fun MultiSegmentGaugeChart(
 
                             fun vToX(v: Float): Float = ratio(v) * w
 
-                            // Segments: rectangles (square boundaries) but outer bar is clipped
-                            segments.forEach { seg ->
-                                val s0 = seg.start.coerceIn(lo, hi)
-                                val s1 = seg.end.coerceIn(lo, hi)
-                                val left = vToX(min(s0, s1))
-                                val right = vToX(max(s0, s1))
-                                val segW = (right - left).coerceAtLeast(0f)
+                            val n = segments.size.coerceAtLeast(1)
+                            val segW = w / n
 
+                            segments.forEachIndexed { i, seg ->
+                                val left = i * segW
+                                val right = left + segW
                                 drawRect(
                                     color = seg.color,
                                     topLeft = Offset(left, 0f),
-                                    size = Size(segW, h)
+                                    size = Size(right - left, h)
                                 )
                             }
 
-                            // Marker: white circle + transparent hex window + white hex + inner white hex
                             if (value != null) {
-                                val vx = vToX(value.coerceIn(lo, hi))
+                                val vx = valueToXEqualBands(
+                                    v = value,
+                                    ticks = tickValues,
+                                    barW = w
+                                )
                                 val cy = h / 2f
 
                                 val outerR = h * markerOuterRadiusFactor
@@ -342,6 +354,59 @@ fun MultiSegmentGaugeChart(
     }
 }
 
+private fun valueToXEqualBands(
+    v: Float,
+    ticks: List<Float>,
+    barW: Float
+): Float {
+    if (ticks.size < 2) return 0f
+
+    val t = v
+    val nBands = ticks.size - 1
+    val bandW = barW / nBands
+
+    val lo = ticks.first()
+    val hi = ticks.last()
+    val vv = t.coerceIn(minOf(lo, hi), maxOf(lo, hi))
+
+    var idx = 0
+    for (i in 0 until nBands) {
+        val a = ticks[i]
+        val b = ticks[i + 1]
+        val minAB = minOf(a, b)
+        val maxAB = maxOf(a, b)
+        if (vv >= minAB && vv <= maxAB) {
+            idx = i
+            break
+        }
+        if (i == nBands - 1) idx = nBands - 1
+    }
+
+    val a = ticks[idx]
+    val b = ticks[idx + 1]
+    val denom = (b - a)
+    val local = if (denom == 0f) 0f else ((vv - a) / denom).coerceIn(0f, 1f)
+
+    val bandLeft = idx * bandW
+    return bandLeft + local * bandW
+}
+
+private fun bandIndexForValue(v: Float, ticks: List<Float>): Int {
+    if (ticks.size < 2) return 0
+    val nBands = ticks.size - 1
+
+    val lo = minOf(ticks.first(), ticks.last())
+    val hi = maxOf(ticks.first(), ticks.last())
+    val vv = v.coerceIn(lo, hi)
+
+    for (i in 0 until nBands) {
+        val a = minOf(ticks[i], ticks[i + 1])
+        val b = maxOf(ticks[i], ticks[i + 1])
+        if (vv in a..b) return i
+    }
+    return nBands - 1
+}
+
 @Composable
 private fun TickRowNoOverlap(
     ticks: List<Float>,
@@ -386,7 +451,7 @@ private fun TickRowNoOverlap(
         val widthsDp = measured.map { with(density) { it.size.width.toDp() } }
 
         val lefts = ticks.mapIndexed { i, t ->
-            val cx = w * ratio(t)
+            val cx = w * (i.toFloat() / (ticks.lastIndex.coerceAtLeast(1)).toFloat())
             (cx - widthsDp[i] / 2f).coerceIn(0.dp, (w - widthsDp[i]).coerceAtLeast(0.dp))
         }.toMutableList()
 

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
@@ -38,25 +38,90 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.ui.theme.ColorUtils
-import kotlin.math.atan2
 import kotlin.math.hypot
 
 /**
- * 프로그레스 차트를 표시하는 컴포저블 함수입니다.
- * 
- * @param modifier 모디파이어
- * @param data 프로그레스 차트에 표시할 데이터 리스트
- * @param title 차트 제목
- * @param isDonut 도넛 차트로 표시할지 여부 (true: 도넛, false: 바)
- * @param colors 각 프로그레스 인스턴스에 사용할 색상 목록
- * @param strokeWidth 도넛 차트의 링 두께 (도넛 모드일 때만)
- * @param barHeight 바 차트의 각 바 높이 (바 모드일 때만)
- * @param showLabels 라벨을 표시할지 여부
- * @param showValues 값을 표시할지 여부
- * @param showCenterInfo 중앙 정보를 표시할지 여부 (도넛 모드일 때만)
- * @param centerTitle 중앙 제목 텍스트 (도넛 모드일 때만)
- * @param centerSubtitle 중앙 부제목 텍스트 (도넛 모드일 때만)
+ * Displays a progress chart in either:
+ * - Donut (ring) mode
+ * - Horizontal bar mode
+ *
+ * This composable supports multiple progress items. In donut mode, each item
+ * is rendered as a concentric ring. In bar mode, each item is rendered as a
+ * horizontal progress bar stacked vertically.
+ *
+ * @param modifier Modifier applied to the chart container.
+ *
+ * @param data List of [ProgressChartMark] representing progress items.
+ * Each item should provide current value, maximum value, label, and optional unit.
+ *
+ * @param title Title text displayed above the chart.
+ *
+ * @param isDonut If true, renders a donut (ring) progress chart.
+ * If false, renders a horizontal bar progress chart.
+ *
+ * @param isPercentage If true, values are displayed as percentages.
+ * If false, raw values (current / max) are displayed.
+ *
+ * @param colors Optional list of colors used for progress items.
+ * If null, default colors will be generated automatically.
+ * If fewer colors than data items are provided, colors will repeat cyclically.
+ *
+ * @param donutHeight Height of the donut chart container.
+ * Only applied when [isDonut] is true.
+ *
+ * @param strokeWidth Thickness of each progress ring in donut mode.
+ * Ignored in bar mode.
+ *
+ * @param barHeight Height of each individual bar in bar mode.
+ * Ignored in donut mode.
+ *
+ * @param barSpacing Vertical spacing between bars in bar mode.
+ * Ignored in donut mode.
+ *
+ * @param topPadding Top padding inside the drawing area (bar mode only).
+ *
+ * @param bottomPadding Bottom padding inside the drawing area (bar mode only).
+ *
+ * @param showLabels If true, displays labels for each progress item.
+ *
+ * @param showValues If true, displays numeric progress values.
+ *
+ * @param showCenterInfo If true, displays center title and subtitle
+ * inside the donut chart. Ignored in bar mode.
+ *
+ * @param centerTitle Title text displayed at the center of the donut chart.
+ * Only used when [isDonut] is true and [showCenterInfo] is true.
+ *
+ * @param centerSubtitle Subtitle text displayed below [centerTitle]
+ * inside the donut chart.
+ *
+ * @param showLegend If true, displays a legend below the chart.
+ *
+ * @param legendTitle Optional title displayed above the legend.
+ *
+ * @param legendColorBoxSize Size of the color indicator box in the legend.
+ *
+ * @param legendTextSize Text size of legend labels.
+ *
+ * @param legendSpacing Horizontal spacing between legend items.
+ *
+ * @param legendPadding Vertical padding applied around the legend.
+ *
+ * @param tooltipEnabled Whether to show a tooltip on donut ring taps.
+ *
+ * @param tooltipFormatter Optional formatter for tooltip text.
+ * If provided, it overrides the default text.
+ *
+ * @param tooltipBackgroundColor Background color of the default tooltip.
+ * Ignored if tooltipContent is provided.
+ *
+ * @param tooltipTextColor Text color of the default tooltip.
+ * Ignored if tooltipContent is provided.
+ *
+ * @param tooltipContent Optional full tooltip composable override.
+ * If provided, it takes priority over tooltipFormatter and the default tooltip UI.
  */
+
 @Composable
 fun ProgressChart(
     modifier: Modifier = Modifier,
@@ -64,177 +129,124 @@ fun ProgressChart(
     title: String = "Progress Chart",
     isDonut: Boolean = true,
     isPercentage: Boolean = true,
-    colors: List<Color> = ColorUtils.ColorUtils(data.size.coerceAtLeast(1)),
-    strokeWidth: Float = 80f,
-    barHeight: Float = 36f,
+    colors: List<Color>? = null,
+    donutHeight: Dp = 200.dp,
+    strokeWidth: Dp = 20.dp,
+    barHeight: Dp = 16.dp,
+    barSpacing: Dp = 10.dp,
+    topPadding: Dp = 8.dp,
+    bottomPadding: Dp = 8.dp,
     showLabels: Boolean = true,
     showValues: Boolean = true,
     showCenterInfo: Boolean = true,
     centerTitle: String = "Activity",
     centerSubtitle: String = "Progress",
-    barSpacing: Float = 16f,
-    topPadding: Float = 8f,
-    bottomPadding: Float = 8f,
     showLegend: Boolean = true,
     legendTitle: String? = null,
     legendColorBoxSize: Dp = 10.dp,
     legendTextSize: TextUnit = 12.sp,
     legendSpacing: Dp = 8.dp,
-    legendPadding: Dp = 8.dp
+    legendPadding: Dp = 8.dp,
+    tooltipEnabled: Boolean = true,
+    tooltipFormatter: ((ProgressChartMark) -> String)? = null,
+    tooltipBackgroundColor: Color = MaterialTheme.colorScheme.surface,
+    tooltipTextColor: Color = MaterialTheme.colorScheme.onSurface,
+    tooltipContent: (@Composable (mark: ProgressChartMark, color: Color, modifier: Modifier) -> Unit)? = null,
 ) {
     if (data.isEmpty()) return
-    val chartType = ChartType.PROGRESS
-    val legendLabels = data.mapIndexed { i, p -> p.label ?: "항목 ${i + 1}" }
-    // Tap state for donut interaction
+
+    val resolvedColors = remember(data.size, colors) {
+        val base = colors ?: ColorUtils.ColorUtils(data.size.coerceAtLeast(1))
+        // Repeat colors if the caller provided fewer than data.size
+        List(data.size) { i -> base[i % base.size] }
+    }
+
+    val legendLabels = remember(data) {
+        data.mapIndexed { i, p -> p.label ?: "Item ${i + 1}" }
+    }
+
+    // Tap state for donut tooltip interaction
     var tappedIndex by remember { mutableStateOf<Int?>(null) }
-    var tapOffset   by remember { mutableStateOf<Offset?>(null) }
+    var tapOffset by remember { mutableStateOf<Offset?>(null) }
+    var boxSize by remember { mutableStateOf(IntSize.Zero) }
+
+    val density = LocalDensity.current
+    val strokeWidthPx = with(density) { strokeWidth.toPx() }
+    val barHeightPx = with(density) { barHeight.toPx() }
+    val barSpacingPx = with(density) { barSpacing.toPx() }
+    val topPaddingPx = with(density) { topPadding.toPx() }
+    val bottomPaddingPx = with(density) { bottomPadding.toPx() }
 
     Column(
-        modifier = modifier
-            .padding(8.dp, vertical = 12.dp)
-            .pointerInput(tappedIndex) {
-                if (tappedIndex != null) {
-                    detectTapGestures {
-                        tappedIndex = null
-                        tapOffset = null
-                    }
-                }
-            }
+        modifier = modifier.padding(horizontal = 8.dp, vertical = 12.dp)
     ) {
-    Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(title, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(20.dp))
 
-        // Only for BAR mode we constrain height
         val canvasModifier = if (isDonut) {
-            Modifier
-                .fillMaxWidth()
-                .height(260.dp)
+            Modifier.fillMaxWidth().height(donutHeight)
         } else {
-            // Convert px -> dp
+            // Compute required height for bar layout in pixels, then convert to dp
             val contentHeightPx =
-                topPadding +
-                        bottomPadding +
-                        data.size * barHeight +
-                        (data.size - 1).coerceAtLeast(0) * barSpacing
+                topPaddingPx +
+                        bottomPaddingPx +
+                        data.size * barHeightPx +
+                        (data.size - 1).coerceAtLeast(0) * barSpacingPx
 
-            val contentHeightDp = with(LocalDensity.current) { contentHeightPx.toDp() }
-            Modifier
-                .fillMaxWidth()
-                .height(contentHeightDp)
+            val contentHeightDp = with(density) { contentHeightPx.toDp() }
+            Modifier.fillMaxWidth().height(contentHeightDp)
         }
 
-        var boxSize by remember { mutableStateOf(IntSize.Zero) }
-
         Box(
-            canvasModifier
+            modifier = canvasModifier
                 .padding(start = 24.dp)
                 .onGloballyPositioned { boxSize = it.size }
         ) {
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(data, isDonut, strokeWidth) {
+                    .pointerInput(data, isDonut, strokeWidthPx) {
                         detectTapGestures { pos ->
                             if (!isDonut) return@detectTapGestures
 
-                            // Convert IntSize -> Size (Float)
-                            val canvasSize = Size(this.size.width.toFloat(), this.size.height.toFloat())
-
+                            val canvasSize = Size(size.width.toFloat(), size.height.toFloat())
                             val (center, _, ringRadii) =
                                 ChartMath.Progress.computeProgressDonutMetrics(
                                     size = canvasSize,
                                     data = data,
-                                    strokeWidth = strokeWidth
+                                    strokeWidth = strokeWidthPx
                                 )
 
                             val d = hypot(pos.x - center.x, pos.y - center.y)
-                            val half = strokeWidth / 2f
+                            val half = strokeWidthPx / 2f
                             val hitIndex = ringRadii.indexOfFirst { r -> d in (r - half)..(r + half) }
 
                             if (hitIndex == -1) {
                                 tappedIndex = null
                                 tapOffset = null
-                                return@detectTapGestures
-                            }
-
-                            // (optional) angle check – safe to keep or remove
-                            val angleDeg = ((Math.toDegrees(
-                                atan2(pos.y - center.y, pos.x - center.x).toDouble()
-                            ) + 360.0) % 360.0).toFloat()
-
-                            // Use the same start angle you use to draw arcs
-                            val startAt = -90f
-
-                            // Current point & raw progress (allow >100%)
-                            val pt = data[hitIndex]
-                            val raw = if (pt.max > 0f) pt.current / pt.max else pt.progress
-
-                            // If no progress at all, dismiss
-                            if (raw <= 0f) {
-                                tappedIndex = null
-                                tapOffset = null
-                                return@detectTapGestures
-                            }
-
-                            // Decompose into full laps + residual (exactly how you draw)
-                            val laps = kotlin.math.floor(raw).toInt().coerceAtLeast(0)
-                            val residualDeg = ((raw - laps).coerceIn(0.0, 1.0)) * 360.0
-
-                            // hit-test helper for circular sweeps
-                            fun containsAngle(start: Float, sweep: Float, target: Float): Boolean {
-                                val s = ((start % 360f) + 360f) % 360f
-                                val e = ((s + sweep) % 360f + 360f) % 360f
-                                return if (sweep >= 0f) {
-                                    if (s <= e) target in s..e else target >= s || target <= e
-                                } else {
-                                    if (e <= s) target in e..s else target >= e || target <= s
-                                }
-                            }
-
-                            // Accept the tap if it falls on ANY of the drawn progress sweeps
-                            var inside = false
-
-                            // 1) Any completed laps (you draw a ~360° arc for them)
-                            if (laps >= 1) {
-                                // Use the same sweep you use for the lap (e.g., 359.6f) so the seam is hidden
-                                inside = inside || containsAngle(startAt, 359.6f, angleDeg)
-                                // If you ever support 200%+, you could repeat this check, but since each lap
-                                // starts at the same startAt, one check is sufficient visually.
-                            }
-
-                            // 2) Residual (remaining) sweep on top
-                            if (residualDeg > 0f) {
-                                inside = inside || containsAngle(startAt, residualDeg.toFloat(), angleDeg)
-                            }
-
-                            if (inside) {
+                            } else {
                                 tappedIndex = hitIndex
                                 tapOffset = pos
-                            } else {
-                                tappedIndex = null
-                                tapOffset = null
                             }
-
                         }
                     }
             ) {
-                // 프로그레스 마크 그리기 (도넛 또는 바)
+                // Draw progress marks (donut or bars)
                 ChartDraw.Progress.drawProgressMarks(
                     drawScope = this,
                     data = data,
                     size = size,
-                    colors = colors,
+                    colors = resolvedColors,
                     isDonut = isDonut,
-                    strokeWidth = strokeWidth,
-                    barHeight = barHeight,
-                    barSpacing = barSpacing,
-                    topPadding = topPadding,
-                    cornerRadius = barHeight / 2f
+                    strokeWidth = strokeWidthPx,
+                    barHeight = barHeightPx,
+                    barSpacing = barSpacingPx,
+                    topPadding = topPaddingPx,
+                    cornerRadius = barHeightPx / 2f
                 )
-                
-                // 중앙 정보 표시 (도넛 모드일 때만)
+
                 if (isDonut && showCenterInfo) {
-                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    val center = Offset(size.width / 2f, size.height / 2f)
                     ChartDraw.Progress.drawProgressCenterInfo(
                         drawScope = this,
                         center = center,
@@ -242,92 +254,99 @@ fun ProgressChart(
                         subtitle = centerSubtitle
                     )
                 }
-                
-                // 라벨 표시
+
                 if (showLabels) {
                     ChartDraw.Progress.drawProgressLabels(
                         drawScope = this,
                         data = data,
                         size = size,
                         isDonut = isDonut,
-                        strokeWidth = strokeWidth,
-                        barHeight = barHeight,
-                        barSpacing = barSpacing,
-                        topPadding = topPadding
+                        strokeWidth = strokeWidthPx,
+                        barHeight = barHeightPx,
+                        barSpacing = barSpacingPx,
+                        topPadding = topPaddingPx
                     )
                 }
-                
-                // 값 표시
+
                 if (showValues) {
                     ChartDraw.Progress.drawProgressValues(
                         drawScope = this,
                         data = data,
                         size = size,
                         isDonut = isDonut,
-                        strokeWidth = strokeWidth,
-                        barHeight = barHeight,
+                        strokeWidth = strokeWidthPx,
+                        barHeight = barHeightPx,
                         isPercentage = isPercentage,
-                        barSpacing = barSpacing,
-                        topPadding = topPadding
+                        barSpacing = barSpacingPx,
+                        topPadding = topPaddingPx
                     )
                 }
             }
-            // Tooltip overlay
-            tappedIndex?.let { i ->
-                tapOffset?.let { pos ->
-                    val density = LocalDensity.current
 
-                    val tipWidthDp = 180.dp     // expected tooltip width
-                    val tipHeightDp = 72.dp     // expected tooltip height
-                    val marginDp = 12.dp
+            // Tooltip overlay (donut only)
+            val i = tappedIndex
+            val pos = tapOffset
+            if (tooltipEnabled && i != null && pos != null && isDonut) {
+                // Expected tooltip bounds for clamping within the Box
+                val tipWidthDp = 180.dp
+                val tipHeightDp = 72.dp
+                val marginDp = 12.dp
 
-                    val tipW = with(density) { tipWidthDp.toPx() }
-                    val tipH = with(density) { tipHeightDp.toPx() }
-                    val margin = with(density) { marginDp.toPx() }
+                val tipW = with(density) { tipWidthDp.toPx() }
+                val tipH = with(density) { tipHeightDp.toPx() }
+                val margin = with(density) { marginDp.toPx() }
 
-                    // Base position (above finger)
-                    var px = pos.x
-                    var py = pos.y - 80f
+                // Position above the tap, then clamp into the container
+                var px = pos.x
+                var py = pos.y - 80f
 
-                    // Clamp horizontally
-                    val maxX = (boxSize.width - tipW - margin).coerceAtLeast(margin)
-                    px = px.coerceIn(margin, maxX)
+                val maxX = (boxSize.width - tipW - margin).coerceAtLeast(margin)
+                val maxY = (boxSize.height - tipH - margin).coerceAtLeast(margin)
+                px = px.coerceIn(margin, maxX)
+                py = py.coerceIn(margin, maxY)
 
-                    // Clamp vertically
-                    val maxY = (boxSize.height - tipH - margin).coerceAtLeast(margin)
-                    py = py.coerceIn(margin, maxY)
+                val xDp = with(density) { px.toDp() }
+                val yDp = with(density) { py.toDp() }
 
-                    val xDp = with(density) { px.toDp() }
-                    val yDp = with(density) { py.toDp() }
+                val point = data[i]
+                val tipModifier = Modifier.offset(x = xDp, y = yDp)
+                val tipColor = resolvedColors[i]
 
-                    // Build value like "1200 KJ / 2000 KJ"
-                    val point = data[i]
-                    val unitSuffix = buildString {
-                        append(" ")
-                        point.unit?.let { append(it).append(" ") }   // "KJ "
-                        append("/ ")
-                        append(point.max.toInt())
-                        point.unit?.let { append(" ").append(it) }   // " 2000 KJ"
+                // Priority: tooltipContent > tooltipFormatter > default tooltip
+                if (tooltipContent != null) {
+                    tooltipContent(point, tipColor, tipModifier)
+                } else {
+                    val defaultText = if (isPercentage) {
+                        val pct = if (point.max > 0f) (point.current / point.max * 100f) else 0f
+                        "${pct.toInt()}%"
+                    } else {
+                        if (!point.unit.isNullOrBlank()) {
+                            "${point.current.toInt()} ${point.unit} / ${point.max.toInt()} ${point.unit}"
+                        } else {
+                            "${point.current.toInt()} / ${point.max.toInt()}"
+                        }
                     }
 
-                    // Use a proxy ChartMark so tooltip shows 'current' (not ratio)
-                    val tooltipPoint = com.hdil.saluschart.core.chart.ChartMark(
+                    val text = tooltipFormatter?.invoke(point) ?: defaultText
+
+                    val tooltipPoint = ChartMark(
                         x = i.toDouble(),
                         y = point.current,
                         label = point.label
                     )
 
                     ChartTooltip(
-                        ChartMark = tooltipPoint,
-                        unit = unitSuffix,
-                        modifier = Modifier.offset(x = xDp, y = yDp),
-                        color = colors[i]
+                        chartMark = tooltipPoint,
+                        customText = text,
+                        backgroundColor = tooltipBackgroundColor,
+                        textColor = tooltipTextColor,
+                        modifier = tipModifier,
+                        color = tipColor
                     )
                 }
             }
         }
 
-        // Legend
         if (showLegend) {
             Spacer(Modifier.height(16.dp))
             Box(
@@ -337,7 +356,7 @@ fun ProgressChart(
                 ChartLegend(
                     modifier = Modifier.padding(vertical = legendPadding),
                     labels = legendLabels,
-                    colors = colors,
+                    colors = resolvedColors,
                     position = LegendPosition.BOTTOM,
                     title = legendTitle,
                     colorBoxSize = legendColorBoxSize,
@@ -346,6 +365,7 @@ fun ProgressChart(
                 )
             }
         }
+
         Spacer(Modifier.height(6.dp))
     }
 }

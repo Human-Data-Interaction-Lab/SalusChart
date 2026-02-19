@@ -13,7 +13,7 @@ package com.hdil.saluschart.core.chart
  * @param maxValueSelector Function to select the maximum value from a group
  * @return List of RangeChartMarks
  */
-fun List<ChartMark>.toRangeChartMarks(
+fun List<ChartMark>.toRangeChartMarksByXGroup(
     minValueSelector: (List<ChartMark>) -> ChartMark = { group -> group.minByOrNull { it.y } ?: group.first() },
     maxValueSelector: (List<ChartMark>) -> ChartMark = { group -> group.maxByOrNull { it.y } ?: group.first() }
 ): List<RangeChartMark> {

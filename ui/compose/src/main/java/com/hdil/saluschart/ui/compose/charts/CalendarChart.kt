@@ -293,7 +293,7 @@ fun SingleMonthCalendarChart(
                     )
                 } else if (tip != null) {
                     com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
-                        ChartMark = tip,
+                        chartMark = tip,
                         color = color
                     )
                 }

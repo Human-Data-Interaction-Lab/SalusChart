@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 
@@ -137,6 +138,8 @@ object BarChartDraw {
         barCornerRadiusFractions: BarCornerRadiusFractions? = null,
         roundTopOnly: Boolean = true,
         onTooltipSpec: ((TooltipSpec?) -> Unit)? = null,
+        showBarValueLabels: Boolean = false,
+        barValueLabel: ((index: Int, mark: RangeChartMark) -> String)? = null
     ) {
         val density = LocalDensity.current
         var tooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
@@ -145,7 +148,8 @@ object BarChartDraw {
         val actualBarWidthRatio = if (isTouchArea) 1.0f else barWidthRatio
         val actualInteractive = if (isTouchArea) true else interactive
 
-        val dataSize = maxOf(minValues.size, maxValues.size)
+        val dataSize = minOf(data.size, minValues.size, maxValues.size)
+        if (dataSize <= 0) return
 
         // 클릭된 바의 인덱스를 관리하는 상태 변수
         var clickedBarIndex by remember { mutableStateOf<Int?>(null) }
@@ -242,8 +246,9 @@ object BarChartDraw {
                     barY.toFloat()
                 }
 
+                val mark = data.getOrNull(index) ?: return@forEach
                 computedTooltip = TooltipSpec(
-                    chartMark = data[index],
+                    chartMark = mark,
                     offset = Offset(
                         x = barX.toFloat() + barWidth.toFloat() / 2f,
                         y = anchorY

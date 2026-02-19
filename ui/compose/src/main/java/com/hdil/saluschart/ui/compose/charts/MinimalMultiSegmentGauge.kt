@@ -50,7 +50,33 @@ fun MinimalMultiSegmentGauge(
         val barTop = (size.height - h) / 2f
         val barW = size.width
 
-        // Clip path so segment colors follow pill shape
+        val total = segments.sumOf { it.fraction.toDouble() }.toFloat().let { if (it <= 0f) 1f else it }
+
+        var acc = 0f
+        var selectedIndex = segments.lastIndex
+        run {
+            for (i in segments.indices) {
+                val w = (segments[i].fraction / total).coerceAtLeast(0f)
+                val next = acc + w
+                if (p <= next || i == segments.lastIndex) {
+                    selectedIndex = i
+                    break
+                }
+                acc = next
+            }
+        }
+
+        var x = barLeft
+        val segStarts = FloatArray(segments.size)
+        val segEnds = FloatArray(segments.size)
+
+        for (i in segments.indices) {
+            val wPx = ((segments[i].fraction / total).coerceAtLeast(0f)) * barW
+            segStarts[i] = x
+            segEnds[i] = x + wPx
+            x += wPx
+        }
+
         val clipPath = Path().apply {
             addRoundRect(
                 RoundRect(
@@ -63,35 +89,37 @@ fun MinimalMultiSegmentGauge(
             )
         }
 
-        // Draw segments inside clipped pill
-        val total = segments.sumOf { it.fraction.toDouble() }.toFloat().let { if (it <= 0f) 1f else it }
-        var x = barLeft
-
         clipPath(clipPath) {
-            segments.forEach { seg ->
-                val w = (seg.fraction / total) * barW
-                val wSafe = max(0f, w)
+            for (i in segments.indices) {
+                val wSafe = max(0f, segEnds[i] - segStarts[i])
                 if (wSafe > 0f) {
                     drawRect(
-                        color = seg.color,
-                        topLeft = Offset(x, barTop),
+                        color = segments[i].color,
+                        topLeft = Offset(segStarts[i], barTop),
                         size = Size(wSafe, h)
                     )
                 }
-                x += wSafe
             }
         }
 
-        // Marker capsule position (centered at markerRatio)
-        val mW = markerWidth.toPx()
+        val requestedMW = markerWidth.toPx()
         val mH = markerHeight.toPx()
-        val markerR = min(mH / 2f, mW / 2f)
+
+        val segLeft = segStarts[selectedIndex]
+        val segRight = segEnds[selectedIndex]
+        val segW = (segRight - segLeft).coerceAtLeast(0f)
+        val mW = min(requestedMW, segW)
+
+        val markerR = mH * 0.32f
 
         val cx = barLeft + p * barW
-        val mLeft = (cx - mW / 2f).coerceIn(0f, size.width - mW)
+
+        // Compute left and clamp to segment bounds
+        val idealLeft = cx - mW / 2f
+        val mLeft = idealLeft.coerceIn(segLeft, segRight - mW)
+
         val mTop = barTop - (mH - h) / 2f
 
-        // subtle shadow behind marker (optional)
         drawRoundRect(
             color = Color.Black.copy(alpha = markerShadowAlpha),
             topLeft = Offset(mLeft, mTop + 1.5f),

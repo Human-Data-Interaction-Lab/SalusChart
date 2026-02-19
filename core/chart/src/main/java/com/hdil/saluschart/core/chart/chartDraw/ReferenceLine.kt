@@ -51,7 +51,7 @@ enum class ReferenceLineType {
 /**
  * 기준선 스타일을 나타내는 enum class
  */
-enum class LineStyle(internal val dashPattern: FloatArray?) {
+enum class LineStyle(val dashPattern: FloatArray?) {
     SOLID(null),                              // 실선
     DASHED(floatArrayOf(10f, 5f)),           // 짧은 점선 
     DOTTED(floatArrayOf(2f, 5f)),            // 점선

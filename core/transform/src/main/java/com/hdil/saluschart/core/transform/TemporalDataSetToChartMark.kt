@@ -116,8 +116,8 @@ fun TemporalDataSet.toChartMarksMap(fillGaps: Boolean = true): Map<String, List<
  * 참고: fillGaps가 true인 경우, 데이터가 없는 날짜는 min=0, max=0으로 표시됩니다.
  * 이는 "데이터가 기록되지 않은 날"을 의미하며, 실제 측정값의 최소/최대와는 구분됩니다.
  */
-fun TemporalDataSet.toRangeChartMarks(fillGaps: Boolean = true): List<RangeChartMark> {
-    require(isMultiValue) { "toRangeChartMarks() requires multi-value TemporalDataSet from MIN_MAX aggregation" }
+fun TemporalDataSet.toRangeChartMarksFromMinMax(fillGaps: Boolean = true): List<RangeChartMark> {
+    require(isMultiValue) { "toRangeChartMarksFromMinMax() requires multi-value TemporalDataSet from MIN_MAX aggregation" }
     require(propertyNames.contains("min") && propertyNames.contains("max")) {
         "TemporalDataSet must contain 'min' and 'max' properties. " +
         "Available properties: ${propertyNames.joinToString()}. " +

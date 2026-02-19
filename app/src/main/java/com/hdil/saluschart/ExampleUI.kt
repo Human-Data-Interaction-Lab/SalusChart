@@ -39,11 +39,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
 import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.RangeChartMark
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
@@ -55,7 +57,6 @@ import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import com.hdil.saluschart.data.model.model.MassUnit
 import com.hdil.saluschart.data.provider.SampleDataProvider
-import com.hdil.saluschart.data.provider.SampleDataProvider.buildHourlyPointValues
 import com.hdil.saluschart.data.provider.SampleDataProvider.getHeartRateData
 import com.hdil.saluschart.ui.compose.charts.BarChart
 import com.hdil.saluschart.ui.compose.charts.BubbleType
@@ -65,6 +66,8 @@ import com.hdil.saluschart.ui.compose.charts.GaugeSegment
 import com.hdil.saluschart.ui.compose.charts.HorizontalRangeBarChart
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarChartList
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarRow
+import com.hdil.saluschart.ui.compose.charts.LegendItem
+import com.hdil.saluschart.ui.compose.charts.LegendShape
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.MiniActivityRings
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
@@ -95,7 +98,6 @@ import com.hdil.saluschart.ui.theme.Primary_Purple
 import com.hdil.saluschart.ui.theme.Teel
 import com.hdil.saluschart.ui.theme.Yellow
 import java.time.YearMonth
-import java.time.ZoneId
 import kotlin.math.abs
 
 // Note: Sample data moved to SampleDataProvider for better organization
@@ -1566,7 +1568,7 @@ fun CardioFitnessMinimalCard() {
 
     // Ladder position config
     val selectedBand = 1      // 0=top, 1=middle, 2=bottom
-    val markerRatio = 0.58f   // 0..1 across the bar
+    val markerRatio = 0.5f   // 0..1 across the bar
 
     Card(
         modifier = Modifier
@@ -1785,7 +1787,7 @@ fun MinimalMultiSegmentGaugeCard() {
     val desc = "오늘 기준"
 
     // Marker position (0..1)
-    val markerRatio = 0.45f
+    val markerRatio = 0.35f
 
     val segments = remember {
         listOf(
@@ -1928,52 +1930,80 @@ fun RangeBarChart_1() {
 }
 @Composable
 fun RangeBarChart_HeartRate() {
-    RangeBarChart(
-        modifier = Modifier.fillMaxWidth().height(500.dp),
-        data = heartRateHealthData.transform(
-            timeUnit = TimeUnitGroup.HOUR,
-            aggregationType = AggregationType.MIN_MAX
-        ),
-        title = "시간별 심박수 범위",
-        yLabel = "심박수 (bpm)",
-        xLabel = "시간",
-        barWidthRatio = 0.8f,
-        barColor = Color(0xFFE91E63), // Pink color to distinguish from other charts
-        interactionType = InteractionType.RangeBar.TOUCH_AREA,
-        unit = "bpm",
-        pageSize = 24,
-    )
-}
-@Composable
-fun VerticalRangePlot_HeartRate() {
-    val rangeData = heartRateHealthData.transform(
+    val marks: List<BaseChartMark> = heartRateHealthData.transform(
         timeUnit = TimeUnitGroup.HOUR,
         aggregationType = AggregationType.MIN_MAX
     )
 
-    val allHeartRateBlocks = remember { getHeartRateData() }
+    val rangeMarks = remember(marks) { marks.filterIsInstance<RangeChartMark>() }
 
-    val zoneId = ZoneId.of("UTC")
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = rangeMarks,
+        title = "시간별 심박수 범위",
+        yLabel = "심박수 (bpm)",
+        xLabel = "시간",
+        barWidthRatio = 0.8f,
+        barColor = Color(0xFFE91E63),
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "bpm",
+        pageSize = 24,
+        referenceLines = listOf(
+            ReferenceLineSpec(
+                y = 120.0,
+                label = "120",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            ),
+            ReferenceLineSpec(
+                y = 70.0,
+                label = "70",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            )
+        )
+    )
+}
 
-    val samplesForFirstDay = remember(allHeartRateBlocks) {
-        val firstDate = allHeartRateBlocks.first().startTime
-            .atZone(zoneId)
-            .toLocalDate()
+@Composable
+fun VerticalRangePlot_HeartRate() {
+    val marks: List<BaseChartMark> = heartRateHealthData.transform(
+        timeUnit = TimeUnitGroup.HOUR,
+        aggregationType = AggregationType.MIN_MAX
+    )
 
-        allHeartRateBlocks
-            .filter { it.startTime.atZone(zoneId).toLocalDate() == firstDate }
-            .flatMap { it.samples }
+    val rangeMarks: List<RangeChartMark> = remember(marks) {
+        marks.filterIsInstance<RangeChartMark>()
     }
 
-    val pointValues = remember(samplesForFirstDay) {
-        buildHourlyPointValues(samplesForFirstDay, zoneId)
+    val allHeartRateBlocks = remember { getHeartRateData() }
+
+    val allSamples = remember(allHeartRateBlocks) {
+        allHeartRateBlocks.flatMap { it.samples }
+    }
+
+    val pointValues = remember(allSamples, rangeMarks) {
+
+        val sortedSamples = allSamples.sortedBy { it.time }
+        val grouped = sortedSamples
+            .mapIndexed { index, sample ->
+                (index / 4) to sample.beatsPerMinute.toDouble() // 4 samples per hour → group into hourly buckets
+            }
+            .groupBy(
+                keySelector = { it.first },
+                valueTransform = { it.second }
+            )
+
+        List(rangeMarks.size) { hourIndex ->
+            grouped[hourIndex] ?: emptyList()
+        }
     }
 
     RangeBarChart(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(400.dp),
-        data = rangeData,
+        modifier = Modifier.fillMaxWidth().height(400.dp),
+        data = rangeMarks,
         title = "심박수 범위 (일간)",
         yLabel = "심박수 (bpm)",
         xLabel = "시간",
@@ -1992,20 +2022,44 @@ fun VerticalRangePlot_HeartRate() {
 
 @Composable
 fun RangeBarChart_BloodGlucose() {
+    val marks: List<BaseChartMark> = bloodGlucoseHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.MIN_MAX
+    )
+
+    val rangeMarks = remember(marks) { marks.filterIsInstance<RangeChartMark>() }
+
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
-        data = bloodGlucoseHealthData.transform(
-            timeUnit = TimeUnitGroup.DAY,
-            aggregationType = AggregationType.MIN_MAX
-        ),
+        data = rangeMarks,
         title = "일별 혈당 범위",
-        yLabel = "혈당 (mg/dL)",
-        xLabel = "날짜",
+        legendItems = listOf(
+            LegendItem(label = "목표 수면 시간대", color = Color(0xFFFF7A00), shape = LegendShape.Box),
+            LegendItem(label = "범위(최소~최대)", color = Color(0xFF4CAF50), shape = LegendShape.Dot),
+        ),
         barWidthRatio = 0.8f,
-        barColor = Color(0xFF4CAF50), // Green color for blood glucose
+        barColor = Color(0xFF4CAF50),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "mg/dL",
-        windowSize = 7
+        windowSize = 7,
+        barCornerRadiusFraction = 0.3f,
+        roundTopOnly = false,
+        referenceLines = listOf(
+            ReferenceLineSpec(
+                y = 62.0,
+                label = "62",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            ),
+            ReferenceLineSpec(
+                y = 42.0,
+                label = "42",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            )
+        )
     )
 }
 
@@ -2030,7 +2084,6 @@ fun RangeBarChart_Paged_LeftAxis() {
         data = rangeData,
         title = "Paged + Fixed Left Y-Axis",
         pageSize = 7,
-        unifyYAxisAcrossPages = true,
         yTickStep = 10.0,
         barWidthRatio = 0.75f,
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
@@ -2045,7 +2098,6 @@ fun RangeBarChart_Paged_RightAxis() {
         data = rangeData,
         title = "Paged + Fixed Right Y-Axis",
         pageSize = 7,
-        unifyYAxisAcrossPages = true,
         yTickStep = 10.0,
         yAxisPosition = YAxisPosition.RIGHT,
         barWidthRatio = 0.75f,
@@ -2067,7 +2119,7 @@ fun ProgressBarChart_1() {
             Color(0xFFFF6B35), // 주황색 (Exercise)
             Color(0xFF3A86FF)  // 파란색 (Stand)
         ),
-        strokeWidth = 80f,
+        strokeWidth = 80.dp,
     )
 }
 
@@ -2085,9 +2137,10 @@ fun ProgressBarChart_2() {
             Color(0xFF4CAF50), // 초록
             Color(0xFF9C27B0), // 보라
         ),
-        strokeWidth = 60f,
+        strokeWidth = 20.dp,
         showLegend = true,
-        showValues = false
+        showValues = false,
+        // tooltipEnabled = false,
     )
 }
 
@@ -2269,19 +2322,21 @@ fun RangeGaugeChart() {
 @Composable
 fun MultiSegmentGauge_Fitness() {
     val segments = listOf(
-        GaugeSegment(120f, 282f, Color(0xFF0AA7FF)), // blue
-        GaugeSegment(282f, 434f, Color(0xFF7ADB2A)), // green
-        GaugeSegment(434f, 616f, Color(0xFFFFC400)), // yellow
-        GaugeSegment(616f, 746f, Color(0xFFFF8A3D))  // orange
+        GaugeSegment(0f, 0f, Color(0xFF0AA7FF)),
+        GaugeSegment(0f, 0f, Color(0xFF7ADB2A)),
+        GaugeSegment(0f, 0f, Color(0xFFFFC400)),
+        GaugeSegment(0f, 0f, Color(0xFFFF8A3D))
     )
 
     MultiSegmentGaugeChart(
         title = "적절함",
-        value = 374f,
+        value = 342f,
         minValue = 120f,
-        maxValue = 746f,
+        maxValue = 646f,
         segments = segments,
-        tickValues = listOf(120f, 282f, 434f, 616f, 746f),
+
+        tickValues = listOf(120f, 302f, 334f, 516f, 646f),
+
         modifier = Modifier.fillMaxWidth()
     )
 }

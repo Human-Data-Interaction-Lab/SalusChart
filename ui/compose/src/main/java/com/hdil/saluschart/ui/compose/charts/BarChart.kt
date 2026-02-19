@@ -215,7 +215,7 @@ fun BarChart(
                             chartType = chartType,
                             minY = minY,
                             maxY = maxY,
-                            includeYAxisPadding = !isFixedYAxis,
+                            includeYAxisPadding = false,
                             fixedTickStep = yTickStep
                         )
                         chartMetrics = metrics
@@ -394,8 +394,6 @@ fun BarChart(
     }
 }
 
-// TODO: unifyYAxisAcrossPages 의미?
-// Function for paged bar chart
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BarChartPagedInternal(

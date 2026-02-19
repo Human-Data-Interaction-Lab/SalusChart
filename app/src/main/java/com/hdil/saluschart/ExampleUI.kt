@@ -45,6 +45,7 @@ import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
 import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.RangeChartMark
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
@@ -65,6 +66,8 @@ import com.hdil.saluschart.ui.compose.charts.GaugeSegment
 import com.hdil.saluschart.ui.compose.charts.HorizontalRangeBarChart
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarChartList
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarRow
+import com.hdil.saluschart.ui.compose.charts.LegendItem
+import com.hdil.saluschart.ui.compose.charts.LegendShape
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.MiniActivityRings
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
@@ -1945,6 +1948,22 @@ fun RangeBarChart_HeartRate() {
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "bpm",
         pageSize = 24,
+        referenceLines = listOf(
+            ReferenceLineSpec(
+                y = 120.0,
+                label = "120",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            ),
+            ReferenceLineSpec(
+                y = 70.0,
+                label = "70",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            )
+        )
     )
 }
 
@@ -2014,15 +2033,33 @@ fun RangeBarChart_BloodGlucose() {
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = rangeMarks,
         title = "일별 혈당 범위",
-        yLabel = "혈당 (mg/dL)",
-        xLabel = "날짜",
+        legendItems = listOf(
+            LegendItem(label = "목표 수면 시간대", color = Color(0xFFFF7A00), shape = LegendShape.Box),
+            LegendItem(label = "범위(최소~최대)", color = Color(0xFF4CAF50), shape = LegendShape.Dot),
+        ),
         barWidthRatio = 0.8f,
         barColor = Color(0xFF4CAF50),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "mg/dL",
-        windowSize = 6,
+        windowSize = 7,
         barCornerRadiusFraction = 0.3f,
         roundTopOnly = false,
+        referenceLines = listOf(
+            ReferenceLineSpec(
+                y = 62.0,
+                label = "62",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            ),
+            ReferenceLineSpec(
+                y = 42.0,
+                label = "42",
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            )
+        )
     )
 }
 

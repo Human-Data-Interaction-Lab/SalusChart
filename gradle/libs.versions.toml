@@ -22,6 +22,8 @@ foundationLayoutVersion = "1.9.5"
 uiUnit = "1.10.0"
 animationCore = "1.10.0"
 ui = "1.10.2"
+androidxFoundation = "1.10.2"
+androidxFoundationLayout = "1.10.2"
 
 [libraries]
 androidx-compose-bom-v20240600 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
@@ -57,6 +59,8 @@ foundation-layout = { group = "androidx.compose.foundation", name = "foundation-
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
 androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
 ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+androidx-compose-foundation-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxFoundation" }
+androidx-compose-foundation-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "androidxFoundationLayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

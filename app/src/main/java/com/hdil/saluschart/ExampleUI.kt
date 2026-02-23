@@ -666,7 +666,8 @@ fun DonutChart_1() {
         isDonut = true,
         colors = listOf(Primary_Purple, Teel, Orange, Yellow),
         showLegend = true,
-        showLabel = true
+        showLabel = true,
+        // interactionsEnabled = false,
     )
 }
 
@@ -2140,6 +2141,7 @@ fun ProgressBarChart_2() {
         strokeWidth = 20.dp,
         showLegend = true,
         showValues = false,
+        // interactionsEnabled = false,
         // tooltipEnabled = false,
     )
 }

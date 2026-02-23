@@ -107,6 +107,10 @@ import kotlin.math.hypot
  *
  * @param legendPadding Vertical padding applied around the legend.
  *
+ * @param interactionsEnabled Controls whether the chart responds to user gestures.
+ * When false, tap detection and selection behavior are disabled,
+ * and tooltips will not appear even if [tooltipEnabled] is true.
+ *
  * @param tooltipEnabled Whether to show a tooltip on donut ring taps.
  *
  * @param tooltipFormatter Optional formatter for tooltip text.
@@ -147,6 +151,7 @@ fun ProgressChart(
     legendTextSize: TextUnit = 12.sp,
     legendSpacing: Dp = 8.dp,
     legendPadding: Dp = 8.dp,
+    interactionsEnabled: Boolean = true,
     tooltipEnabled: Boolean = true,
     tooltipFormatter: ((ProgressChartMark) -> String)? = null,
     tooltipBackgroundColor: Color = MaterialTheme.colorScheme.surface,
@@ -202,13 +207,10 @@ fun ProgressChart(
                 .padding(start = 24.dp)
                 .onGloballyPositioned { boxSize = it.size }
         ) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(data, isDonut, strokeWidthPx) {
+            val chartInteractionModifier =
+                if (interactionsEnabled && isDonut) {
+                    Modifier.pointerInput(data, isDonut, strokeWidthPx) {
                         detectTapGestures { pos ->
-                            if (!isDonut) return@detectTapGestures
-
                             val canvasSize = Size(size.width.toFloat(), size.height.toFloat())
                             val (center, _, ringRadii) =
                                 ChartMath.Progress.computeProgressDonutMetrics(
@@ -230,6 +232,14 @@ fun ProgressChart(
                             }
                         }
                     }
+                } else {
+                    Modifier
+                }
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(chartInteractionModifier)
             ) {
                 // Draw progress marks (donut or bars)
                 ChartDraw.Progress.drawProgressMarks(
@@ -286,7 +296,7 @@ fun ProgressChart(
             // Tooltip overlay (donut only)
             val i = tappedIndex
             val pos = tapOffset
-            if (tooltipEnabled && i != null && pos != null && isDonut) {
+            if (tooltipEnabled && interactionsEnabled && i != null && pos != null && isDonut) {
                 // Expected tooltip bounds for clamping within the Box
                 val tipWidthDp = 180.dp
                 val tipHeightDp = 72.dp

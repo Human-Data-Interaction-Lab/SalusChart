@@ -79,106 +79,68 @@ fun PieChart(
 ) {
     if (data.isEmpty()) return
 
-    // Selection + tooltip state (tap interaction)
-    var selectedIndex by remember { mutableStateOf<Int?>(null) }
-    var tooltipOffsetPx by remember { mutableStateOf<Offset?>(null) }
-    var boxSize by remember { mutableStateOf(IntSize.Zero) }
+    // Selection + tooltip state
+    var selectedSectionIndex by remember { mutableStateOf(-1) }
+    var tooltipPosition by remember { mutableStateOf(IntOffset.Zero) }
+    var showTooltip by remember { mutableStateOf(false) }
 
     // Clear any previous selection when interactions are disabled
     LaunchedEffect(interactionsEnabled) {
         if (!interactionsEnabled) {
-            selectedIndex = null
-            tooltipOffsetPx = null
+            selectedSectionIndex = -1
+            showTooltip = false
+            tooltipPosition = IntOffset.Zero
         }
     }
 
-    // Slight scale-up for the selected slice
-    val selectedScale by animateFloatAsState(
-        targetValue = 1.02f,
+    val animationScale by animateFloatAsState(
+        targetValue = 1.05f,
         animationSpec = tween(300),
         label = "pieScale"
     )
 
-    val density = LocalDensity.current
-
-    // Legend placement helpers
     val isSideLegend = legendPosition == LegendPosition.LEFT || legendPosition == LegendPosition.RIGHT
     val legendBeforeChart = legendPosition == LegendPosition.LEFT || legendPosition == LegendPosition.TOP
 
-    // Only attach pointer input when interaction is enabled
     val interactionModifier =
         if (interactionsEnabled) {
             Modifier.pointerInput(data, isDonut) {
-                detectTapGestures { tap ->
-
+                detectTapGestures { offset ->
                     val canvasSize = Size(size.width.toFloat(), size.height.toFloat())
                     val (center, radius) = ChartMath.Pie.computePieMetrics(canvasSize)
                     val sections = ChartMath.Pie.computePieAngles(data)
 
-                    val clicked = ChartMath.Pie.getClickedSectionIndex(
-                        tap, center, radius, sections
+                    val clickedIndex = ChartMath.Pie.getClickedSectionIndex(
+                        offset, center, radius, sections
                     )
 
-                    if (clicked < 0) {
-                        selectedIndex = null
-                        tooltipOffsetPx = null
+                    if (clickedIndex < 0) {
+                        selectedSectionIndex = -1
+                        showTooltip = false
                         return@detectTapGestures
                     }
 
-                    // Toggle selection
-                    selectedIndex = if (selectedIndex == clicked) null else clicked
+                    selectedSectionIndex =
+                        if (selectedSectionIndex == clickedIndex) -1 else clickedIndex
 
-                    val i = selectedIndex
-                    if (i == null) {
-                        tooltipOffsetPx = null
-                    } else {
-                        // Approx tooltip bounds
-                        val tipWidthPx = with(density) { 200.dp.toPx() }
-                        val tipHeightPx = with(density) { 80.dp.toPx() }
-                        val marginPx = with(density) { 12.dp.toPx() }
-
-                        val (startAngle, sweepAngle, _) = sections[i]
+                    if (selectedSectionIndex >= 0) {
+                        val (startAngle, sweepAngle, _) = sections[selectedSectionIndex]
                         val midAngle = startAngle + sweepAngle / 2f
-                        val rad = Math.toRadians(midAngle.toDouble())
 
-                        // How far outside the donut to place the tooltip
-                        val outsidePaddingPx = with(density) { 28.dp.toPx() }
+                        val labelPos = PieChartMath.calculateCenterPosition(
+                            center = center,
+                            radius = radius / 2f,
+                            angleInDegrees = midAngle,
+                            forToolTip = true
+                        )
 
-                        val dx = Math.cos(rad).toFloat()
-                        val dy = Math.sin(rad).toFloat()
-
-                        // Anchor point outside the donut ring
-                        val anchorR = radius + outsidePaddingPx
-                        val ax = (center.x + dx * anchorR)
-                        val ay = (center.y + dy * anchorR)
-
-                        // Gap between anchor and tooltip
-                        val gapPx = with(density) { 10.dp.toPx() }
-
-                        // Decide placement based on which side the slice points to.
-                        // Horizontal dominates when |dx| >= |dy|, otherwise vertical dominates.
-                        val horizontalDominant = kotlin.math.abs(dx) >= kotlin.math.abs(dy)
-
-                        val left = when {
-                            horizontalDominant && dx >= 0f -> ax + gapPx                 // right side → place tooltip to the right
-                            horizontalDominant && dx < 0f  -> ax - gapPx - tipWidthPx    // left side → place tooltip to the left
-                            else -> ax - tipWidthPx / 2f                                 // vertical dominant → center horizontally
-                        }
-
-                        val top = when {
-                            !horizontalDominant && dy >= 0f -> ay + gapPx                // bottom side → place tooltip below
-                            !horizontalDominant && dy < 0f  -> ay - gapPx - tipHeightPx  // top side → place tooltip above
-                            else -> ay - tipHeightPx / 2f                                // horizontal dominant → center vertically
-                        }
-
-                        // Clamp into Box bounds
-                        val maxX = (boxSize.width.toFloat() - tipWidthPx - marginPx).coerceAtLeast(marginPx)
-                        val maxY = (boxSize.height.toFloat() - tipHeightPx - marginPx).coerceAtLeast(marginPx)
-
-                        val px = left.coerceIn(marginPx, maxX)
-                        val py = top.coerceIn(marginPx, maxY)
-
-                        tooltipOffsetPx = Offset(px, py)
+                        tooltipPosition = IntOffset(
+                            x = labelPos.x.toInt(),
+                            y = labelPos.y.toInt()
+                        )
+                        showTooltip = true
+                    } else {
+                        showTooltip = false
                     }
                 }
             }
@@ -188,8 +150,8 @@ fun PieChart(
 
     val chartContent: @Composable (Modifier) -> Unit = { chartModifier ->
         Box(
-            modifier = chartModifier
-                .onGloballyPositioned { boxSize = it.size }
+            modifier = chartModifier,
+            contentAlignment = Alignment.Center
         ) {
             Canvas(
                 modifier = Modifier
@@ -201,10 +163,9 @@ fun PieChart(
 
                 sections.forEachIndexed { i, (startAngle, sweepAngle, _) ->
                     val color = colors[i % colors.size]
-                    val isSelected = (selectedIndex == i)
-
-                    val alpha = if (selectedIndex != null && !isSelected) 0.3f else 1f
-                    val scale = if (isSelected) selectedScale else 1f
+                    val isSelected = i == selectedSectionIndex
+                    val alpha = if (selectedSectionIndex >= 0 && !isSelected) 0.3f else 1f
+                    val scale = if (isSelected) animationScale else 1f
 
                     ChartDraw.Pie.drawPieSection(
                         drawScope = this,
@@ -232,17 +193,11 @@ fun PieChart(
                 }
             }
 
-            // Tooltip overlay (only when something is selected and interactions are enabled)
-            val i = selectedIndex
-            val tip = tooltipOffsetPx
-            if (interactionsEnabled && i != null && tip != null && i in data.indices) {
+            if (showTooltip && selectedSectionIndex in data.indices) {
                 ChartTooltip(
-                    chartMark = data[i],
-                    modifier = Modifier.absoluteOffset(
-                        x = with(density) { tip.x.toDp() },
-                        y = with(density) { tip.y.toDp() }
-                    ),
-                    color = colors[i % colors.size]
+                    chartMark = data[selectedSectionIndex],
+                    modifier = Modifier.offset { tooltipPosition },
+                    color = colors[selectedSectionIndex % colors.size]
                 )
             }
         }
@@ -274,9 +229,7 @@ fun PieChart(
             }
         } else {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
+                modifier = Modifier.fillMaxWidth().fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (legendBeforeChart) {

@@ -2,6 +2,8 @@
 
 A modular Jetpack Compose charting library (health-focused) for Android.
 
+**Latest version:** `0.1.0`
+
 ## Modules (published)
 
 These artifacts are published to Maven Central:
@@ -30,6 +32,13 @@ dependencies {
     implementation("io.github.hdilys:saluschart-core-util:0.1.0")
     implementation("io.github.hdilys:saluschart-data-model:0.1.0")
 }
+```
+
+## Quickstart
+
+```kotlin
+// Example dependency usage (pseudo)
+val data: List<ChartMark> = ...
 ```
 
 ## Demo / Sample

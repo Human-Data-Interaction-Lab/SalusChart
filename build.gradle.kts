@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     alias(libs.plugins.android.library) apply false
+    id("com.vanniktech.maven.publish") version "0.36.0" apply false
 }
 
 // Apply lint configuration to all Android modules

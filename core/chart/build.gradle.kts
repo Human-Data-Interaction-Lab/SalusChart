@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.vanniktech.maven.publish")
 
 }
 android {
@@ -71,4 +72,10 @@ dependencies {
 
     // compose shape
     implementation("androidx.graphics:graphics-shapes:1.0.1")
+}
+
+mavenPublishing {
+    coordinates("io.github.hdilys", "saluschart-core-chart", "0.1.0")
+    publishToMavenCentral()
+    signAllPublications()
 }

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.vanniktech.maven.publish")
 
 }
 android {
@@ -60,4 +61,10 @@ dependencies {
 
     // Testing dependencies
     testImplementation(libs.junit)
+}
+
+mavenPublishing {
+    coordinates("io.github.hdilys", "saluschart-core-util", "0.1.0")
+    publishToMavenCentral()
+    signAllPublications()
 }

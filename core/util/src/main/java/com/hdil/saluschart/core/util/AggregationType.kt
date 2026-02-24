@@ -1,15 +1,41 @@
 package com.hdil.saluschart.core.util
 
 /**
- * 시간 단위 변환 시 데이터 집계 방법을 정의하는 열거형
+ * Defines how values should be aggregated when resampling/converting time-based data
+ * into a different interval (e.g., hourly → daily, daily → weekly).
+ *
+ * This enum describes the *aggregation operation* applied to all samples that fall into
+ * the same target bucket/window.
  */
 enum class AggregationType {
-    /** 합계 계산 */
+
+    /**
+     * Sum of all values in the bucket.
+     *
+     * Example: total steps per day from multiple step samples.
+     */
     SUM,
-    /** 일일 평균 계산 */
+
+    /**
+     * Average value per day (daily mean).
+     *
+     * Use when you want a normalized "per-day" average rather than a total.
+     * (Exact interpretation depends on the caller: e.g., average of daily totals.)
+     */
     DAILY_AVERAGE,
-    /** 시간 지속 시간 합계 계산 (분 단위로 카운트) */
+
+    /**
+     * Sum of durations in the bucket.
+     *
+     * Typically used for time-based metrics (e.g., minutes of exercise).
+     * Convention: durations are treated as minutes unless the caller specifies otherwise.
+     */
     DURATION_SUM,
-    /** 최소값과 최대값 계산 (범위 차트용) */
+
+    /**
+     * Compute the minimum and maximum values in the bucket.
+     *
+     * Useful for range visualizations such as min/max (range bar) charts.
+     */
     MIN_MAX
 }

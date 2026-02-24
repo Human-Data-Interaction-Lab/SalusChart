@@ -48,8 +48,6 @@ fun MinimalGaugeChart(
     textColor: Color = Color.Black,
     showRangeText: Boolean = true,
 ) {
-    val chartType = ChartType.MINIMAL_GAUGE
-
     // 데이터 범위가 컨테이너 범위를 벗어나지 않도록 클램핑
     val clampedDataMin = data.minPoint.y.coerceIn(containerMin, containerMax)
     val clampedDataMax = data.maxPoint.y.coerceIn(containerMin, containerMax)

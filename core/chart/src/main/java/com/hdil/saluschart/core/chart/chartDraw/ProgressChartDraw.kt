@@ -14,20 +14,43 @@ import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import kotlin.math.cos
 import kotlin.math.sin
 
+/**
+ * Low-level drawing helpers for progress charts.
+ *
+ * Supports two visual modes:
+ * - Donut rings (multi-ring progress)
+ * - Horizontal progress bars (one row per item)
+ *
+ * These functions are intentionally low-level and expect the caller to provide layout context
+ * (canvas [Size], stroke widths, paddings, etc.).
+ */
 object ProgressChartDraw {
-    
+
     /**
-     * 프로그레스 마크를 그립니다 (도넛 또는 바 형태).
-     * PieChart의 drawPieSection과 같은 패턴을 따릅니다.
-     * 
-     * @param drawScope 그리기 영역
-     * @param data 프로그레스 차트 데이터 리스트
-     * @param size 캔버스 크기
-     * @param colors 각 프로그레스 인스턴스에 사용할 색상 목록
-     * @param isDonut 도넛 형태로 그릴지 여부 (true: 도넛, false: 바)
-     * @param strokeWidth 도넛일 경우 링의 두께
-     * @param barHeight 바일 경우 각 바의 높이
-     * @param backgroundAlpha 배경의 투명도
+     * Draws progress marks either as donut rings or horizontal bars.
+     *
+     * Donut mode:
+     * - Computes ring radii using [ChartMath.Progress.computeProgressDonutMetrics].
+     * - Draws a faint background track (full 360°).
+     * - Draws progress:
+     *   - `0..1` => a single arc with a subtle linear gradient.
+     *   - `>1`  => one full lap + an extra lap arc on top (capped at 2.0).
+     *
+     * Bar mode:
+     * - Draws a faint background track for each row and an overlay filled segment
+     *   proportional to `point.progress` clamped to `[0, 1]`.
+     *
+     * @param drawScope Compose draw scope.
+     * @param data Progress data items.
+     * @param size Canvas size.
+     * @param colors Colors used per item (falls back to the first color if missing).
+     * @param isDonut If true, render donut rings; otherwise render horizontal bars.
+     * @param strokeWidth Ring thickness in pixels (donut mode).
+     * @param barHeight Bar height in pixels (bar mode).
+     * @param backgroundAlpha Alpha applied to the background track color.
+     * @param barSpacing Vertical spacing between bar rows (bar mode).
+     * @param topPadding Top padding before the first bar row (bar mode).
+     * @param cornerRadius Corner radius used for rounded bar tracks/fills (bar mode).
      */
     fun drawProgressMarks(
         drawScope: DrawScope,
@@ -44,9 +67,12 @@ object ProgressChartDraw {
     ) {
         if (isDonut) {
             val (center, _, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
-                size = size, data = data, strokeWidth = strokeWidth
+                size = size,
+                data = data,
+                strokeWidth = strokeWidth
             )
 
+            // Simple color helpers (kept local to preserve existing rendering logic).
             fun lighten(c: Color, f: Float) = Color(
                 (c.red + (1f - c.red) * f).coerceIn(0f, 1f),
                 (c.green + (1f - c.green) * f).coerceIn(0f, 1f),
@@ -74,7 +100,7 @@ object ProgressChartDraw {
                     bottom = center.y + radius
                 )
 
-                // 1) Background track
+                // 1) Background track (full ring).
                 drawScope.drawArc(
                     color = base.copy(alpha = backgroundAlpha),
                     startAngle = 0f,
@@ -85,13 +111,20 @@ object ProgressChartDraw {
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
                 )
 
-                // 2) Progress
+                // 2) Progress arc(s).
                 val raw = if (pt.max > 0.0) pt.current / pt.max else pt.progress
                 val progress = raw.coerceIn(0.0, 2.0)
                 if (progress <= 0.0) return@forEachIndexed
 
                 val startAt = -90f
 
+                /**
+                 * Creates a linear gradient aligned between the arc head/tail positions for
+                 * the given [sweep] and [radius].
+                 *
+                 * Note: This intentionally uses a linear gradient (not a sweep gradient)
+                 * to match the existing look.
+                 */
                 fun arcGradient(radius: Float, sweep: Float, tailDark: Boolean): Brush {
                     val startRad = Math.toRadians(startAt.toDouble())
                     val endRad = Math.toRadians((startAt + sweep).toDouble())
@@ -110,18 +143,14 @@ object ProgressChartDraw {
                     val headColor = lighten(base, 0.35f)
 
                     return Brush.linearGradient(
-                        colors = listOf(
-                            tailColor,
-                            midColor,
-                            headColor
-                        ),
+                        colors = listOf(tailColor, midColor, headColor),
                         start = startPoint,
                         end = endPoint
                     )
                 }
 
                 if (progress <= 1.0) {
-                    // ---- 0–100%: single, softly-graded ring ----
+                    // 0–100%: single arc with gradient.
                     val sweep = (progress * 360.0).toFloat()
                     val brush = arcGradient(radius, sweep, tailDark = true)
 
@@ -135,8 +164,7 @@ object ProgressChartDraw {
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
                 } else {
-                    // ---- >100%: one full lap + extra lap on top (same radius) ----
-                    // First lap: full ring in base color
+                    // >100%: one full lap + extra lap on top (clamped to an additional 0–100%).
                     drawScope.drawArc(
                         color = base,
                         startAngle = startAt,
@@ -147,7 +175,6 @@ object ProgressChartDraw {
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
                     )
 
-                    // Extra portion (second lap): gradient arc with tail = base
                     val extraRatio = (progress - 1.0).coerceIn(0.0, 1.0)
                     if (extraRatio > 0.0) {
                         val extraSweep = (extraRatio * 360.0).toFloat()
@@ -165,9 +192,8 @@ object ProgressChartDraw {
                     }
                 }
             }
-
         } else {
-            // Bars
+            // Bar mode.
             val leftPadding = 90f
             val rightPadding = 100f
             val trackWidth = (size.width - leftPadding - rightPadding).coerceAtLeast(0f)
@@ -183,6 +209,7 @@ object ProgressChartDraw {
                     size = Size(trackWidth, barHeight),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius, cornerRadius)
                 )
+
                 if (progressWidth > 0f) {
                     drawScope.drawRoundRect(
                         color = color,
@@ -196,15 +223,23 @@ object ProgressChartDraw {
     }
 
     /**
-     * 프로그레스 라벨을 그립니다.
-     * 
-     * @param drawScope 그리기 영역
-     * @param data 프로그레스 차트 데이터 리스트
-     * @param size 캔버스 크기
-     * @param isDonut 도넛 차트 여부
-     * @param strokeWidth 도넛일 경우 링의 두께
-     * @param barHeight 바일 경우 각 바의 높이
-     * @param textSize 텍스트 크기
+     * Draws progress labels for each progress item.
+     *
+     * Donut mode:
+     * - Label positions are computed per ring using [ChartMath.Progress.computeLabelPosition].
+     *
+     * Bar mode:
+     * - Labels are drawn on the left side, aligned right, centered vertically per row.
+     *
+     * @param drawScope Compose draw scope.
+     * @param data Progress data items.
+     * @param size Canvas size.
+     * @param isDonut If true, render donut labels; otherwise render bar labels.
+     * @param strokeWidth Ring thickness in pixels (donut mode).
+     * @param barHeight Bar height in pixels (bar mode).
+     * @param textSize Text size in pixels.
+     * @param barSpacing Vertical spacing between bar rows (bar mode).
+     * @param topPadding Top padding before the first bar row (bar mode).
      */
     fun drawProgressLabels(
         drawScope: DrawScope,
@@ -218,12 +253,12 @@ object ProgressChartDraw {
         topPadding: Float = 8f
     ) {
         if (isDonut) {
-            val (center, maxRadius, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
+            val (center, _, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
                 size = size,
                 data = data,
                 strokeWidth = strokeWidth
             )
-            
+
             data.forEachIndexed { index, point ->
                 val radius = ringRadii.getOrElse(index) { 0f }
                 val labelPosition = ChartMath.Progress.computeLabelPosition(
@@ -232,8 +267,7 @@ object ProgressChartDraw {
                     isDonut = true,
                     point = point,
                 )
-                
-                // 라벨 텍스트 그리기
+
                 point.label?.let { label ->
                     drawScope.drawContext.canvas.nativeCanvas.drawText(
                         label,
@@ -250,9 +284,10 @@ object ProgressChartDraw {
             }
         } else {
             val leftX = 64f
-            
+
             data.forEachIndexed { index, point ->
                 val centerY = topPadding + index * (barHeight + barSpacing) + barHeight / 2f
+
                 point.label?.let { label ->
                     drawScope.drawContext.canvas.nativeCanvas.drawText(
                         label,
@@ -269,17 +304,30 @@ object ProgressChartDraw {
             }
         }
     }
-    
+
     /**
-     * 프로그레스 값을 그립니다.
-     * 
-     * @param drawScope 그리기 영역
-     * @param data 프로그레스 차트 데이터 리스트
-     * @param size 캔버스 크기
-     * @param isDonut 도넛 차트 여부
-     * @param strokeWidth 도넛일 경우 링의 두께
-     * @param barHeight 바일 경우 각 바의 높이
-     * @param textSize 텍스트 크기
+     * Draws progress values for each progress item.
+     *
+     * Value formatting:
+     * - If [isPercentage] is true: uses `"NN%"`
+     * - Otherwise: uses `"current [unit] / max [unit]"` (unit is appended when present)
+     *
+     * Donut mode:
+     * - Value positions are computed per ring using [ChartMath.Progress.computeValuePosition].
+     *
+     * Bar mode:
+     * - Values are drawn on the right side, aligned right, centered vertically per row.
+     *
+     * @param drawScope Compose draw scope.
+     * @param data Progress data items.
+     * @param size Canvas size.
+     * @param isDonut If true, render donut values; otherwise render bar values.
+     * @param strokeWidth Ring thickness in pixels (donut mode).
+     * @param barHeight Bar height in pixels (bar mode).
+     * @param textSize Text size in pixels.
+     * @param isPercentage If true, display percentage; otherwise display current/max.
+     * @param barSpacing Vertical spacing between bar rows (bar mode).
+     * @param topPadding Top padding before the first bar row (bar mode).
      */
     fun drawProgressValues(
         drawScope: DrawScope,
@@ -294,12 +342,12 @@ object ProgressChartDraw {
         topPadding: Float = 8f
     ) {
         if (isDonut) {
-            val (center, maxRadius, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
+            val (center, _, ringRadii) = ChartMath.Progress.computeProgressDonutMetrics(
                 size = size,
                 data = data,
                 strokeWidth = strokeWidth
             )
-            
+
             data.forEachIndexed { index, point ->
                 val radius = ringRadii.getOrElse(index) { 0f }
                 val valuePosition = ChartMath.Progress.computeValuePosition(
@@ -308,8 +356,7 @@ object ProgressChartDraw {
                     isDonut = true,
                     point = point
                 )
-                
-                // 값 텍스트 생성
+
                 val valueText = if (isPercentage) {
                     "${(point.percentage).toInt()}%"
                 } else {
@@ -321,7 +368,6 @@ object ProgressChartDraw {
                     }
                 }
 
-                // 값 텍스트 그리기
                 drawScope.drawContext.canvas.nativeCanvas.drawText(
                     valueText,
                     valuePosition.x,
@@ -335,9 +381,10 @@ object ProgressChartDraw {
             }
         } else {
             val rightX = size.width - 24f
-            
+
             data.forEachIndexed { index, point ->
                 val centerY = topPadding + index * (barHeight + barSpacing) + barHeight / 2f
+
                 val valueText = if (isPercentage) {
                     "${point.percentage.toInt()}%"
                 } else {
@@ -348,6 +395,7 @@ object ProgressChartDraw {
                         point.unit?.let { append(" $it") }
                     }
                 }
+
                 drawScope.drawContext.canvas.nativeCanvas.drawText(
                     valueText,
                     rightX,
@@ -361,16 +409,18 @@ object ProgressChartDraw {
             }
         }
     }
-    
+
     /**
-     * 프로그레스 중앙 요약 정보를 그립니다 (도넛 차트 전용).
-     * 
-     * @param drawScope 그리기 영역
-     * @param center 중심점
-     * @param title 제목 텍스트
-     * @param subtitle 부제목 텍스트
-     * @param titleSize 제목 텍스트 크기
-     * @param subtitleSize 부제목 텍스트 크기
+     * Draws the centered “summary” text inside a donut progress chart.
+     *
+     * This is only intended for donut mode. The caller controls when to draw it.
+     *
+     * @param drawScope Compose draw scope.
+     * @param center Center of the donut in canvas coordinates.
+     * @param title Top line text.
+     * @param subtitle Bottom line text.
+     * @param titleSize Title text size in pixels.
+     * @param subtitleSize Subtitle text size in pixels.
      */
     fun drawProgressCenterInfo(
         drawScope: DrawScope,
@@ -380,7 +430,6 @@ object ProgressChartDraw {
         titleSize: Float = 36f,
         subtitleSize: Float = 24f
     ) {
-        // 제목 그리기
         drawScope.drawContext.canvas.nativeCanvas.drawText(
             title,
             center.x,
@@ -392,8 +441,7 @@ object ProgressChartDraw {
                 isFakeBoldText = true
             }
         )
-        
-        // 부제목 그리기
+
         drawScope.drawContext.canvas.nativeCanvas.drawText(
             subtitle,
             center.x,

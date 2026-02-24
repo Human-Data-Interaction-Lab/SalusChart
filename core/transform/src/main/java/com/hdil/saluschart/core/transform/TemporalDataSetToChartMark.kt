@@ -3,33 +3,30 @@ package com.hdil.saluschart.core.transform
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.util.TimeUnitGroup
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
-import java.time.DayOfWeek
 
 /**
- * TemporalDataSet를 ChartMark 리스트로 변환하는 확장 함수
- * HealthData → TemporalDataSet → "Transformed TemporalDataSet → ChartMark"
- * 단일 값 데이터용
+ * Converts a single-value [TemporalDataSet] into a list of [ChartMark].
  *
- * @param fillGaps true인 경우 시간 범위 내 누락된 시간 포인트를 0으로 채움 (기본값: true)
- * @return ChartMark 리스트
+ * Pipeline:
+ * HealthData -> TemporalDataSet -> (transform/aggregate) -> ChartMark
  *
- * 각 시간 단위에 따라 레이블이 생성됩니다:
- * HOUR: "14시" (for 2 PM)
- * DAY: "5/8 월" (for May 8th Monday, includes day of week)
- * WEEK: "5월 1주차" (for first week of May)
- * MONTH: "2025년 5월" (for May 2025)
- * YEAR: "2025년" (for year 2025)
+ * ⚠️ About gap filling:
+ * - If [fillGaps] is true, missing buckets inside the time range are filled with [fillValue].
+ * - For sparse measurement data (BP, glucose, weight), filling with 0.0 can distort charts
+ *   and min/max statistics. Prefer fillGaps=false or fillValue=Double.NaN.
  */
-fun TemporalDataSet.toChartMarks(fillGaps: Boolean = true): List<ChartMark> {
+fun TemporalDataSet.toChartMarks(
+    fillGaps: Boolean = true,
+    fillValue: Double = 0.0
+): List<ChartMark> {
     require(isSingleValue) { "Use toChartMarksByProperty() for multi-value TemporalDataSet" }
-    
-    // Fill temporal gaps before converting to ChartMarks
-    val dataToConvert = if (fillGaps) this.fillTemporalGaps() else this
-    
+
+    val dataToConvert = if (fillGaps) this.fillTemporalGaps(fillValue) else this
     val labels = dataToConvert.generateTimeLabels()
 
     return dataToConvert.x.indices.map { index ->
@@ -42,21 +39,22 @@ fun TemporalDataSet.toChartMarks(fillGaps: Boolean = true): List<ChartMark> {
 }
 
 /**
- * 다중 값 TemporalDataSet에서 특정 속성을 추출하여 ChartMark 리스트로 변환하는 확장 함수
+ * Converts a multi-value [TemporalDataSet] into [ChartMark] list for a single [property].
  *
- * @param property 추출할 속성명 (예: "systolic", "diastolic", "calories", "protein" 등)
- * @param fillGaps true인 경우 시간 범위 내 누락된 시간 포인트를 0으로 채움 (기본값: true)
- * @return 해당 속성의 ChartMark 리스트
+ * @param fillGaps If true, fills missing buckets with [fillValue].
+ * @param fillValue Value used for missing buckets (default: 0.0).
  */
-fun TemporalDataSet.toChartMarksByProperty(property: String, fillGaps: Boolean = true): List<ChartMark> {
+fun TemporalDataSet.toChartMarksByProperty(
+    property: String,
+    fillGaps: Boolean = true,
+    fillValue: Double = 0.0
+): List<ChartMark> {
     require(isMultiValue) { "Use toChartMarks() for single-value TemporalDataSet" }
-    require(propertyNames.contains(property)) { 
-        "Property '$property' not found. Available properties: ${propertyNames.joinToString()}" 
+    require(propertyNames.contains(property)) {
+        "Property '$property' not found. Available properties: ${propertyNames.joinToString()}"
     }
-    
-    // Fill temporal gaps before converting to ChartMarks
-    val dataToConvert = if (fillGaps) this.fillTemporalGaps() else this
-    
+
+    val dataToConvert = if (fillGaps) this.fillTemporalGaps(fillValue) else this
     val values = dataToConvert.getValues(property)!!
     val labels = dataToConvert.generateTimeLabels()
 
@@ -70,19 +68,20 @@ fun TemporalDataSet.toChartMarksByProperty(property: String, fillGaps: Boolean =
 }
 
 /**
- * 다중 값 TemporalDataSet를 모든 속성별로 분리된 ChartMark 맵으로 변환하는 확장 함수
+ * Converts a multi-value [TemporalDataSet] into a map of property -> [ChartMark] list.
  *
- * @param fillGaps true인 경우 시간 범위 내 누락된 시간 포인트를 0으로 채움 (기본값: true)
- * @return 속성명을 키로 하고 해당 속성의 ChartMark 리스트를 값으로 하는 맵
+ * @param fillGaps If true, fills missing buckets with [fillValue].
+ * @param fillValue Value used for missing buckets (default: 0.0).
  */
-fun TemporalDataSet.toChartMarksMap(fillGaps: Boolean = true): Map<String, List<ChartMark>> {
+fun TemporalDataSet.toChartMarksMap(
+    fillGaps: Boolean = true,
+    fillValue: Double = 0.0
+): Map<String, List<ChartMark>> {
     require(isMultiValue) { "Use toChartMarks() for single-value TemporalDataSet" }
-    
-    // Fill temporal gaps before converting to ChartMarks
-    val dataToConvert = if (fillGaps) this.fillTemporalGaps() else this
-    
+
+    val dataToConvert = if (fillGaps) this.fillTemporalGaps(fillValue) else this
     val labels = dataToConvert.generateTimeLabels()
-    
+
     return dataToConvert.propertyNames.associateWith { property ->
         val values = dataToConvert.getValues(property)!!
         dataToConvert.x.indices.map { index ->
@@ -96,125 +95,99 @@ fun TemporalDataSet.toChartMarksMap(fillGaps: Boolean = true): Map<String, List<
 }
 
 /**
- * MIN_MAX 집계된 TemporalDataSet을 RangeChartMark 리스트로 변환하는 확장 함수
- * 
- * MIN_MAX aggregation으로 생성된 다중 값 TemporalDataSet (min, max 속성 포함)을
- * RangeChartMark 리스트로 변환합니다.
- * 
- * @param fillGaps true인 경우 시간 범위 내 누락된 시간 포인트를 min=0, max=0으로 채움 (기본값: true)
- * @return RangeChartMark 리스트
- * @throws IllegalArgumentException 단일 값 데이터이거나 min/max 속성이 없는 경우
- * 
- * 사용 예:
- * ```
- * val heartRateRange = heartRates.toHeartRateTemporalDataSet()
- *     .transform(timeUnit = TimeUnitGroup.DAY, aggregationType = AggregationType.MIN_MAX)
- *     .toRangeChartMarks()
- * RangeBarChart(data = heartRateRange, ...)
- * ```
- * 
- * 참고: fillGaps가 true인 경우, 데이터가 없는 날짜는 min=0, max=0으로 표시됩니다.
- * 이는 "데이터가 기록되지 않은 날"을 의미하며, 실제 측정값의 최소/최대와는 구분됩니다.
+ * Converts a MIN_MAX aggregated [TemporalDataSet] (with "min" and "max" properties)
+ * into a list of [RangeChartMark].
+ *
+ * NOTE:
+ * - Default [fillGaps] is false because filling missing buckets with 0 can be misleading for vitals.
+ * - If you enable fillGaps, missing buckets are filled with [fillValue] for both min/max.
  */
-fun TemporalDataSet.toRangeChartMarksFromMinMax(fillGaps: Boolean = true): List<RangeChartMark> {
-    require(isMultiValue) { "toRangeChartMarksFromMinMax() requires multi-value TemporalDataSet from MIN_MAX aggregation" }
+fun TemporalDataSet.toRangeChartMarksFromMinMax(
+    fillGaps: Boolean = false,
+    fillValue: Double = 0.0
+): List<RangeChartMark> {
+    require(isMultiValue) {
+        "toRangeChartMarksFromMinMax() requires multi-value TemporalDataSet from MIN_MAX aggregation"
+    }
     require(propertyNames.contains("min") && propertyNames.contains("max")) {
         "TemporalDataSet must contain 'min' and 'max' properties. " +
-        "Available properties: ${propertyNames.joinToString()}. " +
-        "Use transform(aggregationType = AggregationType.MIN_MAX) to create min/max data."
+                "Available properties: ${propertyNames.joinToString()}. " +
+                "Use transform(aggregationType = AggregationType.MIN_MAX) to create min/max data."
     }
-    
-    // Fill temporal gaps before converting to ChartMarks
-    val dataToConvert = if (fillGaps) this.fillTemporalGaps() else this
-    
+
+    val dataToConvert = if (fillGaps) this.fillTemporalGaps(fillValue) else this
+
     val minValues = dataToConvert.getValues("min")!!
     val maxValues = dataToConvert.getValues("max")!!
     val labels = dataToConvert.generateTimeLabels()
-    // Create RangeChartMark list from min and max values
+
     return dataToConvert.x.indices.map { index ->
+        val label = labels.getOrNull(index) ?: dataToConvert.x.getOrNull(index)?.toString()
         RangeChartMark(
             x = index.toDouble(),
-            minPoint = ChartMark(
-                x = index.toDouble(),
-                y = minValues[index],
-                label = labels.getOrNull(index) ?: dataToConvert.x.getOrNull(index)?.toString()
-            ),
-            maxPoint = ChartMark(
-                x = index.toDouble(),
-                y = maxValues[index],
-                label = labels.getOrNull(index) ?: dataToConvert.x.getOrNull(index)?.toString()
-            ),
-            label = labels.getOrNull(index) ?: dataToConvert.x.getOrNull(index)?.toString()
+            minPoint = ChartMark(x = index.toDouble(), y = minValues[index], label = label),
+            maxPoint = ChartMark(x = index.toDouble(), y = maxValues[index], label = label),
+            label = label
         )
     }
 }
 
 /**
- * 시간 단위에 따른 레이블 생성 (공통 로직)
- * @return 레이블 리스트
- * 
- * 레이블 형식 예시: 
- * TimeUnitGroup.MINUTE: "14:00", 
- * TimeUnitGroup.HOUR: "14시", 
- * TimeUnitGroup.DAY: "5/8 월", 
- * TimeUnitGroup.WEEK: "5월 1주차", 
- * TimeUnitGroup.MONTH: "2025년 5월", 
- * TimeUnitGroup.YEAR: "2025년"
+ * Generates time labels based on the dataset's [timeUnit].
+ *
+ * Examples:
+ * - MINUTE: "14:05"
+ * - HOUR: "14시"
+ * - DAY: "5/8 월"
+ * - WEEK: "5월 1주차" (Sunday-based week-of-month)
+ * - MONTH: "2025년 5월"
+ * - YEAR: "2025년"
  */
 fun TemporalDataSet.generateTimeLabels(): List<String> {
+    val zone = ZoneId.systemDefault()
+
     return when (timeUnit) {
-        TimeUnitGroup.MINUTE -> {
-            x.map { instant ->
-                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                "${dateTime.hour}:${dateTime.minute.toString().padStart(2, '0')}"
-            }
+        TimeUnitGroup.MINUTE -> x.map { instant ->
+            val dt = LocalDateTime.ofInstant(instant, zone)
+            "${dt.hour}:${dt.minute.toString().padStart(2, '0')}"
         }
-        TimeUnitGroup.HOUR -> {
-            x.map { instant ->
-                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                "${dateTime.hour}시"
-            }
+
+        TimeUnitGroup.HOUR -> x.map { instant ->
+            val dt = LocalDateTime.ofInstant(instant, zone)
+            "${dt.hour}시"
         }
-        TimeUnitGroup.DAY -> {
-            x.map { instant ->
-                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                val dayOfWeekKorean = when (dateTime.dayOfWeek.value) {
-                    1 -> "월"
-                    2 -> "화"
-                    3 -> "수"
-                    4 -> "목"
-                    5 -> "금"
-                    6 -> "토"
-                    7 -> "일"
-                    else -> "?"
-                }
-                "${dateTime.monthValue}/${dateTime.dayOfMonth} $dayOfWeekKorean"
+
+        TimeUnitGroup.DAY -> x.map { instant ->
+            val dt = LocalDateTime.ofInstant(instant, zone)
+            val dow = when (dt.dayOfWeek.value) {
+                1 -> "월"; 2 -> "화"; 3 -> "수"; 4 -> "목"; 5 -> "금"; 6 -> "토"; 7 -> "일"
+                else -> "?"
             }
+            "${dt.monthValue}/${dt.dayOfMonth} $dow"
         }
-        TimeUnitGroup.WEEK -> {
-            x.map { instant ->
-                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                val sunday = dateTime.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-                val firstSundayOfMonth = LocalDate.of(sunday.year, sunday.month, 1)
-                    .let { firstDay ->
-                        val dayOfWeek = firstDay.dayOfWeek.value
-                        if (dayOfWeek == 7) firstDay else firstDay.plusDays((7 - dayOfWeek).toLong())
-                    }
-                val weekNumber = ((sunday.toEpochDay() - firstSundayOfMonth.toEpochDay()) / 7 + 1).toInt()
-                "${sunday.monthValue}월 ${weekNumber}주차"
+
+        TimeUnitGroup.WEEK -> x.map { instant ->
+            val dt = LocalDateTime.ofInstant(instant, zone)
+            val sunday = dt.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+
+            val firstSundayOfMonth = LocalDate.of(sunday.year, sunday.month, 1).let { firstDay ->
+                val dayOfWeek = firstDay.dayOfWeek.value
+                if (dayOfWeek == 7) firstDay else firstDay.plusDays((7 - dayOfWeek).toLong())
             }
+
+            val rawWeek = ((sunday.toEpochDay() - firstSundayOfMonth.toEpochDay()) / 7 + 1).toInt()
+            val weekNumber = rawWeek.coerceAtLeast(1) // clamp safety
+            "${sunday.monthValue}월 ${weekNumber}주차"
         }
-        TimeUnitGroup.MONTH -> {
-            x.map { instant ->
-                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                "${dateTime.year}년 ${dateTime.monthValue}월"
-            }
+
+        TimeUnitGroup.MONTH -> x.map { instant ->
+            val dt = LocalDateTime.ofInstant(instant, zone)
+            "${dt.year}년 ${dt.monthValue}월"
         }
-        TimeUnitGroup.YEAR -> {
-            x.map { instant ->
-                val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                "${dateTime.year}년"
-            }
+
+        TimeUnitGroup.YEAR -> x.map { instant ->
+            val dt = LocalDateTime.ofInstant(instant, zone)
+            "${dt.year}년"
         }
     }
 }

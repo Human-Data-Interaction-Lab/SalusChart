@@ -9,48 +9,67 @@ import androidx.compose.ui.graphics.toArgb
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
 /**
- * Y축 위치를 나타내는 열거형 클래스
+ * Placement for the Y-axis within a chart.
  */
 enum class YAxisPosition {
-    LEFT,   // 왼쪽
-    RIGHT   // 오른쪽
+    /** Y-axis is drawn on the left edge of the chart. */
+    LEFT,
+
+    /** Y-axis is drawn on the right edge of the chart. */
+    RIGHT
 }
 
-// TODO : metric 관련 함수에서 고정값 수정 필요
+/**
+ * Shared drawing utilities for chart primitives (axes, grid, tick labels) and accessors
+ * to chart-specific draw helpers.
+ *
+ * This object is intended as a central entry point for chart rendering helpers used across
+ * multiple chart types (line, bar, pie, etc.).
+ */
 object ChartDraw {
 
+    // Chart-specific drawers (kept as properties for existing call sites / API stability).
     var Pie = PieChartDraw
-    val RangeBar = RangeBarChartDraw
     val Line = LineChartDraw
     val Bar = BarChartDraw
     val Scatter = ScatterPlotDraw
     val Progress = ProgressChartDraw
     val Gauge = GaugeChartDraw
-    val SleepStage = SleepStageChartDraw
 
     /**
-     * 눈금 값을 적절한 형식으로 포맷합니다.
+     * Formats a tick value into a compact human-readable string.
      *
-     * @param value 눈금 값
-     * @return 포맷된 문자열
+     * Formatting rules:
+     * - `0` is shown as `"0"`
+     * - `>= 1,000,000` uses `"M"` (millions) with 1 decimal (e.g., `1.2M`)
+     * - `>= 1,000` uses `"K"` (thousands) with 1 decimal (e.g., `3.4K`)
+     * - Integer values are shown without decimals
+     * - Otherwise, 1 decimal place is used
+     *
+     * @param value Tick value.
+     * @return Formatted tick label.
      */
     fun formatTickLabel(value: Float): String {
         return when {
             value == 0f -> "0"
-            value >= 1000000 -> "%.1fM".format(value / 1000000)
-            value >= 1000 -> "%.1fK".format(value / 1000)
-            value % 1 == 0f -> "%.0f".format(value)
+            value >= 1_000_000f -> "%.1fM".format(value / 1_000_000f)
+            value >= 1_000f -> "%.1fK".format(value / 1_000f)
+            value % 1f == 0f -> "%.0f".format(value)
             else -> "%.1f".format(value)
         }
     }
 
     /**
-     * Y축 그리드와 레이블을 그립니다.
+     * Draws horizontal grid lines for each Y tick and optionally draws Y-axis tick labels.
      *
-     * @param drawScope 그리기 영역
-     * @param size Canvas의 전체 크기
-     * @param metrics 차트 메트릭 정보
-     * @param yAxisPosition Y축 위치
+     * Grid lines span the entire chart plotting area ([metrics.paddingX] to
+     * `[metrics.paddingX] + [metrics.chartWidth]`).
+     *
+     * @param drawScope Compose draw scope.
+     * @param size Full canvas size (currently unused; kept for API stability / future use).
+     * @param metrics Chart layout and tick information.
+     * @param yAxisPosition Which side the Y-axis labels should appear on.
+     * @param drawLabels If true, tick labels are drawn next to the Y-axis.
      */
     fun drawGrid(
         drawScope: DrawScope,
@@ -59,23 +78,24 @@ object ChartDraw {
         yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
         drawLabels: Boolean = true
     ) {
-        // Y축 라인의 실제 X 좌표 계산
+        val denom = (metrics.maxY - metrics.minY)
+        if (denom == 0.0) return
+
+        // Y-axis line X position (used to place labels).
         val yAxisX = when (yAxisPosition) {
             YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth
             YAxisPosition.LEFT -> metrics.paddingX
         }
 
         metrics.yTicks.forEach { yVal ->
-            // Convert chart-relative Y to canvas coordinates
+            // Convert chart-relative Y to canvas coordinates.
             val y =
-                metrics.paddingY + metrics.chartHeight - ((yVal - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+                metrics.paddingY +
+                        metrics.chartHeight -
+                        ((yVal - metrics.minY) / denom) * metrics.chartHeight
 
-            // 그리드 라인은 차트 영역 전체에 걸쳐 그리기
-            val gridStart = metrics.paddingX // 왼쪽 Y축까지
-            val gridEnd = when (yAxisPosition) {
-                YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth // 오른쪽 Y축까지
-                YAxisPosition.LEFT -> metrics.paddingX + metrics.chartWidth // 오른쪽 끝까지
-            }
+            val gridStart = metrics.paddingX
+            val gridEnd = metrics.paddingX + metrics.chartWidth
 
             drawScope.drawLine(
                 color = Color.LightGray,
@@ -84,70 +104,63 @@ object ChartDraw {
                 strokeWidth = 1f
             )
 
-            // only draw labels when drawLabels = true
-            if (drawLabels) {
-                val labelText = formatTickLabel(yVal.toFloat())
+            if (!drawLabels) return@forEach
 
-                // Y축 레이블 위치를 yAxisPosition에 따라 결정
-                val labelX = when (yAxisPosition) {
-                    YAxisPosition.RIGHT -> yAxisX + 20f // 오른쪽 Y축 라인의 오른쪽에 위치
-                    YAxisPosition.LEFT -> 20f // 기본값: 왼쪽 위치
-                }
+            val labelText = formatTickLabel(yVal.toFloat())
 
-                // Y축 레이블 정렬을 yAxisPosition에 따라 결정
-                val textAlign = when (yAxisPosition) {
-                    YAxisPosition.RIGHT -> android.graphics.Paint.Align.LEFT // 오른쪽 Y축일 때는 왼쪽 정렬
-                    YAxisPosition.LEFT -> android.graphics.Paint.Align.RIGHT // 왼쪽 Y축일 때는 오른쪽 정렬
-                }
-
-                drawScope.drawContext.canvas.nativeCanvas.drawText(
-                    labelText,
-                    labelX,
-                    y.toFloat() + 10f,
-                    android.graphics.Paint().apply {
-                        color = android.graphics.Color.DKGRAY
-                        textSize = 28f
-                        this.textAlign = textAlign
-                    }
-                )
+            val labelX = when (yAxisPosition) {
+                YAxisPosition.RIGHT -> yAxisX + 20f
+                YAxisPosition.LEFT -> 20f
             }
+
+            val textAlign = when (yAxisPosition) {
+                YAxisPosition.RIGHT -> android.graphics.Paint.Align.LEFT
+                YAxisPosition.LEFT -> android.graphics.Paint.Align.RIGHT
+            }
+
+            drawScope.drawContext.canvas.nativeCanvas.drawText(
+                labelText,
+                labelX,
+                y.toFloat() + 10f,
+                android.graphics.Paint().apply {
+                    color = android.graphics.Color.DKGRAY
+                    textSize = 28f
+                    this.textAlign = textAlign
+                }
+            )
         }
     }
 
     /**
-     * X축 라인을 그립니다.
+     * Draws the X-axis baseline at the bottom of the chart plotting area.
      *
-     * @param drawScope 그리기 영역
-     * @param metrics 차트 메트릭 정보
+     * @param drawScope Compose draw scope.
+     * @param metrics Chart metrics used to locate the baseline.
      */
     fun drawXAxis(drawScope: DrawScope, metrics: ChartMath.ChartMetrics) {
         drawScope.drawLine(
             color = Color.Black,
             start = Offset(metrics.paddingX, metrics.paddingY + metrics.chartHeight),
-            end = Offset(
-                metrics.paddingX + metrics.chartWidth,
-                metrics.paddingY + metrics.chartHeight
-            ),
+            end = Offset(metrics.paddingX + metrics.chartWidth, metrics.paddingY + metrics.chartHeight),
             strokeWidth = 2f
         )
     }
 
     /**
-     * Y축 라인을 그립니다.
+     * Draws the Y-axis baseline on the left or right edge of the chart plotting area.
      *
-     * @param drawScope 그리기 영역
-     * @param metrics 차트 메트릭 정보
-     * @param yAxisPosition Y축 위치
+     * @param drawScope Compose draw scope.
+     * @param metrics Chart metrics used to locate the axis.
+     * @param yAxisPosition Which side to draw the Y-axis on.
      */
     fun drawYAxis(
         drawScope: DrawScope,
         metrics: ChartMath.ChartMetrics,
         yAxisPosition: YAxisPosition = YAxisPosition.LEFT
     ) {
-        // Y축 라인 위치를 yAxisPosition에 따라 결정
         val axisStartX = when (yAxisPosition) {
-            YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth // 오른쪽 위치
-            YAxisPosition.LEFT -> metrics.paddingX // 기본값: 왼쪽 위치
+            YAxisPosition.RIGHT -> metrics.paddingX + metrics.chartWidth
+            YAxisPosition.LEFT -> metrics.paddingX
         }
 
         drawScope.drawLine(
@@ -158,14 +171,34 @@ object ChartDraw {
         )
     }
 
-    /*
-     * 고정된 Y축을 그립니다. (paging용)
+    /**
+     * Draws a standalone (fixed) Y-axis pane, used for charts with horizontal paging/scrolling
+     * where the plot area moves but the Y-axis remains fixed.
      *
-     * @param drawScope 그리기 영역
-     * @param metrics 차트 메트릭 정보
-     * @param yAxisPosition Y축 위치
-     * @param paneWidthPx 팬 너비
-     * @param labelTextSizePx 레이블 텍스트 크기
+     * This function:
+     * - Draws the axis line at the pane edge
+     * - Draws tick marks
+     * - Draws tick labels
+     * - Optionally highlights certain tick labels with a “pill” background
+     *
+     * Highlighting:
+     * - A tick is considered highlighted if any entry in [highlightValues] is within
+     *   [highlightTolerance] of the tick value.
+     * - The highlight text/pill color is derived from [highlightColorForValue].
+     *
+     * Extra ticks:
+     * - [extraTickValues] may be provided to render additional labels (e.g., for reference lines).
+     * - Ticks are merged with [metrics.yTicks], distinct, and sorted.
+     *
+     * @param drawScope Compose draw scope to draw into.
+     * @param metrics Chart metrics describing Y-range, padding, height, and base ticks.
+     * @param yAxisPosition Whether the axis is at the left or right edge of the pane.
+     * @param paneWidthPx Width of this Y-axis pane in pixels.
+     * @param labelTextSizePx Tick label text size in pixels.
+     * @param highlightValues Y-values to highlight (approximate match within [highlightTolerance]).
+     * @param highlightColorForValue Function mapping a highlighted value to a text color.
+     * @param extraTickValues Additional tick values to include besides [metrics.yTicks].
+     * @param highlightTolerance Absolute tolerance used to match ticks for highlighting.
      */
     fun drawYAxisStandalone(
         drawScope: DrawScope,
@@ -181,10 +214,10 @@ object ChartDraw {
         val denom = (metrics.maxY - metrics.minY)
         if (denom == 0.0) return
 
-        // Axis X anchored to the pane edge (1px in from the edge)
+        // Axis X anchored to the pane edge (slightly inset for crisp rendering).
         val axisX = if (yAxisPosition == YAxisPosition.RIGHT) paneWidthPx - 0.5f else 0.5f
 
-        // Axis line
+        // Axis line.
         drawScope.drawLine(
             color = Color.Black,
             start = Offset(axisX, metrics.paddingY),
@@ -203,8 +236,11 @@ object ChartDraw {
             isAntiAlias = true
             color = android.graphics.Color.DKGRAY
             textSize = labelTextSizePx
-            textAlign = if (yAxisPosition == YAxisPosition.RIGHT)
-                android.graphics.Paint.Align.LEFT else android.graphics.Paint.Align.RIGHT
+            textAlign = if (yAxisPosition == YAxisPosition.RIGHT) {
+                android.graphics.Paint.Align.LEFT
+            } else {
+                android.graphics.Paint.Align.RIGHT
+            }
         }
 
         val highlightPaint = android.graphics.Paint().apply {
@@ -219,11 +255,11 @@ object ChartDraw {
         }
 
         val fm = normalPaint.fontMetrics
-        val textHeight = (fm.descent - fm.ascent) // px
+        val textHeight = (fm.descent - fm.ascent)
 
         drawScope.drawContext.canvas.nativeCanvas.apply {
             mergedTicks.forEach { yVal ->
-                // skip ticks outside visible range
+                // Skip ticks outside visible range.
                 if (yVal < metrics.minY - 1e-9 || yVal > metrics.maxY + 1e-9) return@forEach
 
                 val y =
@@ -231,7 +267,7 @@ object ChartDraw {
                             metrics.chartHeight -
                             (((yVal - metrics.minY) / denom) * metrics.chartHeight).toFloat()
 
-                // Tick mark
+                // Tick mark.
                 val tickEndX =
                     if (yAxisPosition == YAxisPosition.RIGHT) axisX - tickLen else axisX + tickLen
 
@@ -242,7 +278,6 @@ object ChartDraw {
                     strokeWidth = 1f
                 )
 
-                // Label
                 val label = formatTickLabel(yVal.toFloat())
 
                 val isHighlighted = highlightValues.any { hv ->
@@ -255,9 +290,7 @@ object ChartDraw {
                 if (isHighlighted) {
                     val c = highlightColorForValue(yVal)
 
-                    val textColorInt = c.toArgb()
-                    highlightPaint.color = textColorInt
-
+                    highlightPaint.color = c.toArgb()
                     pillPaint.color = c.copy(alpha = 0.18f).toArgb()
 
                     val textWidth = highlightPaint.measureText(label)
@@ -271,11 +304,11 @@ object ChartDraw {
                     val right: Float
 
                     if (yAxisPosition == YAxisPosition.RIGHT) {
-                        // textAlign LEFT => labelX is left edge
+                        // textAlign LEFT => labelX is left edge.
                         left = labelX - padX
                         right = labelX + textWidth + padX
                     } else {
-                        // textAlign RIGHT => labelX is right edge
+                        // textAlign RIGHT => labelX is right edge.
                         left = labelX - textWidth - padX
                         right = labelX + padX
                     }
@@ -296,11 +329,9 @@ object ChartDraw {
                         pillPaint
                     )
 
-                    // Draw highlighted text
-                    drawText(label, labelX, y - 0f, highlightPaint)
+                    drawText(label, labelX, y, highlightPaint)
                 } else {
-                    // Normal tick label
-                    drawText(label, labelX, y - 0f, normalPaint)
+                    drawText(label, labelX, y, normalPaint)
                 }
             }
         }

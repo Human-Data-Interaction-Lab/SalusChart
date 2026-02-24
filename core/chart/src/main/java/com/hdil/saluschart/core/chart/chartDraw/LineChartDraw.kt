@@ -8,15 +8,27 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
+/**
+ * Drawing helpers for line charts.
+ *
+ * This object contains low-level rendering utilities used by line-chart composables:
+ * - Drawing a polyline that connects data points
+ * - Drawing X-axis labels using the line-chart spacing rule
+ */
 object LineChartDraw {
 
     /**
-     * 데이터 포인트를 연결하는 라인을 그립니다.
+     * Draws a polyline connecting the given points in order.
      *
-     * @param drawScope 그리기 영역
-     * @param points 화면 좌표로 변환된 데이터 포인트 목록
-     * @param color 라인 색상
-     * @param strokeWidth 라인 두께
+     * The caller is responsible for providing points already converted into screen/canvas
+     * coordinates (e.g., using [ChartMath.ChartMetrics]).
+     *
+     * No drawing occurs if fewer than 2 points are provided.
+     *
+     * @param drawScope Compose draw scope.
+     * @param points Points in canvas coordinates, in draw order.
+     * @param color Line color.
+     * @param strokeWidth Line width in pixels.
      */
     fun drawLine(
         drawScope: DrawScope,
@@ -26,27 +38,43 @@ object LineChartDraw {
     ) {
         if (points.size < 2) return
 
-        // 라인 그리기
         val path = androidx.compose.ui.graphics.Path().apply {
             moveTo(points.first().x, points.first().y)
             points.drop(1).forEach { lineTo(it.x, it.y) }
         }
-        drawScope.drawPath(path, color = color, style = Stroke(width = strokeWidth))
+
+        drawScope.drawPath(
+            path = path,
+            color = color,
+            style = Stroke(width = strokeWidth)
+        )
     }
-    
-    // TODO: 현재 line chart 및 scatter plot 레이블이 왼쪽 가장 끝에서 시작 (첫 번째 레이블이 y축과 맞닿음)
-    // - 이에 첫 번째 PointMarker가 y축과 겹치는 현상 발생 (ScatterPlot 예시 참고)
-    // - 따라서 drawBarXAxisLabels 함수 참고하여 첫 번째 레이블과 데이터포인트를 왼쪽 끝에서 반 칸 띄어서 그리는 작업 필요할 수도 있음
+
     /**
-     * X축 레이블을 그립니다 (라인차트용 - 첫 번째 레이블이 왼쪽 끝에서 시작).
+     * Draws X-axis labels for a line chart.
      *
-     * @param ctx 그리기 컨텍스트
-     * @param labels X축에 표시할 레이블 목록
-     * @param metrics 차트 메트릭 정보
-     * @param centered 텍스트를 중앙 정렬할지 여부 (기본값: true)
-     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
-     * @param maxXTicksLimit X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
-     * @param xLabelAutoSkip 라벨 자동 스킵 활성화 여부 (true이면 텍스트 너비 기반 자동 계산)
+     * Positioning rule:
+     * - Labels are centered within each "slot" using `(index + 0.5) * spacing`, where
+     *   `spacing = chartWidth / totalLabelCount`.
+     *
+     * Label density:
+     * - If [xLabelAutoSkip] is enabled, labels may be skipped using
+     *   [ChartMath.computeAutoSkipLabels] to reduce overlap.
+     *
+     * Clamping behavior (when [centered] is true):
+     * - The label's center X is clamped so the text does not overflow the canvas bounds.
+     *
+     * Note:
+     * - The current implementation uses the line-chart spacing rule and places the first label
+     *   half a slot away from the left edge. This matches existing point positioning behavior.
+     *
+     * @param ctx Draw context whose native canvas is used to render text.
+     * @param labels Full list of labels (one per x-position).
+     * @param metrics Chart metrics used for padding and chart dimensions.
+     * @param centered If true, center-align the text (default: true).
+     * @param textSize Text size in pixels (default: 28f).
+     * @param maxXTicksLimit Optional cap on how many labels can be displayed (null = no cap).
+     * @param xLabelAutoSkip If true, compute an auto-skip factor based on text width and chart width.
      */
     fun drawLineXAxisLabels(
         ctx: DrawContext,
@@ -70,7 +98,6 @@ object LineChartDraw {
             }
 
         val total = labels.size
-
         val spacing = if (total > 1) metrics.chartWidth / total else 0f
 
         val canvas = ctx.canvas.nativeCanvas
@@ -95,12 +122,10 @@ object LineChartDraw {
                 val clamped = baseX.coerceIn(half, canvasWidth - half)
 
                 canvas.drawText(label, clamped, y, paint)
-
             } else {
                 paint.textAlign = android.graphics.Paint.Align.LEFT
                 canvas.drawText(label, baseX, y, paint)
             }
         }
     }
-
 }

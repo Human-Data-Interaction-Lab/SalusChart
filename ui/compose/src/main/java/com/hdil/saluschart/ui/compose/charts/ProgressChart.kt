@@ -161,7 +161,7 @@ fun ProgressChart(
     if (data.isEmpty()) return
 
     val resolvedColors = remember(data.size, colors) {
-        val base = colors ?: ColorUtils.ColorUtils(data.size.coerceAtLeast(1))
+        val base = colors ?: ColorUtils.rainbowPalette(data.size.coerceAtLeast(1))
         // Repeat colors if the caller provided fewer than data.size
         List(data.size) { i -> base[i % base.size] }
     }

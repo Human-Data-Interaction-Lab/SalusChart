@@ -52,7 +52,7 @@ fun MinimalLineChart(
     referenceLineInteractive: Boolean = false
 ) {
     if (data.isEmpty()) return
-    val chartType = ChartType.MINIMAL_LINE
+    val chartType = ChartType.LINE
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 

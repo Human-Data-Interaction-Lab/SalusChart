@@ -41,7 +41,7 @@ fun MinimalRangeBarChart(
     roundTopOnly: Boolean = true,
 ) {
     if (data.isEmpty()) return
-    val chartType = ChartType.MINIMAL_RANGE_BAR
+    val chartType = ChartType.RANGE_BAR
 
     // Transform ChartMarks -> RangeChartMarks
     val rangeData = remember(data) {

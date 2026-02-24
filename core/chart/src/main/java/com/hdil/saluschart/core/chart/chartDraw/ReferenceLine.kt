@@ -33,74 +33,101 @@ import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.StackedChartMark
-import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /**
- * 기준선 타입을 나타내는 enum class
+ * The type of reference line to display on a chart.
  */
 enum class ReferenceLineType {
-    NONE,      // 기준선 없음
-    AVERAGE,   // 평균선
-    TREND      // 추세선
+    /** No reference line is drawn. */
+    NONE,
+
+    /** A horizontal line drawn at the average Y value of the dataset. */
+    AVERAGE,
+
+    /** A trend line computed using linear regression. */
+    TREND
 }
 
 /**
- * 기준선 스타일을 나타내는 enum class
+ * Visual style for a reference line, represented as an optional dash pattern.
+ *
+ * If [dashPattern] is null, the line is solid.
  */
 enum class LineStyle(val dashPattern: FloatArray?) {
-    SOLID(null),                              // 실선
-    DASHED(floatArrayOf(10f, 5f)),           // 짧은 점선 
-    DOTTED(floatArrayOf(2f, 5f)),            // 점선
-    DASHDOT(floatArrayOf(10f, 5f, 2f, 5f)),  // 점-선 혼합
-    LONGDASH(floatArrayOf(20f, 10f))         // 긴 점선
+    /** Solid line. */
+    SOLID(null),
+
+    /** Short dashed line. */
+    DASHED(floatArrayOf(10f, 5f)),
+
+    /** Dotted line. */
+    DOTTED(floatArrayOf(2f, 5f)),
+
+    /** Dash-dot pattern. */
+    DASHDOT(floatArrayOf(10f, 5f, 2f, 5f)),
+
+    /** Long dashed line. */
+    LONGDASH(floatArrayOf(20f, 10f))
 }
 
 /**
- * 기준선을 그리고 관리하는 객체
+ * Utilities for computing and rendering chart reference lines (average line / trend line).
+ *
+ * This file provides:
+ * - Average computation (including stacked bar handling)
+ * - Linear regression for trend line
+ * - A composable overlay that draws the selected reference line type
+ *
+ * Note: Interaction behavior differs by type:
+ * - Average line supports a touch-area overlay (toggle label) and optional click callback.
+ * - Trend line is currently drawn as a visual-only overlay (no interaction).
  */
 object ReferenceLine {
-// TODO : 추세선 interaction 일관성 부족 (average line은 touch interaction 가능하지만, trend line은 불가능)
+
     /**
-     * 차트 데이터에서 평균값을 계산합니다.
-     * 
-     * @param data 차트 데이터 포인트 목록
-     * @param chartType 차트 타입 (스택 바 차트의 경우 총합의 평균을 계산)
-     * @return 계산된 평균값 (정수로 반올림됨)
+     * Computes the average Y value for the given dataset.
+     *
+     * Special handling:
+     * - For [ChartType.STACKED_BAR], the average is computed using the `y` value of
+     *   [StackedChartMark] items (which represents the stack total).
+     *
+     * The result is rounded to the nearest integer and returned as a [Float].
+     *
+     * @param data Chart data marks.
+     * @param chartType Chart type (used for stacked bar handling).
+     * @return Average Y value (rounded to an integer).
      */
     fun calculateAverage(data: List<BaseChartMark>, chartType: ChartType): Float {
         if (data.isEmpty()) return 0f
 
         return when (chartType) {
             ChartType.STACKED_BAR -> {
-                // 스택 바 차트: 각 스택의 총합의 평균
                 val stackedData = data.filterIsInstance<StackedChartMark>()
                 if (stackedData.isEmpty()) {
                     data.map { it.y }.average().roundToInt().toFloat()
                 } else {
-                    stackedData.map { it.y }.average().roundToInt().toFloat() // StackedChartMark의 y값은 각 세그먼트의 총합
+                    stackedData.map { it.y }.average().roundToInt().toFloat()
                 }
             }
-            else -> {
-                // 일반 차트: y 값들의 평균
-                data.map { it.y }.average().roundToInt().toFloat()
-            }
+
+            else -> data.map { it.y }.average().roundToInt().toFloat()
         }
     }
 
     /**
-     * 추세선 계산을 위한 선형 회귀
-     * 
-     * @param data 차트 데이터 포인트 목록
-     * @return 추세선의 기울기와 y절편을 포함한 Pair (slope, intercept)
+     * Computes a trend line using simple linear regression.
+     *
+     * The returned pair represents `(slope, intercept)` for the line:
+     * `y = slope * x + intercept`.
+     *
+     * If fewer than 2 points are provided, `(0f, 0f)` is returned.
      */
     private fun calculateTrendLine(data: List<BaseChartMark>): Pair<Float, Float> {
         if (data.size < 2) return Pair(0f, 0f)
 
-        // 선형 회귀를 이용한 추세선 계산
         val n = data.size
         val sumX = data.sumOf { it.x.toDouble() }
         val sumY = data.sumOf { it.y.toDouble() }
@@ -114,21 +141,25 @@ object ReferenceLine {
     }
 
     /**
-     * 기준선을 그립니다.
-     * 
-     * @param modifier Compose 모디파이어
-     * @param data 차트 데이터 포인트 목록
-     * @param metrics 차트 메트릭 정보
-     * @param chartType 차트 타입
-     * @param referenceLineType 기준선 타입
-     * @param color 기준선 색상
-     * @param strokeWidth 기준선 두께
-     * @param lineStyle 기준선 스타일 (실선, 점선, 점-선 등)
-     * @param showLabel 기준선 값 레이블 표시 여부 (평균선만 해당)
-     * @param labelFormat 레이블 값 포맷 (예: "평균: %.0f")
-     * @param yAxisPosition Y축 위치 (레이블 위치 결정용)
-     * @param interactive 터치 상호작용 가능 여부
-     * @param onClick 기준선 클릭 시 콜백
+     * Draws the selected reference line as an overlay.
+     *
+     * This composable renders nothing when:
+     * - [referenceLineType] is [ReferenceLineType.NONE]
+     * - [data] is empty
+     *
+     * @param modifier Modifier applied to the overlay container.
+     * @param data Chart data marks used to compute the reference line.
+     * @param metrics Chart metrics used for coordinate conversion.
+     * @param chartType Chart type (affects average computation for stacked bars).
+     * @param referenceLineType Which reference line to draw.
+     * @param color Line/label color.
+     * @param strokeWidth Line width.
+     * @param lineStyle Line dash style.
+     * @param showLabel Whether to show the value label (average line only).
+     * @param labelFormat Label formatting string (e.g., `"평균: %.0f"`).
+     * @param yAxisPosition Y-axis placement (affects label alignment/position).
+     * @param interactive If true, average line supports touch toggle behavior.
+     * @param onClick Optional click callback (applies to average line when [interactive] is false).
      */
     @Composable
     fun ReferenceLine(
@@ -165,6 +196,7 @@ object ReferenceLine {
                         onClick = onClick,
                     )
                 }
+
                 ReferenceLineType.TREND -> {
                     TrendLine(
                         data = data,
@@ -178,15 +210,23 @@ object ReferenceLine {
                         labelFormat = labelFormat
                     )
                 }
+
                 ReferenceLineType.NONE -> {
-                    // 아무것도 그리지 않음
+                    // no-op
                 }
             }
         }
     }
 
     /**
-     * 평균선을 Compose로 그립니다.
+     * Renders an average line as a horizontal dashed/solid line positioned at the average Y value.
+     *
+     * Interaction behavior:
+     * - If [interactive] is true, a large touch area toggles a "pressed" state that can reveal the label.
+     * - If [interactive] is false and [onClick] is provided, the touch area triggers [onClick].
+     *
+     * Label behavior:
+     * - The label is shown if [showLabel] is true, OR if [interactive] is true and the line is pressed.
      */
     @Composable
     private fun AverageLine(
@@ -203,23 +243,22 @@ object ReferenceLine {
         onClick: (() -> Unit)?
     ) {
         val average = calculateAverage(data, chartType)
-        
-        // 평균값이 차트 범위를 벗어나면 그리지 않음
+
+        // Do not draw if the average is outside the visible chart range.
         if (average < metrics.minY || average > metrics.maxY) return
-        
+
         val density = LocalDensity.current
         val interactionSource = remember { MutableInteractionSource() }
-        
-        // 인터랙티브 모드를 위한 상태
+
         var isPressed by remember { mutableStateOf(false) }
 
-        // Y축 좌표 계산
-        val y = metrics.chartHeight - ((average - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
-        
+        val denom = (metrics.maxY - metrics.minY)
+        val y = metrics.chartHeight - ((average - metrics.minY) / denom) * metrics.chartHeight
+
         val lineWidth = with(density) { metrics.chartWidth.toDp() }
         val touchThreshold = 20.dp
-        val touchAreaHeight = touchThreshold * 2 // ±20dp around the line
-        
+        val touchAreaHeight = touchThreshold * 2
+
         Box(
             modifier = Modifier
                 .offset(
@@ -228,20 +267,17 @@ object ReferenceLine {
                 )
                 .size(width = lineWidth, height = touchAreaHeight)
         ) {
-            // 기준선 Canvas - positioned relative to the Box
             Canvas(
                 modifier = Modifier.size(width = lineWidth, height = touchAreaHeight)
             ) {
-                val startX = 0f // Relative to Box
+                val startX = 0f
                 val endX = size.width
-                val lineY = touchThreshold.toPx() // Center of the touch area
+                val lineY = touchThreshold.toPx()
 
-                // 점선 효과 설정
                 val pathEffect = lineStyle.dashPattern?.let {
                     PathEffect.dashPathEffect(it, 0f)
                 }
 
-                // 평균선 그리기
                 drawLine(
                     color = color,
                     start = Offset(startX, lineY),
@@ -250,16 +286,14 @@ object ReferenceLine {
                     pathEffect = pathEffect
                 )
             }
-            
-            // 인터랙티브 오버레이
+
             if (interactive) {
                 Box(
                     modifier = Modifier
                         .size(width = lineWidth, height = touchAreaHeight)
                         .pointerInput(Unit) {
-                            detectTapGestures { offset ->
-                                // Touch is anywhere within the line's touch area
-                                isPressed = !isPressed // Toggle the pressed state
+                            detectTapGestures {
+                                isPressed = !isPressed
                             }
                         }
                 )
@@ -275,8 +309,7 @@ object ReferenceLine {
                         }
                 )
             }
-            
-            // 레이블 표시 조건: showLabel이 true이거나 interactive이면서 pressed 상태일 때
+
             if (showLabel || (interactive && isPressed)) {
                 ReferenceLineLabel(
                     value = average,
@@ -291,7 +324,14 @@ object ReferenceLine {
     }
 
     /**
-     * 추세선을 Compose로 그립니다.
+     * Renders a trend line computed via linear regression.
+     *
+     * Current behavior:
+     * - Draw-only overlay (no interaction).
+     * - The line is drawn between the first and last data x-values mapped to the chart bounds.
+     *
+     * Note: [interactive], [onClick], [showLabel], and [labelFormat] are currently accepted to keep
+     * the call signature stable, but are not used by the existing implementation.
      */
     @Composable
     private fun TrendLine(
@@ -302,36 +342,29 @@ object ReferenceLine {
         lineStyle: LineStyle,
         showLabel: Boolean,
         labelFormat: String,
-        interactive: Boolean, // 현재 TrendLine은 인터랙티브 모드 사용 안함
-        onClick: (() -> Unit)?, // 현재 TrendLine은 클릭 이벤트 사용 안함
+        interactive: Boolean,
+        onClick: (() -> Unit)?,
     ) {
         val (slope, intercept) = calculateTrendLine(data)
 
-        // 추세선의 시작점과 끝점 계산
         val startX = metrics.paddingX
         val endX = metrics.paddingX + metrics.chartWidth
 
-        // X 좌표를 데이터 좌표계로 변환
         val dataStartX = if (data.isNotEmpty()) data.first().x else 0f
         val dataEndX = if (data.isNotEmpty()) data.last().x else 1f
 
         val startY = slope * dataStartX.toFloat() + intercept
         val endY = slope * dataEndX.toFloat() + intercept
 
-        // Y 좌표를 화면 좌표계로 변환
-        val screenStartY = metrics.chartHeight - ((startY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
-        val screenEndY = metrics.chartHeight - ((endY - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
+        val denom = (metrics.maxY - metrics.minY)
+        val screenStartY = metrics.chartHeight - ((startY - metrics.minY) / denom) * metrics.chartHeight
+        val screenEndY = metrics.chartHeight - ((endY - metrics.minY) / denom) * metrics.chartHeight
 
-        // 추세선 Canvas (drawing only, no interaction)
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // 점선 효과 설정
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val pathEffect = lineStyle.dashPattern?.let {
                 PathEffect.dashPathEffect(it, 0f)
             }
 
-            // 추세선 그리기
             drawLine(
                 color = color,
                 start = Offset(startX, screenStartY.toFloat()),
@@ -341,11 +374,16 @@ object ReferenceLine {
             )
         }
     }
-    
+
     /**
-     * 기준선의 값 레이블을 표시합니다.
+     * Displays a small pill label showing the reference line value.
+     *
+     * The label is positioned near the corresponding Y-axis side (left/right) based on
+     * [yAxisPosition]. Coordinates are relative to the parent line container.
+     *
+     * Note: Several sizes here are intentionally kept as fixed values to preserve the
+     * existing look-and-feel.
      */
-    // TODO: 고정값 (text size, padding, etc.) 수정 필요
     @Composable
     private fun ReferenceLineLabel(
         value: Float,
@@ -357,25 +395,21 @@ object ReferenceLine {
     ) {
         val density = LocalDensity.current
         val labelText = labelFormat.format(value)
-        
-        // 레이블 박스의 예상 높이 계산
+
         val textSize = 12.sp
         val verticalPadding = 5.dp
         val estimatedLabelHeight = with(density) {
             textSize.toPx() + (verticalPadding * 2).toPx()
         }
 
-        // Y축 위치와 같은 쪽에 레이블 배치 (부모 Box 기준 상대 좌표)
         val labelX = when (yAxisPosition) {
             YAxisPosition.LEFT -> -with(density) { 5.dp.toPx() }
             YAxisPosition.RIGHT -> metrics.chartWidth + with(density) { 5.dp.toPx() }
         }
 
-        // 위치 조정
         val adjustedX = with(density) { labelX.toDp() }
         val adjustedY = with(density) { yPosition.toDp() }
 
-        // 레이블을 기준선 위로 전체 높이만큼 이동
         val labelHeightOffset = with(density) { estimatedLabelHeight.toDp() }
 
         Box(
@@ -383,7 +417,7 @@ object ReferenceLine {
                 .offset {
                     IntOffset(
                         x = adjustedX.roundToPx(),
-                        y = (adjustedY - labelHeightOffset).roundToPx() // 레이블 박스 높이만큼 위로 이동
+                        y = (adjustedY - labelHeightOffset).roundToPx()
                     )
                 }
                 .background(

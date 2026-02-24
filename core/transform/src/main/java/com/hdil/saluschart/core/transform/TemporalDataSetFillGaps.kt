@@ -8,85 +8,75 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 
-// TODO: 누락된 시간 포인트에 0 값을 대입하면, min/max 계산 시 문제가 생길 여지 존재 
-// - (min value가 따로 존재하는데도 최대/최소 계산 범위 내 누락된 시간 포인트로 인해 항상 0으로 처리되는 문제)
-// - 이 문제가 실제로 생기는지 확인 필요 
-
-// TODO: transform 모듈 내에서 로직 겹치는 함수 존재, Utils 파일로 빼야할 듯
-// - ex. normalizeToTimeUnitDateTime, incrementByTimeUnit
-
 /**
- * TemporalDataSet의 시간 간격을 채우는 확장 함수들
- * 
- * 시간 범위 내에서 누락된 시간 포인트를 0 값으로 채워서
- * 차트에서 연속적인 시간 축을 표시할 수 있게 합니다.
+ * Fills missing time buckets inside a [TemporalDataSet] so charts can render continuous time axes.
+ *
+ * IMPORTANT:
+ * - This should typically be used *after* aggregation/transform to the target [timeUnit].
+ * - If the dataset contains multiple points that normalize to the same bucket, gap-filling becomes
+ *   ambiguous (because the mapping bucket -> value is no longer 1:1).
+ *
+ * By default, missing buckets are filled with 0.0. Be careful with sparse measurement data
+ * (e.g., blood glucose, blood pressure, weight): filling with 0.0 can distort min/max and averages.
+ *
+ * @param fillValue Value used for missing buckets (default: 0.0).
+ *                 Consider using [Double.NaN] for “missing” when you want downstream logic
+ *                 to ignore gaps (but your chart/aggregation must handle NaN).
  */
-
-/**
- * 시간 범위의 모든 간격을 0 값으로 채운 TemporalDataSet을 반환
- * 
- * 이 함수는 TemporalDataSet의 최소/최대 시간 사이의 모든 시간 포인트를 생성하고,
- * 누락된 시간 포인트는 0 값으로 채웁니다.
- * 
- * 사용 예시:
- * ```
- * val exerciseData = exercises.toTemporalDataSet()
- *     .transform(timeUnit = TimeUnitGroup.DAY)
- *     .fillTemporalGaps()  // 누락된 날짜를 0으로 채움
- *     .toChartMarks()
- * ```
- * 
- * @return 간격이 채워진 새로운 TemporalDataSet
- */
-fun TemporalDataSet.fillTemporalGaps(): TemporalDataSet {
+fun TemporalDataSet.fillTemporalGaps(fillValue: Double = 0.0): TemporalDataSet {
     if (x.isEmpty()) return this
-    
+
     val minTime = x.minOrNull() ?: return this
     val maxTime = x.maxOrNull() ?: return this
-    
-    // 완전한 시간 간격 생성
+
     val completeTimePoints = generateCompleteTimePoints(minTime, maxTime, timeUnit)
 
-    // 기존 데이터를 맵으로 변환 (빠른 조회를 위해)
-    val normalizedExistingData = x.map { normalizeTimePoint(it, timeUnit) }
-    
+    // Normalize existing timestamps to bucket keys
+    val normalizedExisting = x.map { normalizeTimePoint(it, timeUnit) }
+
+    // Fail fast if duplicates exist in the same normalized bucket
+    // (otherwise zip(...).toMap() silently overwrites values).
+    val dupCount = normalizedExisting.size - normalizedExisting.distinct().size
+    require(dupCount == 0) {
+        "fillTemporalGaps() requires the dataset to be aggregated to a single value per '$timeUnit' bucket. " +
+                "Found $dupCount duplicate bucket(s). Call transform(...) first or aggregate before filling gaps."
+    }
+
     return if (isSingleValue) {
-        // 단일 값 처리
-        val existingDataMap = normalizedExistingData.zip(y!!).toMap()
-        
-        val filledYValues = completeTimePoints.map { timePoint ->
-            val normalized = normalizeTimePoint(timePoint, timeUnit)
-            existingDataMap[normalized] ?: 0.0
+        val existingDataMap = normalizedExisting.zip(y!!).toMap()
+
+        val filledY = completeTimePoints.map { timePoint ->
+            val key = normalizeTimePoint(timePoint, timeUnit)
+            existingDataMap[key] ?: fillValue
         }
-        
+
         TemporalDataSet(
             x = completeTimePoints,
-            y = filledYValues,
+            y = filledY,
             timeUnit = timeUnit
         )
     } else {
-        // 다중 값 처리
-        val existingDataMaps = yMultiple!!.mapValues { (_, values) ->
-            normalizedExistingData.zip(values).toMap()
+        val existingMaps = yMultiple!!.mapValues { (_, values) ->
+            normalizedExisting.zip(values).toMap()
         }
-        
-        val filledYMultiple = existingDataMaps.mapValues { (_, dataMap) ->
+
+        val filledMultiple = existingMaps.mapValues { (_, dataMap) ->
             completeTimePoints.map { timePoint ->
-                val normalized = normalizeTimePoint(timePoint, timeUnit)
-                dataMap[normalized] ?: 0.0
+                val key = normalizeTimePoint(timePoint, timeUnit)
+                dataMap[key] ?: fillValue
             }
         }
-        
+
         TemporalDataSet(
             x = completeTimePoints,
-            yMultiple = filledYMultiple,
+            yMultiple = filledMultiple,
             timeUnit = timeUnit
         )
     }
 }
 
 /**
- * 시간 범위의 모든 간격을 생성
+ * Generates all bucket timestamps between [minTime] and [maxTime] inclusive for [timeUnit].
  */
 private fun generateCompleteTimePoints(
     minTime: Instant,
@@ -94,27 +84,22 @@ private fun generateCompleteTimePoints(
     timeUnit: TimeUnitGroup
 ): List<Instant> {
     val zoneId = ZoneId.systemDefault()
-    val startDateTime = LocalDateTime.ofInstant(minTime, zoneId)
-    val endDateTime = LocalDateTime.ofInstant(maxTime, zoneId)
-    
-    val normalizedStart = normalizeToTimeUnitDateTime(startDateTime, timeUnit)
-    val normalizedEnd = normalizeToTimeUnitDateTime(endDateTime, timeUnit)
-    
-    val timePoints = mutableListOf<LocalDateTime>()
-    var current = normalizedStart
-    
-    while (!current.isAfter(normalizedEnd)) {
-        timePoints.add(current)
+    val start = normalizeToTimeUnitDateTime(LocalDateTime.ofInstant(minTime, zoneId), timeUnit)
+    val end = normalizeToTimeUnitDateTime(LocalDateTime.ofInstant(maxTime, zoneId), timeUnit)
+
+    val points = mutableListOf<LocalDateTime>()
+    var current = start
+    while (!current.isAfter(end)) {
+        points.add(current)
         current = incrementByTimeUnit(current, timeUnit)
     }
-    
-    return timePoints.map { it.atZone(zoneId).toInstant() }
+
+    return points.map { it.atZone(zoneId).toInstant() }
 }
 
 /**
- * 시간 단위에 따라 LocalDateTime을 정규화
+ * Normalizes [dateTime] to the start of the corresponding bucket for [timeUnit].
  */
- // TODO: DataTransformer의 groupBy'TimeUnit' 함수와 유사한 로직 존재 
 private fun normalizeToTimeUnitDateTime(dateTime: LocalDateTime, timeUnit: TimeUnitGroup): LocalDateTime {
     return when (timeUnit) {
         TimeUnitGroup.MINUTE -> dateTime.truncatedTo(ChronoUnit.MINUTES)
@@ -130,19 +115,17 @@ private fun normalizeToTimeUnitDateTime(dateTime: LocalDateTime, timeUnit: TimeU
 }
 
 /**
- * Instant를 시간 단위에 따라 정규화
+ * Normalizes an [Instant] into the corresponding time bucket key for [timeUnit].
  */
 private fun normalizeTimePoint(instant: Instant, timeUnit: TimeUnitGroup): Instant {
     val zoneId = ZoneId.systemDefault()
-    val dateTime = LocalDateTime.ofInstant(instant, zoneId)
-    val normalized = normalizeToTimeUnitDateTime(dateTime, timeUnit)
+    val normalized = normalizeToTimeUnitDateTime(LocalDateTime.ofInstant(instant, zoneId), timeUnit)
     return normalized.atZone(zoneId).toInstant()
 }
 
 /**
- * 시간 단위에 따라 LocalDateTime 증가
+ * Increments [dateTime] by exactly one bucket of [timeUnit].
  */
- // TODO: DataTransformer의 간격 끝 시간 계산 로직이 TemporalDataSetFillGaps와 중복됨
 private fun incrementByTimeUnit(dateTime: LocalDateTime, timeUnit: TimeUnitGroup): LocalDateTime {
     return when (timeUnit) {
         TimeUnitGroup.MINUTE -> dateTime.plusMinutes(1)
@@ -153,4 +136,3 @@ private fun incrementByTimeUnit(dateTime: LocalDateTime, timeUnit: TimeUnitGroup
         TimeUnitGroup.YEAR -> dateTime.plusYears(1)
     }
 }
-

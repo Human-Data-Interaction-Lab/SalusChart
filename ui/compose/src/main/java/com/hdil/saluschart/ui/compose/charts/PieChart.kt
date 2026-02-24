@@ -71,7 +71,7 @@ fun PieChart(
     data: List<ChartMark>,
     title: String = "Pie Chart Example",
     isDonut: Boolean = true,
-    colors: List<Color> = ColorUtils.ColorUtils(data.size.coerceAtLeast(1)),
+    colors: List<Color> = ColorUtils.rainbowPalette(data.size.coerceAtLeast(1)),
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     showLabel: Boolean = false,

@@ -29,9 +29,9 @@ Add dependencies:
 
 ```kotlin
 dependencies {
-    implementation("io.github.hdilys:saluschart-ui-compose:0.1.2") ✅ (recommended for most users)
-    implementation("io.github.hdilys:saluschart-ui-theme:0.1.2") ✅ (recommended for most users)
-    implementation("io.github.hdilys:saluschart-core-chart:0.1.2") ✅ (recommended for most users)
+    implementation("io.github.hdilys:saluschart-ui-compose:0.1.2") // ✅ recommended for most users
+    implementation("io.github.hdilys:saluschart-ui-theme:0.1.2") // ✅ recommended for most users
+    implementation("io.github.hdilys:saluschart-core-chart:0.1.2") // ✅ recommended for most users
     implementation("io.github.hdilys:saluschart-core-transform:0.1.2")
     implementation("io.github.hdilys:saluschart-core-util:0.1.2")
     implementation("io.github.hdilys:saluschart-data-model:0.1.2")

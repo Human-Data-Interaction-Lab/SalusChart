@@ -5,17 +5,33 @@ import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath.ChartMetrics
 
+/**
+ * Math utilities specific to range bar charts.
+ *
+ * This object currently provides a helper to compute [ChartMetrics] for range bars by:
+ * - Applying fixed padding values
+ * - Collecting both min/max Y values from each [RangeChartMark]
+ * - Delegating Y-axis range/tick generation to [ChartMath.computeYAxisRange]
+ *
+ * Note: Padding values are currently fixed to preserve existing layout behavior.
+ */
 object RangeBarChartMath {
+
     /**
-     * 범위 차트 그리기에 필요한 메트릭 값을 계산합니다.
+     * Computes chart metrics needed to draw a range bar chart.
      *
-     * @param size Canvas의 전체 크기
-     * @param data 범위 차트 데이터 포인트 목록
-     * @param tickCount 원하는 Y축 눈금 개수 (기본값: 5)
-     * @param minY 사용자 지정 최소 Y값 (null이면 데이터 기반)
-     * @param maxY 사용자 지정 최대 Y값 (null이면 데이터 기반)
-     * @param fixedTickStep 고정 눈금 간격 (null이면 자동 계산)
-     * @return 차트 메트릭 객체
+     * The returned [ChartMetrics] includes:
+     * - Fixed paddings ([paddingX], [paddingY])
+     * - Drawable chart width/height derived from [size] and paddings
+     * - A computed Y-axis range based on both min/max values in [data]
+     *
+     * @param size Total canvas size.
+     * @param data Range bar marks containing min/max points.
+     * @param tickCount Desired Y tick count when using "nice" ticks (default: 5).
+     * @param minY Optional explicit minimum Y value (overrides computed minimum).
+     * @param maxY Optional explicit maximum Y value (overrides computed maximum).
+     * @param fixedTickStep Optional fixed tick step (uses fixed ticks instead of "nice" ticks).
+     * @return Computed [ChartMetrics] for rendering a range bar chart.
      */
     fun computeRangeMetrics(
         size: Size,
@@ -30,10 +46,9 @@ object RangeBarChartMath {
         val chartWidth = size.width - paddingX * 2
         val chartHeight = size.height - paddingY
 
-        // Extract all Y values from range data
+        // Extract all Y values (both min and max) to compute the full range.
         val allYValues = data.flatMap { listOf(it.minPoint.y, it.maxPoint.y) }
 
-        // Compute Y-axis range using the standardized function
         val yAxisRange = ChartMath.computeYAxisRange(
             values = allYValues,
             chartType = ChartType.RANGE_BAR,

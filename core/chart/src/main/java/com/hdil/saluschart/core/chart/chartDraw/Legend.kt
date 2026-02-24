@@ -1,7 +1,14 @@
 package com.hdil.saluschart.core.chart.chartDraw
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,20 +22,30 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.ChartMark
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 
 /**
- * 차트 범례를 Composable로 표시합니다.
+ * Displays a legend for a chart.
  *
- * @param modifier 모디파이어
- * @param labels 범례 항목 레이블 목록 (직접 제공된 경우)
- * @param chartData 차트 데이터 포인트 목록 (레이블을 추출할 경우)
- * @param colors 각 항목에 사용한 색상 목록
- * @param title 범례 제목 (기본값: null)
- * @param colorBoxSize 색상 상자 크기
- * @param textSize 텍스트 크기
- * @param spacing 항목 간 간격
+ * A legend item consists of:
+ * - A colored box (representing a dataset/segment)
+ * - A label
+ *
+ * Labels can be provided directly via [labels], or derived from [chartData].
+ * If both are null, an empty legend is rendered.
+ *
+ * Layout behavior:
+ * - [LegendPosition.TOP] and [LegendPosition.BOTTOM] → horizontal layout (LazyRow)
+ * - [LegendPosition.LEFT] and [LegendPosition.RIGHT] → vertical layout (Column)
+ *
+ * @param modifier Modifier applied to the legend container.
+ * @param labels Optional explicit labels for legend items.
+ * @param chartData Optional chart data used to derive labels if [labels] is null.
+ * @param position Legend placement relative to the chart.
+ * @param colors Colors corresponding to each legend item.
+ * @param title Optional legend title (shown only in LEFT/RIGHT positions).
+ * @param colorBoxSize Size of the colored indicator box.
+ * @param textSize Text size of legend labels.
+ * @param spacing Spacing between legend items.
  */
 @Composable
 fun ChartLegend(
@@ -42,14 +59,15 @@ fun ChartLegend(
     textSize: TextUnit = 12.sp,
     spacing: Dp = 8.dp
 ) {
-    // labels가 null인 경우 기본 레이블 생성
-    val legendLabels = labels ?: chartData?.mapIndexed { i, point ->
-        point.label ?: "항목 ${i + 1}"
+    // If explicit labels are not provided, derive them from chartData.
+    val legendLabels = labels ?: chartData?.mapIndexed { index, point ->
+        point.label ?: "항목 ${index + 1}"
     } ?: emptyList()
 
     when (position) {
-        LegendPosition.TOP, LegendPosition.BOTTOM -> {
-            // 위/아래: 가로로 배치
+        LegendPosition.TOP,
+        LegendPosition.BOTTOM -> {
+            // Horizontal layout
             LazyRow(
                 modifier = modifier,
                 horizontalArrangement = Arrangement.spacedBy(spacing * 2),
@@ -68,13 +86,15 @@ fun ChartLegend(
                 }
             }
         }
-        LegendPosition.LEFT, LegendPosition.RIGHT -> {
-            // 좌/우: 세로로 배치
+
+        LegendPosition.LEFT,
+        LegendPosition.RIGHT -> {
+            // Vertical layout
             Column(
                 modifier = modifier,
                 verticalArrangement = Arrangement.spacedBy(spacing)
             ) {
-                // 범례 제목 (제공된 경우)
+                // Optional title (shown only in vertical layout)
                 title?.let {
                     Text(
                         text = it,
@@ -86,7 +106,6 @@ fun ChartLegend(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                // 각 범례 항목
                 legendLabels.forEachIndexed { index, label ->
                     if (index < colors.size) {
                         LegendItem(
@@ -104,13 +123,15 @@ fun ChartLegend(
 }
 
 /**
- * 범례의 개별 항목을 Composable로 표시합니다.
+ * A single legend entry consisting of:
+ * - A small colored square
+ * - A label text
  *
- * @param color 색상
- * @param label 레이블 텍스트
- * @param colorBoxSize 색상 상자 크기
- * @param textSize 텍스트 크기
- * @param spacing 상자와 텍스트 사이 간격
+ * @param color Color used to represent the corresponding dataset/segment.
+ * @param label Display text of the legend item.
+ * @param colorBoxSize Size of the colored square indicator.
+ * @param textSize Text size of the label.
+ * @param spacing Space between the color box and the text.
  */
 @Composable
 fun LegendItem(
@@ -124,7 +145,7 @@ fun LegendItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing)
     ) {
-        // 색상 상자
+        // Color indicator box
         Box(
             modifier = Modifier
                 .size(colorBoxSize)
@@ -134,7 +155,7 @@ fun LegendItem(
                 )
         )
 
-        // 레이블 텍스트
+        // Label text
         Text(
             text = label,
             fontSize = textSize,
@@ -145,11 +166,11 @@ fun LegendItem(
 }
 
 /**
- * 범례 위치를 나타내는 enum class
+ * Position of the legend relative to the chart.
  */
 enum class LegendPosition {
-    LEFT,   // 왼쪽
-    RIGHT,  // 오른쪽
-    TOP,    // 위쪽
-    BOTTOM  // 아래쪽
+    LEFT,
+    RIGHT,
+    TOP,
+    BOTTOM
 }

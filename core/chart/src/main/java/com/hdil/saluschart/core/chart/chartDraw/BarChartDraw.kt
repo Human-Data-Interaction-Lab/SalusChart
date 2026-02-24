@@ -32,22 +32,39 @@ import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 
+/**
+ * Tooltip payload emitted by [BarChartDraw.BarMarker] via [onTooltipSpec].
+ *
+ * @property chartMark The mark associated with the currently “active” bar (selected or externally targeted).
+ * @property offset Anchor position in *canvas coordinates* (pixels) to position a tooltip near the bar.
+ */
 data class TooltipSpec(
     val chartMark: BaseChartMark,
     val offset: Offset
 )
 
+/**
+ * Drawing/marker utilities for bar-based charts (BAR / RANGE_BAR / STACKED_BAR).
+ *
+ * This object intentionally contains rendering helpers used by multiple chart composables.
+ * Public APIs should remain stable to support library consumers.
+ */
 object BarChartDraw {
     /**
-     * 바 차트의 X축 레이블을 그립니다 (첫 번째 레이블이 바 너비의 절반만큼 오른쪽에서 시작).
+     * Draws X-axis tick labels for a bar chart.
      *
-     * @param ctx 그리기 컨텍스트
-     * @param labels X축에 표시할 레이블 목록
-     * @param metrics 차트 메트릭 정보
-     * @param centered 텍스트를 중앙 정렬할지 여부 (기본값: true)
-     * @param textSize 레이블 텍스트 크기 (기본값: 28f)
-     * @param maxXTicksLimit X축에 표시할 최대 라벨 개수 (null이면 모든 라벨 표시)
-     * @param xLabelAutoSkip 라벨 자동 스킵 활성화 여부 (true이면 텍스트 너비 기반 자동 계산)
+     * Notes:
+     * - Labels are anchored using the bar-slot spacing, so the first label starts at
+     *   `paddingX + (barWidth / 2)` and proceeds by slot spacing.
+     * - If [xLabelAutoSkip] is enabled, labels may be skipped to avoid overlapping.
+     *
+     * @param ctx Draw context whose native canvas is used to render text.
+     * @param labels Full list of labels (one per bar slot).
+     * @param metrics Chart layout metrics used for positioning.
+     * @param centered Whether text is center-aligned (default: true).
+     * @param textSize Text size in pixels (default: 28f).
+     * @param maxXTicksLimit Optional cap on how many labels can be displayed (null = no cap).
+     * @param xLabelAutoSkip If true, compute an auto-skip factor based on text width and chart width.
      */
     fun drawBarXAxisLabels(
         ctx: DrawContext,
@@ -58,9 +75,7 @@ object BarChartDraw {
         maxXTicksLimit: Int? = null,
         xLabelAutoSkip: Boolean = false
     ) {
-        // 라벨 감소 로직
         val (displayLabels, displayIndices) = if (xLabelAutoSkip) {
-            // 자동 스킵: 텍스트 너비 기반으로 계산
             ChartMath.computeAutoSkipLabels(
                 labels = labels,
                 textSize = textSize,
@@ -68,7 +83,6 @@ object BarChartDraw {
                 maxXTicksLimit = maxXTicksLimit
             )
         } else {
-            // 모든 라벨 표시
             Pair(labels, labels.indices.toList())
         }
         
@@ -77,10 +91,9 @@ object BarChartDraw {
         val spacing = metrics.chartWidth / totalLabels
         
         displayLabels.forEachIndexed { displayIndex, label ->
-            // 원본 라벨 목록에서의 실제 인덱스를 사용
             val originalIndex = displayIndices[displayIndex]
-            // 차트 영역의 시작점(paddingLeftX)에서 바의 중심까지 계산
             val x = metrics.paddingX + barWidth + originalIndex * spacing
+
             ctx.canvas.nativeCanvas.drawText(
                 label,
                 x,
@@ -97,24 +110,46 @@ object BarChartDraw {
     }
 
     /**
-     * 바 차트 막대들을 Composable로 생성합니다.
-     * 상호작용 여부를 제어할 수 있습니다.
+     * Renders bar markers as composables (rectangles) positioned using [metrics].
      *
-     * @param minValues 바의 최소값 목록 (일반 바 차트는 0, 범위 바 차트는 실제 최소값)
-     * @param maxValues 바의 최대값 목록 (바의 상단 값)
-     * @param metrics 차트 메트릭 정보
-     * @param color 바 색상 (단일 바용)
-     * @param barWidthRatio 바 너비 배수 (기본값: 0.8f)
-     * @param interactive true이면 클릭 가능하고 툴팁 표시, false이면 순수 시각적 렌더링 (기본값: true)
-     * @param useLineChartPositioning true이면 라인차트 ���지셔닝 사용, false이면 바차트 포지셔닝 사용 (기본값: false)
-     * @param onBarClick 바 클릭 시 호출되는 콜백 (바 인덱스, 툴팁 텍스트)
-     * @param chartType 차트 타입 (툴팁 위치 결정용)
-     * @param showTooltipForIndex 외부에서 제어되는 툴팁 표시 인덱스 (null이면 표시 안함)
-     * @param isTouchArea true이면 터치 영역용 (투명, 전체 높이, 상호작용 가능), false이면 일반 바 (기본값: false)
-     * @param customTooltipText 커스텀 툴팁 텍스트 목록 (null이면 기본 툴팁 사용)
-     * @param segmentIndex 스택 바 차트에서 세그먼트 인덱스 (툴팁 위치 조정용, null이면 기본 위치)
-     * @param showLabel 레이블 표시 여부 (기본값: false)
-     * @param unit 단위 (기본값: "")
+     * Supports:
+     * - Regular bars (min = chart min, max = value)
+     * - Range bars (min..max)
+     * - Stacked bars (tooltip anchor uses total height)
+     * - Optional “touch strips” via [isTouchArea]
+     *
+     * Tooltip behavior:
+     * - When [showTooltipForIndex] is provided, that index is treated as externally targeted.
+     * - Otherwise, when [interactive] is enabled, tapping a bar toggles internal selection.
+     * - Tooltip emission is done through [onTooltipSpec] (anchor in canvas px).
+     *
+     * Corner radius:
+     * - Use [barCornerRadiusFraction] for a uniform fraction-of-width rounding.
+     * - Use [barCornerRadiusFractions] for per-corner control.
+     * - If [roundTopOnly] is true (default), bottom corners are not rounded unless explicitly provided.
+     *
+     * @param data Marks (used for tooltip payload).
+     * @param minValues Per-bar min values (0 for standard bars, or actual min for range bars).
+     * @param maxValues Per-bar max values.
+     * @param metrics Chart metrics for layout calculations.
+     * @param color Base bar color.
+     * @param barWidthRatio Bar width relative to its slot (default: 0.8f).
+     * @param interactive If true, taps update internal selection; if false, bars are still drawn as usual.
+     * @param useLineChartPositioning If true, use the line-chart spacing rule to position bars.
+     * @param onBarClick Callback invoked on bar click: (index, tooltipText).
+     * @param chartType Chart type (affects tooltip anchoring).
+     * @param showTooltipForIndex Externally-controlled tooltip index; null disables external targeting.
+     * @param isTouchArea If true, draws transparent full-height bars for hit testing.
+     * @param customTooltipText Optional per-index tooltip text override.
+     * @param segmentIndex Segment index in stacked bars (currently used only as a parameter placeholder).
+     * @param showLabel Whether to draw a simple value label inside the bar.
+     * @param unit Unit suffix (currently unused; kept for API stability).
+     * @param barCornerRadiusFraction Uniform corner rounding as a fraction of bar width.
+     * @param barCornerRadiusFractions Per-corner rounding fractions of bar width.
+     * @param roundTopOnly If true, rounds top corners only when using [barCornerRadiusFraction].
+     * @param onTooltipSpec Emits the computed [TooltipSpec] for the active bar, or null if none.
+     * @param showBarValueLabels Currently unused; kept for API stability.
+     * @param barValueLabel Currently unused; kept for API stability.
      */
     @Composable
     fun BarMarker(
@@ -142,87 +177,67 @@ object BarChartDraw {
         barValueLabel: ((index: Int, mark: RangeChartMark) -> String)? = null
     ) {
         val density = LocalDensity.current
+
+        // Kept as state to preserve the “emit on commit” behavior via SideEffect.
         var tooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
         var computedTooltip: TooltipSpec? = null
-        // 터치 영역용인 경우 자동으로 파라미터 설정
+
+        // Touch-strip mode forces full-width hit area and always allows tapping.
         val actualBarWidthRatio = if (isTouchArea) 1.0f else barWidthRatio
         val actualInteractive = if (isTouchArea) true else interactive
 
         val dataSize = minOf(data.size, minValues.size, maxValues.size)
         if (dataSize <= 0) return
 
-        // 클릭된 바의 인덱스를 관리하는 상태 변수
+        // Tracks internal selection (used only when showTooltipForIndex == null and interactive enabled).
         var clickedBarIndex by remember { mutableStateOf<Int?>(null) }
 
-        // 툴팁 정보 저장 변수
-        var tooltipOffset: Offset? = null
-        var tooltipData: BaseChartMark? = null
-
         (0 until dataSize).forEach { index ->
-            // 값 추출
             val minValue = minValues.getOrNull(index) ?: 0.0
             val maxValue = maxValues.getOrNull(index) ?: 0.0
 
-            // 툴팁 텍스트 결정: 커스텀 텍스트가 있으면 사용, 없으면 기본 로직 사용
             val tooltipText = customTooltipText?.getOrNull(index) ?: run {
                 if (minValue == metrics.minY) {
-                    // For regular bars starting from chart minimum, show only max value
                     maxValue.toInt().toString()
                 } else {
-                    // For range bars, show min-max range
                     "${minValue.toInt()}-${maxValue.toInt()}"
                 }
             }
 
-            // 바 높이와 위치 계산
+            // Compute bar height and top Y in canvas coordinates.
             val (barHeight, barY) = if (isTouchArea) {
-                // 전체 차트 높이 사용 (터치 영역용)
                 Pair(metrics.chartHeight, metrics.paddingY)
             } else {
-                // minValue에서 maxValue까지의 바 계산
                 val yMinScreen = metrics.chartHeight - ((minValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
                 val yMaxScreen = metrics.chartHeight - ((maxValue - metrics.minY) / (metrics.maxY - metrics.minY)) * metrics.chartHeight
                 val height = yMinScreen - yMaxScreen
-                // Convert chart-relative Y to canvas coordinates by adding paddingY
                 Pair(height, metrics.paddingY + yMaxScreen)
             }
 
-            // 바 X 위치 계산 - 차트 타입에 따라 다른 포지셔닝 로직 사용
+            // X positioning: either line-chart spacing rule or bar-slot centering rule.
             val (barWidth, barX) = if (useLineChartPositioning) {
-
                 val total = dataSize
-
-                // LineChart spacing rule: chartWidth / (N + 1)
                 val spacing = if (total > 0) metrics.chartWidth / total else 0f
-
                 val pointX = metrics.paddingX + (index + 0.5) * spacing
-
-                // Touch strip width = full spacing
                 val barW = spacing * actualBarWidthRatio
-
-                // Center bar on the point
                 val barXPos = pointX - barW / 2f
-
                 Pair(barW, barXPos)
             } else {
-                // 바차트 포지셔닝: 할당된 공간의 중앙에 배치
                 val barW = metrics.chartWidth / dataSize * actualBarWidthRatio
                 val spacing = metrics.chartWidth / dataSize
                 val barXPos = metrics.paddingX + index * spacing + (spacing - barW) / 2f
                 Pair(barW, barXPos)
             }
 
-            // Double 좌표를 Dp로 변환
+            // Convert px -> dp for layout modifiers.
             val barXDp = with(density) { barX.toFloat().toDp() }
             val barYDp = with(density) { barY.toFloat().toDp() }
             val barWidthDp = with(density) { barWidth.toFloat().toDp() }
             val barHeightDp = with(density) { barHeight.toFloat().toDp() }
 
-            // 툴팁 표시 여부 결정:
-            // - isTouchArea = true인 경우 툴팁 표시 안함 (터치 영역용이므로)
-            // - 바 차트 타입이 아닌 경우 툴팁 표시 안함 (LINE, SCATTERPLOT 등은 PointMarker 사용)
+            // Decide whether this bar should produce a tooltip anchor.
             val shouldShowTooltip = when {
-                isTouchArea -> false // 터치 영역용이므로 툴팁 표시 안함
+                isTouchArea -> false
                 chartType in listOf(ChartType.BAR, ChartType.RANGE_BAR, ChartType.STACKED_BAR) -> {
                     if (showTooltipForIndex != null) {
                         showTooltipForIndex == index
@@ -232,7 +247,7 @@ object BarChartDraw {
                         false
                     }
                 }
-                else -> false // LINE, SCATTERPLOT 등에서는 툴팁 표시 안함
+                else -> false
             }
 
             if (shouldShowTooltip) {
@@ -250,49 +265,45 @@ object BarChartDraw {
                 computedTooltip = TooltipSpec(
                     chartMark = mark,
                     offset = Offset(
-                        x = barX.toFloat() + barWidth.toFloat() / 2f,
+                        x = barX.toFloat() + barWidth / 2f,
                         y = anchorY
                     )
                 )
             }
 
             val actualColor = if (isTouchArea) {
-                Color.Transparent // 터치 영역용은 투명
+                Color.Transparent
             } else {
                 if (actualInteractive) {
                     if (clickedBarIndex == index || clickedBarIndex == null) {
                         color
                     } else {
-                        color.copy(alpha = 0.3f) // 클릭되지 않은 바는 반투명 처리
+                        color.copy(alpha = 0.3f)
                     }
                 } else {
                     if (showTooltipForIndex == index || showTooltipForIndex == null) {
                         color
                     } else {
-                        color.copy(alpha = 0.3f) // 클릭되지 않은 바는 반투명 처리
+                        color.copy(alpha = 0.3f)
                     }
                 }
             }
 
-            // pixel sizes as Float (barWidth is already Float, barHeight is Double)
-            val barWidthPx = barWidth.toFloat()
+            val barWidthPx = barWidth
             val barHeightPx = barHeight.toFloat()
 
-            // Helper: convert a "fraction of bar width" into a safe Dp radius
             fun fractionToCornerDp(fraction: Float): Dp {
                 if (isTouchArea) return 0.dp
                 if (fraction <= 0f) return 0.dp
                 if (barHeightPx <= 0f || barWidthPx <= 0f) return 0.dp
 
                 val radiusPx = (barWidthPx * fraction)
-                    // Keep it sane: cannot exceed half of width or half of height
                     .coerceAtMost(barWidthPx / 2f)
                     .coerceAtMost(barHeightPx / 2f)
 
                 return with(density) { radiusPx.toDp() }
             }
 
-            // Choose per-corner fractions if provided; otherwise fall back to existing behavior
             val fractions = barCornerRadiusFractions ?: run {
                 if (roundTopOnly) {
                     BarCornerRadiusFractions(
@@ -311,13 +322,11 @@ object BarChartDraw {
                 }
             }
 
-            // Convert to Dp per corner
             val topStartDp = fractionToCornerDp(fractions.topStart)
             val topEndDp = fractionToCornerDp(fractions.topEnd)
             val bottomStartDp = fractionToCornerDp(fractions.bottomStart)
             val bottomEndDp = fractionToCornerDp(fractions.bottomEnd)
 
-            // Build shape only if any corner > 0
             val hasAnyCorner =
                 topStartDp > 0.dp || topEndDp > 0.dp || bottomStartDp > 0.dp || bottomEndDp > 0.dp
 
@@ -330,7 +339,6 @@ object BarChartDraw {
                 )
             } else null
 
-            // 기본 modifier
             var barModifier = Modifier
                 .offset(x = barXDp, y = barYDp)
                 .size(width = barWidthDp, height = barHeightDp)
@@ -344,6 +352,7 @@ object BarChartDraw {
                     barModifier.background(color = actualColor)
                 }
 
+            // Keep behavior: clickable is enabled whenever callback is provided.
             barModifier = barModifier.clickable(enabled = (onBarClick != null)) {
                 if (actualInteractive) {
                     clickedBarIndex = if (clickedBarIndex == index) null else index
@@ -355,7 +364,6 @@ object BarChartDraw {
                 modifier = barModifier,
                 contentAlignment = Alignment.TopCenter
             ) {
-                // label 표시 여부 결정
                 if (showLabel) {
                     Box(
                         modifier = Modifier.offset(0.dp, 0.dp) // 바 위에 표시

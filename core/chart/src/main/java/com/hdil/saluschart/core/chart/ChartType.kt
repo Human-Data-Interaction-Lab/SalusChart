@@ -1,66 +1,121 @@
 package com.hdil.saluschart.core.chart
 
-import androidx.compose.foundation.interaction.Interaction
+/** Visual style preset for a chart. */
+enum class ChartStyle { NORMAL, MINIMAL }
 
+/** Layout orientation when a chart supports it. */
+enum class ChartOrientation { VERTICAL, HORIZONTAL }
+
+enum class GaugeVariant { SINGLE, MULTI_SEGMENT, RANGE }
+
+enum class ProgressVariant { RINGS, BAR }
+
+/**
+ * High-level chart families.
+ *
+ * This describes *what* is rendered (chart family).
+ * Layout/style variants belong in separate flags (e.g., [ChartStyle], [ChartOrientation]).
+ */
 enum class ChartType {
     LINE,
     BAR,
     RANGE_BAR,
     STACKED_BAR,
     PIE,
-    PROGRESS,
+    PROGRESS,     // RINGS/BAR via [ProgressVariant]
     SCATTERPLOT,
     CALENDAR,
     SLEEP_STAGE,
-    MINIMAL_BAR,
-    MINIMAL_LINE,
-    MINIMAL_RANGE_BAR,
-    MINIMAL_GAUGE;
+    GAUGE,        // SINGLE/MULTI_SEGMENT/RANGE via [GaugeVariant]
+    LADDER;
 
     companion object {
-        fun fromString(type: String): ChartType? {
-            return values().find { it.name.equals(type, ignoreCase = true) }
+        fun fromString(type: String?): ChartType? {
+            if (type.isNullOrBlank()) return null
+            return entries.find { it.name.equals(type, ignoreCase = true) }
         }
     }
 }
 
+/** Unified chart “identity + variants” container. */
+data class ChartSpec(
+    val type: ChartType,
+    val style: ChartStyle = ChartStyle.NORMAL,
+    val orientation: ChartOrientation = ChartOrientation.VERTICAL,
+    val gaugeVariant: GaugeVariant? = null,
+    val progressVariant: ProgressVariant? = null
+)
+
+/**
+ * Represents the interaction behavior supported by a chart.
+ *
+ * Interaction types are separated per chart family to enforce
+ * type-safe interaction configuration.
+ *
+ * Example:
+ * - Bar charts can use [InteractionType.Bar]
+ * - Line charts use [InteractionType.Line]
+ */
 sealed interface InteractionType {
-    // 차트별 허용 집합을 타입으로 분리 - 각 차트 타입별 전용 sealed interface
+
+    /**
+     * Interaction modes for Bar charts.
+     */
     sealed interface Bar : InteractionType {
-        data object BAR : Bar        // 바를 직접 터치
-        data object TOUCH_AREA : Bar     // 바 영역 터치 (더 넓은 터치 영역)
+        data object BAR : Bar              // Direct bar touch
+        data object TOUCH_AREA : Bar       // Expanded touch region
     }
-    
+
+    /**
+     * Interaction modes for Line charts.
+     */
     sealed interface Line : InteractionType {
-        data object POINT : Line        // 라인의 포인트 터치
-        data object TOUCH_AREA : Line    // 라인 영역 터치
+        data object POINT : Line           // Tap on specific data point
+        data object TOUCH_AREA : Line      // Tap anywhere near the line
     }
-    
+
+    /**
+     * Interaction modes for Scatter plots.
+     */
     sealed interface Scatter : InteractionType {
-        data object POINT : Scatter     // 스캐터 포인트 직접 터치
-        data object TOUCH_AREA : Scatter // 스캐터 넓은 터치 영역
+        data object POINT : Scatter
+        data object TOUCH_AREA : Scatter
     }
-    
+
+    /**
+     * Interaction modes for Stacked Bar charts.
+     */
     sealed interface StackedBar : InteractionType {
-        data object BAR : StackedBar    // 개별 세그먼트 터치
-        data object TOUCH_AREA : StackedBar  // 전체 바 영역 터치
+        data object BAR : StackedBar           // Individual segment tap
+        data object TOUCH_AREA : StackedBar    // Whole stacked bar tap
     }
-    
+
+    /**
+     * Interaction modes for Range Bar charts.
+     */
     sealed interface RangeBar : InteractionType {
-        data object BAR : RangeBar       // 레인지 바 직접 터치
-        data object TOUCH_AREA : RangeBar    // 레인지 바 영역 터치
+        data object BAR : RangeBar
+        data object TOUCH_AREA : RangeBar
     }
 
+    /**
+     * Interaction modes for Pie charts.
+     */
     sealed interface Pie : InteractionType {
-        data object PIE : Pie       // 파이 섹션 직접 터치
+        data object PIE : Pie
     }
 
-    // 일반적인 상호작용 (특정 차트에 제한되지 않음)
-    data object None : InteractionType  // 상호작용 없음
+    /**
+     * No interaction.
+     */
+    data object None : InteractionType
 }
 
+/**
+ * Defines the shape used for rendering points in Line and Scatter charts.
+ */
 enum class PointType {
-    Circle,      // 원형 포인트
-    Square,      // 사각형 포인트
-    Triangle,    // 삼각형 포인트
+    Circle,
+    Square,
+    Triangle
 }

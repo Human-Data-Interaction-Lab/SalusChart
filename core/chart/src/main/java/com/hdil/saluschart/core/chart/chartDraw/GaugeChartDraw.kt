@@ -22,14 +22,27 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// TODO: 현재 Minimal Gauge Chart 제작 시 사용 중, 추후 Gauge chart (큰 버전) 제작 시 재사용 가능한 함수들
+/**
+ * Drawing helpers for a minimal horizontal gauge visualization.
+ *
+ * This file provides small, reusable building blocks:
+ * - A text label that displays a numeric range.
+ * - A gauge bar consisting of a background container and an overlaid range segment.
+ *
+ * Note: This is currently used by the minimal gauge variant. The APIs are kept small and stable
+ * so they can be reused by future (larger) gauge chart implementations without changing behavior.
+ */
 object GaugeChartDraw {
+
     /**
-     * 범위 텍스트를 표시하는 컴포저블
+     * Displays a simple range label formatted as `"min-max"`.
+     *
+     * @param dataMin Lower bound of the displayed range.
+     * @param dataMax Upper bound of the displayed range.
+     * @param textColor Color of the text label.
      */
     @Composable
     fun RangeText(
@@ -48,13 +61,22 @@ object GaugeChartDraw {
     }
 
     /**
-     * 게이지 바를 그리는 컴포저블
-     * @param dataMin 데이터 최소값
-     * @param dataMax 데이터 최대값
-     * @param containerMin 컨테이너(게이지 바를 감싸는 배경) 최소값
-     * @param containerMax 컨테이너(게이지 바를 감싸는 배경) 최대값
-     * @param containerColor 컨테이너 색상
-     * @param rangeColor 범위 색상
+     * Draws a horizontal gauge bar with:
+     * - A full-width container (background bar) representing [containerMin]..[containerMax]
+     * - An overlay segment representing the data range [dataMin]..[dataMax], clamped to the container
+     *
+     * Positioning is computed as a ratio of the measured container width:
+     * - `startRatio = (dataMin - containerMin) / (containerMax - containerMin)`
+     * - `endRatio   = (dataMax - containerMin) / (containerMax - containerMin)`
+     *
+     * Both ratios are clamped into `[0, 1]` and the segment width is `endRatio - startRatio`.
+     *
+     * @param dataMin Lower bound of the data range to highlight.
+     * @param dataMax Upper bound of the data range to highlight.
+     * @param containerMin Minimum value represented by the full container bar.
+     * @param containerMax Maximum value represented by the full container bar.
+     * @param containerColor Background/container bar color.
+     * @param rangeColor Highlight segment color.
      */
     @Composable
     fun GaugeBar(
@@ -73,12 +95,13 @@ object GaugeChartDraw {
                 .fillMaxWidth()
                 .height(24.dp)
                 .onGloballyPositioned { coordinates ->
+                    // Measure container width in dp for placing the range segment.
                     containerWidth = with(density) { coordinates.size.width.toDp() }
                 }
         ) {
             val containerRange = containerMax - containerMin
 
-            // 안전한 비율 계산
+            // Safe ratio calculations (guarding divide-by-zero and clamping).
             val startRatio = if (containerRange > 0) {
                 ((dataMin - containerMin) / containerRange).coerceIn(0f, 1f)
             } else 0f
@@ -89,7 +112,7 @@ object GaugeChartDraw {
 
             val widthRatio = (endRatio - startRatio).coerceAtLeast(0f)
 
-            // 컨테이너 바 (배경)
+            // Container bar (background).
             ContainerBar(
                 containerColor = containerColor,
                 modifier = Modifier
@@ -97,7 +120,7 @@ object GaugeChartDraw {
                     .height(24.dp)
             )
 
-            // 범위 바 (실제 데이터 범위) - 컨테이너 내부에 정확히 배치
+            // Range segment (data range), positioned precisely within the container.
             if (widthRatio > 0f && containerWidth > 0.dp) {
                 RangeBar(
                     rangeColor = rangeColor,
@@ -110,7 +133,10 @@ object GaugeChartDraw {
     }
 
     /**
-     * 컨테이너(배경) 바 컴포저블
+     * Background/container bar for the gauge.
+     *
+     * @param containerColor Fill color of the container.
+     * @param modifier Modifier applied to the container bar.
      */
     @Composable
     private fun ContainerBar(
@@ -125,7 +151,12 @@ object GaugeChartDraw {
     }
 
     /**
-     * 범위 바 컴포저블
+     * Highlight segment representing the data range within the gauge.
+     *
+     * @param rangeColor Fill color of the range segment.
+     * @param startOffset Horizontal offset from the container start.
+     * @param barWidth Width of the range segment.
+     * @param modifier Modifier applied to the range segment.
      */
     @Composable
     private fun RangeBar(

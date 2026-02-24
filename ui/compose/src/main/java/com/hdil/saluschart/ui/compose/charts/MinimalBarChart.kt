@@ -50,7 +50,7 @@ fun MinimalBarChart(
     if (data.isEmpty()) return
 
     val yValues = data.map { it.y }
-    val chartType = ChartType.MINIMAL_BAR
+    val chartType = ChartType.BAR
 
     var chartMetrics by remember { mutableStateOf<ChartMath.ChartMetrics?>(null) }
 

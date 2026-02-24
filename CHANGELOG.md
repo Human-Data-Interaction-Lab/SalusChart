@@ -7,3 +7,8 @@
     - core:transform
     - core:util
     - data:model
+
+## 0.1.1
+- Publish UI modules:
+    - ui:compose
+    - ui:theme

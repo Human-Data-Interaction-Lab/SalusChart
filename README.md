@@ -2,18 +2,18 @@
 
 A modular Jetpack Compose charting library (health-focused) for Android.
 
-**Latest version:** `0.1.1`
+**Latest version:** `0.1.2`
 
 ## Modules (published)
 
 These artifacts are published to **Maven Central**:
 
-- `io.github.hdilys:saluschart-core-chart:0.1.1`
-- `io.github.hdilys:saluschart-core-transform:0.1.1`
-- `io.github.hdilys:saluschart-core-util:0.1.1`
-- `io.github.hdilys:saluschart-data-model:0.1.1`
-- `io.github.hdilys:saluschart-ui-compose:0.1.1`
-- `io.github.hdilys:saluschart-ui-theme:0.1.1`
+- `io.github.hdilys:saluschart-core-chart:0.1.2`
+- `io.github.hdilys:saluschart-core-transform:0.1.2`
+- `io.github.hdilys:saluschart-core-util:0.1.2`
+- `io.github.hdilys:saluschart-data-model:0.1.2`
+- `io.github.hdilys:saluschart-ui-compose:0.1.2`
+- `io.github.hdilys:saluschart-ui-theme:0.1.2`
 
 ## Installation
 
@@ -29,12 +29,12 @@ Add dependencies:
 
 ```kotlin
 dependencies {
-    implementation("io.github.hdilys:saluschart-core-chart:0.1.1")
-    implementation("io.github.hdilys:saluschart-core-transform:0.1.1")
-    implementation("io.github.hdilys:saluschart-core-util:0.1.1")
-    implementation("io.github.hdilys:saluschart-data-model:0.1.1")
-    implementation("io.github.hdilys:saluschart-ui-compose:0.1.1")
-    implementation("io.github.hdilys:saluschart-ui-theme:0.1.1")
+    implementation("io.github.hdilys:saluschart-core-chart:0.1.2")
+    implementation("io.github.hdilys:saluschart-core-transform:0.1.2")
+    implementation("io.github.hdilys:saluschart-core-util:0.1.2")
+    implementation("io.github.hdilys:saluschart-data-model:0.1.2")
+    implementation("io.github.hdilys:saluschart-ui-compose:0.1.2")
+    implementation("io.github.hdilys:saluschart-ui-theme:0.1.2")
 }
 ```
 

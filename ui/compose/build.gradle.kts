@@ -39,7 +39,6 @@ android {
 
 dependencies {
     implementation(project(":core:chart"))
-    implementation(project(":core:dsl"))
     implementation(project(":core:transform"))
     implementation(project(":ui:theme"))
     implementation(project(":data:model"))
@@ -62,7 +61,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-ui-compose", "0.1.1")
+    coordinates("io.github.hdilys", "saluschart-ui-compose", "0.1.2")
     publishToMavenCentral()
     signAllPublications()
 }

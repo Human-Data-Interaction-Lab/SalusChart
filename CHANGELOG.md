@@ -12,3 +12,6 @@
 - Publish UI modules:
     - ui:compose
     - ui:theme
+
+## 0.1.2
+- Remove :core:dsl module.

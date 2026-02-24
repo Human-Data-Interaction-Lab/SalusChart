@@ -23,7 +23,6 @@ rootProject.name = "SalusChart"
 include(":app")
 include(":core:chart")
 include(":core:transform")
-include(":core:dsl")
 include(":core:util")
 include(":data:model")
 include(":data:provider")

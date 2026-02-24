@@ -24,6 +24,9 @@ animationCore = "1.10.0"
 ui = "1.10.2"
 androidxFoundation = "1.10.2"
 androidxFoundationLayout = "1.10.2"
+material3Version = "1.3.2"
+uiToolingPreviewVersion = "1.10.2"
+uiGraphicsVersion = "1.10.2"
 
 [libraries]
 androidx-compose-bom-v20240600 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
@@ -61,6 +64,13 @@ androidx-compose-animation-core = { group = "androidx.compose.animation", name =
 ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 androidx-compose-foundation-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxFoundation" }
 androidx-compose-foundation-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "androidxFoundationLayout" }
+androidx-ui-versioned = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+androidx-ui-graphics-versioned = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphicsVersion" }
+androidx-ui-tooling-preview-versioned = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiToolingPreviewVersion" }
+androidx-material3-versioned = { group = "androidx.compose.material3", name = "material3", version.ref = "material3Version" }
+androidx-foundation-versioned = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxFoundation" }
+androidx-foundation-layout-versioned = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "androidxFoundationLayout" }
+androidx-animation-core-versioned = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

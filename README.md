@@ -92,7 +92,9 @@ fun PieChartExample() {
     )
 }
 ```
-<img width="1080" height="667" alt="Image" src="[https://github.com/user-attachments/assets/b4ffa88f-e20a-422d-9d07-1502af8fbbff](https://github.com/user-attachments/assets/b4ffa88f-e20a-422d-9d07-1502af8fbbff)" />
+<p align="center">
+<img width="756" height="467" alt="Image" src="https://github.com/user-attachments/assets/40e651ee-0e72-4a9e-b04f-773f92b5bbd5" />
+</p>
 
 ## ProgressChart
 
@@ -133,7 +135,9 @@ fun ProgressBarChartExample() {
     )
 }
 ```
-<img width="1080" height="537" alt="Image" src="[https://github.com/user-attachments/assets/a7f176ef-5d04-4e34-afaf-e33ffab1c7ea](https://github.com/user-attachments/assets/a7f176ef-5d04-4e34-afaf-e33ffab1c7ea)" />
+<p align="center">
+<img width="756" height="376" alt="Image" src="https://github.com/user-attachments/assets/24149023-a8ee-4b8a-8a3b-9bda0c0c41c1" />
+</p>
 
 ### Donut/ring progress
 

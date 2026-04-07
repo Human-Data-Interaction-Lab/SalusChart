@@ -3,37 +3,34 @@ package com.hdil.saluschart.ui.compose.charts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.hdil.saluschart.core.chart.ChartMark
-import com.hdil.saluschart.core.chart.ChartType
-import com.hdil.saluschart.core.chart.chartDraw.LineChartDraw
-import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
-import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
-import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
+import com.hdil.saluschart.core.chart.chartDraw.LineChartDraw
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
+import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.dp
+import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
 /**
  * 미니멀 라인 차트 (스파크라인) - 위젯이나 스마트워치 등 작은 화면용
  * 축, 그리드, 레이블 없이 순수 라인만 표시
- * 
+ *
  * @param modifier 모디파이어
  * @param data 라인 차트 데이터 포인트들
  * @param color 라인 색상
- * @param width 차트 너비
- * @param height 차트 높이
  * @param strokeWidth 라인 두께
  * @param padding 차트 주변 패딩
  * @param showPoints 끝점을 원으로 표시할지 여부
+ * @param referenceLines Optional reference lines drawn across the plot area.
  */
 @Composable
 fun MinimalLineChart(
@@ -43,13 +40,7 @@ fun MinimalLineChart(
     strokeWidth: Float = 2f,
     padding: Float = 4f,
     showPoints: Boolean = false,
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
-    referenceLineColor: Color = Color.Red,
-    referenceLineStrokeWidth: Dp = 1.dp,
-    referenceLineStyle: LineStyle = LineStyle.DASHED,
-    showReferenceLineLabel: Boolean = false, // 미니멀 차트는 기본적으로 레이블 비활성화
-    referenceLineLabelFormat: String = "%.0f",
-    referenceLineInteractive: Boolean = false
+    referenceLines: List<ReferenceLineSpec> = emptyList(),
 ) {
     if (data.isEmpty()) return
     val chartType = ChartType.LINE
@@ -60,9 +51,9 @@ fun MinimalLineChart(
         modifier = modifier
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // 미니멀 차트 메트릭 계산
+            val labelReservePx = if (referenceLines.any { it.showLabel || it.label != null }) 20.dp.toPx() else 0f
             val metrics = ChartMath.computeMetrics(
-                size = size,
+                size = Size(size.width - labelReservePx, size.height),
                 values = data.map { it.y },
                 chartType = chartType,
                 isMinimal = true,
@@ -74,26 +65,18 @@ fun MinimalLineChart(
             // Store metrics for ReferenceLine
             chartMetrics = metrics
 
-            // 라인 그리기 (포인트 표시 포함)
             LineChartDraw.drawLine(this, points, color, strokeWidth)
         }
-        
-        // 기준선 표시
-        if (referenceLineType != ReferenceLineType.NONE) {
+
+        if (referenceLines.isNotEmpty()) {
             chartMetrics?.let { metrics ->
-                ReferenceLine.ReferenceLine(
+                ReferenceLine.ReferenceLines(
                     modifier = Modifier.fillMaxSize(),
+                    specs = referenceLines,
                     data = data,
                     metrics = metrics,
                     chartType = chartType,
-                    referenceLineType = referenceLineType,
-                    color = referenceLineColor,
-                    strokeWidth = referenceLineStrokeWidth,
-                    lineStyle = referenceLineStyle,
-                    showLabel = showReferenceLineLabel,
-                    labelFormat = referenceLineLabelFormat,
-                    yAxisPosition = YAxisPosition.LEFT, // 미니멀 차트는 기본 왼쪽
-                    interactive = referenceLineInteractive
+                    yAxisPosition = YAxisPosition.LEFT,
                 )
             }
         }

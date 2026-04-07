@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.StackedChartMark
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import kotlin.math.pow
@@ -41,14 +43,17 @@ import kotlin.math.roundToInt
  * The type of reference line to display on a chart.
  */
 enum class ReferenceLineType {
-    /** No reference line is drawn. */
-    NONE,
-
-    /** A horizontal line drawn at the average Y value of the dataset. */
+    /** A horizontal line drawn at the average Y value of the dataset (auto-computed). */
     AVERAGE,
 
-    /** A trend line computed using linear regression. */
-    TREND
+    /** A diagonal trend line computed using linear regression (auto-computed). */
+    TREND,
+
+    /** A horizontal line drawn at a user-specified Y value ([ReferenceLineSpec.y]). */
+    THRESHOLD,
+
+    /** A shaded horizontal band between [ReferenceLineSpec.y] and [ReferenceLineSpec.yEnd]. */
+    ZONE,
 }
 
 /**
@@ -74,182 +79,211 @@ enum class LineStyle(val dashPattern: FloatArray?) {
 }
 
 /**
- * Utilities for computing and rendering chart reference lines (average line / trend line).
+ * Utilities for computing and rendering chart reference lines.
  *
- * This file provides:
- * - Average computation (including stacked bar handling)
- * - Linear regression for trend line
- * - A composable overlay that draws the selected reference line type
+ * Supports four types (see [ReferenceLineType]):
+ * - AVERAGE  — horizontal line at the dataset mean
+ * - TREND    — diagonal line via linear regression
+ * - THRESHOLD — horizontal line at a fixed user-supplied Y value
+ * - ZONE      — shaded band between two Y values
  *
- * Note: Interaction behavior differs by type:
- * - Average line supports a touch-area overlay (toggle label) and optional click callback.
- * - Trend line is currently drawn as a visual-only overlay (no interaction).
+ * Entry points:
+ * - [ReferenceLines] — composable overlay that renders a full [List<ReferenceLineSpec>].
+ *   Use this for LineChart, BarChart, ScatterPlot.
+ * - [drawOnCanvas] — canvas draw function for charts that draw inside a DrawScope
+ *   (handles THRESHOLD and ZONE only; use [ReferenceLines] composable for AVERAGE/TREND).
  */
 object ReferenceLine {
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Math helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
     /**
      * Computes the average Y value for the given dataset.
-     *
-     * Special handling:
-     * - For [ChartType.STACKED_BAR], the average is computed using the `y` value of
-     *   [StackedChartMark] items (which represents the stack total).
-     *
-     * The result is rounded to the nearest integer and returned as a [Float].
-     *
-     * @param data Chart data marks.
-     * @param chartType Chart type (used for stacked bar handling).
-     * @return Average Y value (rounded to an integer).
+     * For [ChartType.STACKED_BAR] the stack-total Y is used.
      */
     fun calculateAverage(data: List<BaseChartMark>, chartType: ChartType): Float {
         if (data.isEmpty()) return 0f
-
         return when (chartType) {
             ChartType.STACKED_BAR -> {
                 val stackedData = data.filterIsInstance<StackedChartMark>()
-                if (stackedData.isEmpty()) {
-                    data.map { it.y }.average().roundToInt().toFloat()
-                } else {
-                    stackedData.map { it.y }.average().roundToInt().toFloat()
-                }
+                if (stackedData.isEmpty()) data.map { it.y }.average().roundToInt().toFloat()
+                else stackedData.map { it.y }.average().roundToInt().toFloat()
             }
-
             else -> data.map { it.y }.average().roundToInt().toFloat()
         }
     }
 
     /**
-     * Computes a trend line using simple linear regression.
-     *
-     * The returned pair represents `(slope, intercept)` for the line:
-     * `y = slope * x + intercept`.
-     *
-     * If fewer than 2 points are provided, `(0f, 0f)` is returned.
+     * Returns (slope, intercept) for the linear regression of [data].
+     * Returns (0, 0) if fewer than 2 points exist.
      */
     private fun calculateTrendLine(data: List<BaseChartMark>): Pair<Float, Float> {
         if (data.size < 2) return Pair(0f, 0f)
-
         val n = data.size
         val sumX = data.sumOf { it.x.toDouble() }
         val sumY = data.sumOf { it.y.toDouble() }
         val sumXY = data.sumOf { it.x.toDouble() * it.y.toDouble() }
         val sumXSquared = data.sumOf { it.x.toDouble().pow(2) }
-
         val slope = ((n * sumXY - sumX * sumY) / (n * sumXSquared - sumX.pow(2))).toFloat()
         val intercept = ((sumY - slope * sumX) / n).toFloat()
-
         return Pair(slope, intercept)
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Public composable entry point (LineChart / BarChart / ScatterPlot)
+    // ─────────────────────────────────────────────────────────────────────────
+
     /**
-     * Draws the selected reference line as an overlay.
+     * Renders all reference lines/zones in [specs] as a composable overlay.
      *
-     * This composable renders nothing when:
-     * - [referenceLineType] is [ReferenceLineType.NONE]
-     * - [data] is empty
+     * Place this inside the same [Box] that contains the chart canvas, using
+     * `Modifier.fillMaxSize()` so it aligns with the canvas coordinate system.
      *
-     * @param modifier Modifier applied to the overlay container.
-     * @param data Chart data marks used to compute the reference line.
-     * @param metrics Chart metrics used for coordinate conversion.
-     * @param chartType Chart type (affects average computation for stacked bars).
-     * @param referenceLineType Which reference line to draw.
-     * @param color Line/label color.
-     * @param strokeWidth Line width.
-     * @param lineStyle Line dash style.
-     * @param showLabel Whether to show the value label (average line only).
-     * @param labelFormat Label formatting string (e.g., `"평균: %.0f"`).
-     * @param yAxisPosition Y-axis placement (affects label alignment/position).
-     * @param interactive If true, average line supports touch toggle behavior.
-     * @param onClick Optional click callback (applies to average line when [interactive] is false).
+     * @param modifier Modifier for the overlay container.
+     * @param specs    Reference line specs to render.
+     * @param data     Chart data (used to compute AVERAGE and TREND lines).
+     * @param metrics  Chart metrics for coordinate mapping.
+     * @param chartType Chart type (affects AVERAGE computation for stacked bars).
+     * @param yAxisPosition Which side the Y-axis is on (affects label placement).
      */
     @Composable
-    fun ReferenceLine(
+    fun ReferenceLines(
         modifier: Modifier = Modifier,
+        specs: List<ReferenceLineSpec>,
         data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
         chartType: ChartType,
-        referenceLineType: ReferenceLineType,
-        color: Color = Color.Red,
-        strokeWidth: Dp = 2.dp,
-        lineStyle: LineStyle = LineStyle.DASHED,
-        showLabel: Boolean = true,
-        labelFormat: String = "평균: %.0f",
         yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
-        interactive: Boolean = false,
-        onClick: (() -> Unit)? = null,
     ) {
-        if (referenceLineType == ReferenceLineType.NONE || data.isEmpty()) return
-
+        if (specs.isEmpty() || data.isEmpty()) return
         Box(modifier = modifier.fillMaxSize()) {
-            when (referenceLineType) {
-                ReferenceLineType.AVERAGE -> {
-                    AverageLine(
+            specs.forEach { spec ->
+                when (spec.type) {
+                    ReferenceLineType.AVERAGE -> AverageLine(
+                        spec = spec,
                         data = data,
                         metrics = metrics,
                         chartType = chartType,
-                        color = color,
-                        strokeWidth = strokeWidth,
-                        lineStyle = lineStyle,
-                        showLabel = showLabel,
-                        labelFormat = labelFormat,
                         yAxisPosition = yAxisPosition,
-                        interactive = interactive,
-                        onClick = onClick,
                     )
-                }
-
-                ReferenceLineType.TREND -> {
-                    TrendLine(
+                    ReferenceLineType.TREND -> TrendLine(
+                        spec = spec,
                         data = data,
                         metrics = metrics,
-                        color = color,
-                        strokeWidth = strokeWidth,
-                        lineStyle = lineStyle,
-                        interactive = interactive,
-                        onClick = onClick,
-                        showLabel = showLabel,
-                        labelFormat = labelFormat
                     )
-                }
-
-                ReferenceLineType.NONE -> {
-                    // no-op
+                    ReferenceLineType.THRESHOLD -> ThresholdLine(
+                        spec = spec,
+                        metrics = metrics,
+                        yAxisPosition = yAxisPosition,
+                    )
+                    ReferenceLineType.ZONE -> ZoneBand(
+                        spec = spec,
+                        metrics = metrics,
+                    )
                 }
             }
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Canvas draw entry point (RangeBarChart canvas-based rendering)
+    // ─────────────────────────────────────────────────────────────────────────
+
     /**
-     * Renders an average line as a horizontal dashed/solid line positioned at the average Y value.
+     * Draws THRESHOLD and ZONE specs directly onto a [androidx.compose.ui.graphics.drawscope.DrawScope].
      *
-     * Interaction behavior:
-     * - If [interactive] is true, a large touch area toggles a "pressed" state that can reveal the label.
-     * - If [interactive] is false and [onClick] is provided, the touch area triggers [onClick].
-     *
-     * Label behavior:
-     * - The label is shown if [showLabel] is true, OR if [interactive] is true and the line is pressed.
+     * AVERAGE and TREND specs are skipped here (they require chart data that is not available
+     * in a DrawScope context). Use [ReferenceLines] composable for those types.
      */
+    fun drawOnCanvas(
+        drawScope: androidx.compose.ui.graphics.drawscope.DrawScope,
+        metrics: ChartMath.ChartMetrics,
+        lines: List<ReferenceLineSpec>,
+    ) = with(drawScope) {
+        if (lines.isEmpty()) return
+        val denom = (metrics.maxY - metrics.minY).takeIf { it != 0.0 } ?: return
+
+        val dashCache = HashMap<LineStyle, PathEffect?>()
+
+        lines.forEach { spec ->
+            when (spec.type) {
+                ReferenceLineType.THRESHOLD -> {
+                    val y = spec.y
+                    if (y < metrics.minY || y > metrics.maxY) return@forEach
+
+                    val screenY = (metrics.paddingY + metrics.chartHeight -
+                            ((y - metrics.minY) / denom) * metrics.chartHeight).toFloat()
+
+                    val pathEffect = dashCache.getOrPut(spec.style) {
+                        spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
+                    }
+
+                    drawLine(
+                        color = spec.color,
+                        start = Offset(metrics.paddingX, screenY),
+                        end = Offset(metrics.paddingX + metrics.chartWidth, screenY),
+                        strokeWidth = spec.strokeWidth.toPx(),
+                        pathEffect = pathEffect
+                    )
+                }
+
+                ReferenceLineType.ZONE -> {
+                    val yLow = spec.y
+                    val yHigh = spec.yEnd ?: return@forEach
+                    if (yLow >= yHigh) return@forEach
+
+                    val clampedLow = yLow.coerceIn(metrics.minY, metrics.maxY)
+                    val clampedHigh = yHigh.coerceIn(metrics.minY, metrics.maxY)
+
+                    val screenTop = (metrics.paddingY + metrics.chartHeight -
+                            ((clampedHigh - metrics.minY) / denom) * metrics.chartHeight).toFloat()
+                    val screenBottom = (metrics.paddingY + metrics.chartHeight -
+                            ((clampedLow - metrics.minY) / denom) * metrics.chartHeight).toFloat()
+
+                    drawRect(
+                        color = spec.color.copy(alpha = spec.color.alpha * 0.15f),
+                        topLeft = Offset(metrics.paddingX, screenTop),
+                        size = Size(metrics.chartWidth, screenBottom - screenTop)
+                    )
+                    // Optional top and bottom border lines
+                    val pathEffect = dashCache.getOrPut(spec.style) {
+                        spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
+                    }
+                    listOf(screenTop, screenBottom).forEach { borderY ->
+                        drawLine(
+                            color = spec.color,
+                            start = Offset(metrics.paddingX, borderY),
+                            end = Offset(metrics.paddingX + metrics.chartWidth, borderY),
+                            strokeWidth = spec.strokeWidth.toPx(),
+                            pathEffect = pathEffect
+                        )
+                    }
+                }
+
+                else -> { /* AVERAGE and TREND not supported in canvas path */ }
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private composable implementations
+    // ─────────────────────────────────────────────────────────────────────────
+
     @Composable
     private fun AverageLine(
+        spec: ReferenceLineSpec,
         data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
         chartType: ChartType,
-        color: Color,
-        strokeWidth: Dp,
-        lineStyle: LineStyle,
-        showLabel: Boolean,
-        labelFormat: String,
         yAxisPosition: YAxisPosition,
-        interactive: Boolean,
-        onClick: (() -> Unit)?
     ) {
         val average = calculateAverage(data, chartType)
-
-        // Do not draw if the average is outside the visible chart range.
         if (average < metrics.minY || average > metrics.maxY) return
 
         val density = LocalDensity.current
         val interactionSource = remember { MutableInteractionSource() }
-
         var isPressed by remember { mutableStateOf(false) }
 
         val denom = (metrics.maxY - metrics.minY)
@@ -263,172 +297,253 @@ object ReferenceLine {
             modifier = Modifier
                 .offset(
                     x = with(density) { metrics.paddingX.toDp() },
-                    y = with(density) { (y.toFloat() - touchThreshold.toPx()).toDp() }
+                    y = with(density) { (metrics.paddingY + y.toFloat() - touchThreshold.toPx()).toDp() }
                 )
                 .size(width = lineWidth, height = touchAreaHeight)
         ) {
-            Canvas(
-                modifier = Modifier.size(width = lineWidth, height = touchAreaHeight)
-            ) {
-                val startX = 0f
-                val endX = size.width
-                val lineY = touchThreshold.toPx()
-
-                val pathEffect = lineStyle.dashPattern?.let {
-                    PathEffect.dashPathEffect(it, 0f)
-                }
-
+            Canvas(modifier = Modifier.size(width = lineWidth, height = touchAreaHeight)) {
+                val pathEffect = spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
                 drawLine(
-                    color = color,
-                    start = Offset(startX, lineY),
-                    end = Offset(endX, lineY),
-                    strokeWidth = strokeWidth.toPx(),
+                    color = spec.color,
+                    start = Offset(0f, touchThreshold.toPx()),
+                    end = Offset(size.width, touchThreshold.toPx()),
+                    strokeWidth = spec.strokeWidth.toPx(),
                     pathEffect = pathEffect
                 )
             }
 
-            if (interactive) {
+            if (spec.interactive) {
                 Box(
                     modifier = Modifier
                         .size(width = lineWidth, height = touchAreaHeight)
-                        .pointerInput(Unit) {
-                            detectTapGestures {
-                                isPressed = !isPressed
-                            }
-                        }
+                        .pointerInput(Unit) { detectTapGestures { isPressed = !isPressed } }
                 )
-            } else if (onClick != null) {
+            } else if (spec.onClick != null) {
                 Box(
                     modifier = Modifier
                         .size(width = lineWidth, height = touchAreaHeight)
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null
-                        ) {
-                            onClick.invoke()
+                        .clickable(interactionSource = interactionSource, indication = null) {
+                            spec.onClick.invoke()
                         }
                 )
             }
 
-            if (showLabel || (interactive && isPressed)) {
+            if (spec.showLabel || (spec.interactive && isPressed)) {
+                val displayLabel = spec.label ?: spec.labelFormat.format(average)
                 ReferenceLineLabel(
-                    value = average,
-                    yPosition = with(density) { touchThreshold.toPx() },
-                    color = color,
-                    labelFormat = labelFormat,
+                    text = displayLabel,
+                    lineY = with(density) { touchThreshold.toPx() },
+                    color = spec.color,
                     metrics = metrics,
-                    yAxisPosition = yAxisPosition
                 )
             }
         }
     }
 
-    /**
-     * Renders a trend line computed via linear regression.
-     *
-     * Current behavior:
-     * - Draw-only overlay (no interaction).
-     * - The line is drawn between the first and last data x-values mapped to the chart bounds.
-     *
-     * Note: [interactive], [onClick], [showLabel], and [labelFormat] are currently accepted to keep
-     * the call signature stable, but are not used by the existing implementation.
-     */
     @Composable
     private fun TrendLine(
+        spec: ReferenceLineSpec,
         data: List<BaseChartMark>,
         metrics: ChartMath.ChartMetrics,
-        color: Color,
-        strokeWidth: Dp,
-        lineStyle: LineStyle,
-        showLabel: Boolean,
-        labelFormat: String,
-        interactive: Boolean,
-        onClick: (() -> Unit)?,
     ) {
         val (slope, intercept) = calculateTrendLine(data)
 
-        val startX = metrics.paddingX
-        val endX = metrics.paddingX + metrics.chartWidth
-
-        val dataStartX = if (data.isNotEmpty()) data.first().x else 0f
-        val dataEndX = if (data.isNotEmpty()) data.last().x else 1f
-
-        val startY = slope * dataStartX.toFloat() + intercept
-        val endY = slope * dataEndX.toFloat() + intercept
+        val dataStartX = data.first().x.toFloat()
+        val dataEndX = data.last().x.toFloat()
+        val startY = slope * dataStartX + intercept
+        val endY = slope * dataEndX + intercept
 
         val denom = (metrics.maxY - metrics.minY)
-        val screenStartY = metrics.chartHeight - ((startY - metrics.minY) / denom) * metrics.chartHeight
-        val screenEndY = metrics.chartHeight - ((endY - metrics.minY) / denom) * metrics.chartHeight
+        val screenStartY = metrics.paddingY + metrics.chartHeight - ((startY - metrics.minY) / denom) * metrics.chartHeight
+        val screenEndY = metrics.paddingY + metrics.chartHeight - ((endY - metrics.minY) / denom) * metrics.chartHeight
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val pathEffect = lineStyle.dashPattern?.let {
-                PathEffect.dashPathEffect(it, 0f)
-            }
-
+            val pathEffect = spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
             drawLine(
-                color = color,
-                start = Offset(startX, screenStartY.toFloat()),
-                end = Offset(endX, screenEndY.toFloat()),
-                strokeWidth = strokeWidth.toPx(),
+                color = spec.color,
+                start = Offset(metrics.paddingX, screenStartY.toFloat()),
+                end = Offset(metrics.paddingX + metrics.chartWidth, screenEndY.toFloat()),
+                strokeWidth = spec.strokeWidth.toPx(),
                 pathEffect = pathEffect
             )
         }
     }
 
-    /**
-     * Displays a small pill label showing the reference line value.
-     *
-     * The label is positioned near the corresponding Y-axis side (left/right) based on
-     * [yAxisPosition]. Coordinates are relative to the parent line container.
-     *
-     * Note: Several sizes here are intentionally kept as fixed values to preserve the
-     * existing look-and-feel.
-     */
+    @Composable
+    private fun ThresholdLine(
+        spec: ReferenceLineSpec,
+        metrics: ChartMath.ChartMetrics,
+        yAxisPosition: YAxisPosition,
+    ) {
+        val y = spec.y
+        if (y < metrics.minY || y > metrics.maxY) return
+
+        val density = LocalDensity.current
+        val interactionSource = remember { MutableInteractionSource() }
+        var isPressed by remember { mutableStateOf(false) }
+
+        val denom = (metrics.maxY - metrics.minY)
+        val screenY = metrics.chartHeight - ((y - metrics.minY) / denom) * metrics.chartHeight
+
+        val lineWidth = with(density) { metrics.chartWidth.toDp() }
+        val touchThreshold = 20.dp
+        val touchAreaHeight = touchThreshold * 2
+
+        Box(
+            modifier = Modifier
+                .offset(
+                    x = with(density) { metrics.paddingX.toDp() },
+                    y = with(density) { (metrics.paddingY + screenY.toFloat() - touchThreshold.toPx()).toDp() }
+                )
+                .size(width = lineWidth, height = touchAreaHeight)
+        ) {
+            Canvas(modifier = Modifier.size(width = lineWidth, height = touchAreaHeight)) {
+                val pathEffect = spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
+                drawLine(
+                    color = spec.color,
+                    start = Offset(0f, touchThreshold.toPx()),
+                    end = Offset(size.width, touchThreshold.toPx()),
+                    strokeWidth = spec.strokeWidth.toPx(),
+                    pathEffect = pathEffect
+                )
+            }
+
+            if (spec.interactive) {
+                Box(
+                    modifier = Modifier
+                        .size(width = lineWidth, height = touchAreaHeight)
+                        .pointerInput(Unit) { detectTapGestures { isPressed = !isPressed } }
+                )
+            } else if (spec.onClick != null) {
+                Box(
+                    modifier = Modifier
+                        .size(width = lineWidth, height = touchAreaHeight)
+                        .clickable(interactionSource = interactionSource, indication = null) {
+                            spec.onClick.invoke()
+                        }
+                )
+            }
+
+            if (spec.showLabel || (spec.interactive && isPressed)) {
+                val displayLabel = spec.label ?: spec.labelFormat.format(y)
+                ReferenceLineLabel(
+                    text = displayLabel,
+                    lineY = with(density) { touchThreshold.toPx() },
+                    color = spec.color,
+                    metrics = metrics,
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun ZoneBand(
+        spec: ReferenceLineSpec,
+        metrics: ChartMath.ChartMetrics,
+    ) {
+        val yLow = spec.y
+        val yHigh = spec.yEnd ?: return
+        if (yLow >= yHigh) return
+
+        val denom = (metrics.maxY - metrics.minY).takeIf { it != 0.0 } ?: return
+
+        val clampedLow = yLow.coerceIn(metrics.minY, metrics.maxY)
+        val clampedHigh = yHigh.coerceIn(metrics.minY, metrics.maxY)
+
+        val screenTop = metrics.chartHeight - ((clampedHigh - metrics.minY) / denom) * metrics.chartHeight
+        val screenBottom = metrics.chartHeight - ((clampedLow - metrics.minY) / denom) * metrics.chartHeight
+
+        val density = LocalDensity.current
+        val left = with(density) { metrics.paddingX.toDp() }
+        val top = with(density) { (metrics.paddingY + screenTop.toFloat()).toDp() }
+        val width = with(density) { metrics.chartWidth.toDp() }
+        val height = with(density) { (screenBottom - screenTop).toFloat().toDp() }
+
+        Canvas(
+            modifier = Modifier
+                .offset(x = left, y = top)
+                .size(width = width, height = height)
+        ) {
+            // Filled band
+            drawRect(color = spec.color.copy(alpha = spec.color.alpha * 0.15f))
+
+            // Border lines at top and bottom
+            val pathEffect = spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
+            val sw = spec.strokeWidth.toPx()
+            drawLine(
+                color = spec.color,
+                start = Offset(0f, 0f),
+                end = Offset(size.width, 0f),
+                strokeWidth = sw,
+                pathEffect = pathEffect
+            )
+            drawLine(
+                color = spec.color,
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = sw,
+                pathEffect = pathEffect
+            )
+        }
+
+        // Optional label — centered in zone, just outside the chart right edge
+        if (spec.showLabel) {
+            val displayLabel = spec.label ?: "${yHigh.toInt()}–${yLow.toInt()}"
+            val labelXPx = metrics.paddingX + metrics.chartWidth + with(density) { 5.dp.toPx() }
+            val zoneCenterY = metrics.paddingY + (screenTop + screenBottom).toFloat() / 2f
+            val halfLabelHeightPx = with(density) { 12.dp.toPx() }
+            Box(
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            x = labelXPx.roundToInt(),
+                            y = (zoneCenterY - halfLabelHeightPx).roundToInt()
+                        )
+                    }
+                    .background(spec.color.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = displayLabel,
+                    color = spec.color,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Shared label composable
+    // ─────────────────────────────────────────────────────────────────────────
+
     @Composable
     private fun ReferenceLineLabel(
-        value: Float,
-        yPosition: Float,
+        text: String,
+        lineY: Float,
         color: Color,
-        labelFormat: String,
         metrics: ChartMath.ChartMetrics,
-        yAxisPosition: YAxisPosition
     ) {
         val density = LocalDensity.current
-        val labelText = labelFormat.format(value)
-
-        val textSize = 12.sp
-        val verticalPadding = 5.dp
-        val estimatedLabelHeight = with(density) {
-            textSize.toPx() + (verticalPadding * 2).toPx()
-        }
-
-        val labelX = when (yAxisPosition) {
-            YAxisPosition.LEFT -> -with(density) { 5.dp.toPx() }
-            YAxisPosition.RIGHT -> metrics.chartWidth + with(density) { 5.dp.toPx() }
-        }
-
-        val adjustedX = with(density) { labelX.toDp() }
-        val adjustedY = with(density) { yPosition.toDp() }
-
-        val labelHeightOffset = with(density) { estimatedLabelHeight.toDp() }
+        // ~12dp = half of a typical single-line label height (12sp text + 4dp vertical padding)
+        val halfLabelHeightPx = with(density) { 12.dp.toPx() }
 
         Box(
             modifier = Modifier
                 .offset {
                     IntOffset(
-                        x = adjustedX.roundToPx(),
-                        y = (adjustedY - labelHeightOffset).roundToPx()
+                        x = (metrics.chartWidth + 5.dp.toPx()).roundToInt(),
+                        y = (lineY - halfLabelHeightPx).roundToInt()
                     )
                 }
-                .background(
-                    color = color.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(4.dp)
-                )
+                .background(color.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
                 .clip(RoundedCornerShape(4.dp))
                 .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
             Text(
-                text = labelText,
+                text = text,
                 color = color,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,

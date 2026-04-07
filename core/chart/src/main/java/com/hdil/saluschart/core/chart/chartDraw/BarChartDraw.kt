@@ -73,7 +73,8 @@ object BarChartDraw {
         centered: Boolean = true,
         textSize: Float = 28f,
         maxXTicksLimit: Int? = null,
-        xLabelAutoSkip: Boolean = false
+        xLabelAutoSkip: Boolean = false,
+        labelYOffset: Float = 50f
     ) {
         val (displayLabels, displayIndices) = if (xLabelAutoSkip) {
             ChartMath.computeAutoSkipLabels(
@@ -89,23 +90,26 @@ object BarChartDraw {
         val totalLabels = labels.size
         val barWidth = metrics.chartWidth / totalLabels / 2
         val spacing = metrics.chartWidth / totalLabels
-        
+
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.DKGRAY
+            this.textSize = textSize
+            textAlign = if (centered) android.graphics.Paint.Align.CENTER else android.graphics.Paint.Align.LEFT
+        }
+
+        val labelY = metrics.paddingY + metrics.chartHeight + labelYOffset
+
         displayLabels.forEachIndexed { displayIndex, label ->
             val originalIndex = displayIndices[displayIndex]
             val x = metrics.paddingX + barWidth + originalIndex * spacing
 
-            ctx.canvas.nativeCanvas.drawText(
-                label,
-                x,
-                metrics.paddingY + metrics.chartHeight + 50f,
-                android.graphics.Paint().apply {
-                    color = android.graphics.Color.DKGRAY
-                    this.textSize = textSize
-                    if (centered) {
-                        textAlign = android.graphics.Paint.Align.CENTER
-                    }
-                }
-            )
+            // Clamp only the left edge so the first label never overflows into the y-axis area.
+            // The right edge is intentionally left unclamped: clamping the last label shifts it
+            // away from its bar centre, making it appear misaligned with the other labels.
+            val labelHalfWidth = if (centered) paint.measureText(label) / 2f else 0f
+            val clampedX = x.coerceAtLeast(metrics.paddingX + labelHalfWidth)
+
+            ctx.canvas.nativeCanvas.drawText(label, clampedX, labelY, paint)
         }
     }
 
@@ -284,7 +288,7 @@ object BarChartDraw {
                     if (showTooltipForIndex == index || showTooltipForIndex == null) {
                         color
                     } else {
-                        color.copy(alpha = 0.3f)
+                        if (color.alpha == 0f) Color.Transparent else color.copy(alpha = 0.3f)
                     }
                 }
             }

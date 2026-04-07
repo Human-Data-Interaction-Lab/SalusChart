@@ -25,8 +25,6 @@ import kotlin.math.sqrt
  *   optimal packing.
  */
 object LineChartMath {
-
-    // TODO: 이거 필요한지? (과거에 핋요 없다고 판단되어서 삭제했었음, 누가 다시 만들었지)
     /**
      * Computes non-overlapping label anchors (top-left positions in canvas px) for a polyline.
      *

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,7 +58,8 @@ fun ChartLegend(
     title: String? = null,
     colorBoxSize: Dp = 12.dp,
     textSize: TextUnit = 12.sp,
-    spacing: Dp = 8.dp
+    spacing: Dp = 8.dp,
+    shapes: List<LegendShape>? = null
 ) {
     // If explicit labels are not provided, derive them from chartData.
     val legendLabels = labels ?: chartData?.mapIndexed { index, point ->
@@ -80,7 +82,8 @@ fun ChartLegend(
                             label = legendLabels[index],
                             colorBoxSize = colorBoxSize,
                             textSize = textSize,
-                            spacing = spacing
+                            spacing = spacing,
+                            shape = shapes?.getOrElse(index) { LegendShape.Box } ?: LegendShape.Box
                         )
                     }
                 }
@@ -113,7 +116,8 @@ fun ChartLegend(
                             label = label,
                             colorBoxSize = colorBoxSize,
                             textSize = textSize,
-                            spacing = spacing
+                            spacing = spacing,
+                            shape = shapes?.getOrElse(index) { LegendShape.Box } ?: LegendShape.Box
                         )
                     }
                 }
@@ -139,21 +143,32 @@ fun LegendItem(
     label: String,
     colorBoxSize: Dp = 20.dp,
     textSize: TextUnit = 16.sp,
-    spacing: Dp = 8.dp
+    spacing: Dp = 8.dp,
+    shape: LegendShape = LegendShape.Box
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing)
     ) {
-        // Color indicator box
-        Box(
-            modifier = Modifier
-                .size(colorBoxSize)
-                .background(
-                    color = color,
-                    shape = RoundedCornerShape(2.dp)
-                )
-        )
+        // Color indicator
+        when (shape) {
+            LegendShape.Dot -> Box(
+                modifier = Modifier
+                    .size(colorBoxSize)
+                    .background(
+                        color = color,
+                        shape = CircleShape
+                    )
+            )
+            LegendShape.Box -> Box(
+                modifier = Modifier
+                    .size(colorBoxSize)
+                    .background(
+                        color = color,
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+        }
 
         // Label text
         Text(
@@ -173,4 +188,12 @@ enum class LegendPosition {
     RIGHT,
     TOP,
     BOTTOM
+}
+
+/**
+ * Shape of the color indicator in a legend item.
+ */
+enum class LegendShape {
+    Dot,
+    Box
 }

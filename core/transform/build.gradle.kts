@@ -67,7 +67,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-core-transform", "0.1.2")
+    coordinates("io.github.hdilys", "saluschart-core-transform", "0.1.3")
     publishToMavenCentral()
     signAllPublications()
 }

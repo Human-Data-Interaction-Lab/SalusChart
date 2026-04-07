@@ -14,15 +14,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.*
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
-import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
+import com.hdil.saluschart.core.chart.chartDraw.VerticalAxisLabel
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.toStackedChartMarks
@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 
@@ -64,15 +65,9 @@ fun StackedBarChart(
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.StackedBar = InteractionType.StackedBar.TOUCH_AREA,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)? = null,
-    // Reference line
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE, // NONE, AVERAGE
-    referenceLineColor: Color = Color.Red,
-    referenceLineStrokeWidth: Dp = 2.dp,
-    referenceLineStyle: LineStyle = LineStyle.DASHED,
-    showReferenceLineLabel: Boolean = false,
-    referenceLineLabelFormat: String = "평균: %.0f", // Format for reference line label
-    referenceLineInteractive: Boolean = false, // Whether to make the reference line clickable
-    onReferenceLineClick: (() -> Unit)? = null,
+    // Reference lines
+    referenceLines: List<com.hdil.saluschart.core.chart.ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
@@ -89,7 +84,8 @@ fun StackedBarChart(
     pageSize: Int? = null, // number of items per page (enables paging if not null)
     unifyYAxisAcrossPages: Boolean = true,
     initialPageIndex: Int? = null, // initial page to show (last page if null)
-    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
+    yAxisFixedWidth: Dp = 20.dp, // Padding between the chart and the y-axis
+    tooltipColor: Color = Color.Black,
 ) {
     if (data.isEmpty()) return
 
@@ -172,12 +168,15 @@ fun StackedBarChart(
             yAxisFixedWidth = yAxisFixedWidth,
             xLabelAutoSkip = xLabelAutoSkip,
             maxXTicksLimit = maxXTicksLimit,
+            referenceLines = referenceLines,
+            showYAxisHighlight = showYAxisHighlight,
         )
         return
     }
 
     val useScrolling = windowSize != null && windowSize < stackedData.size
     val isFixedYAxis = showYAxis && useScrolling
+    val useExternalYAxis = isFixedYAxis || (showYAxisHighlight && showYAxis && referenceLines.isNotEmpty())
     val scrollState = rememberScrollState()
     val onBarClickState by rememberUpdatedState(onBarClick)
 
@@ -188,6 +187,27 @@ fun StackedBarChart(
             Text(title, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(16.dp))
         }
+
+        val density = LocalDensity.current
+        val effectiveYAxisWidth = if (useExternalYAxis) {
+            val yAxisRange = remember(totals, minY, maxY, yTickStep) {
+                ChartMath.computeYAxisRange(
+                    values = totals,
+                    chartType = chartType,
+                    minY = minY ?: 0.0,
+                    maxY = maxY,
+                    fixedTickStep = yTickStep
+                )
+            }
+            val tickPaint = remember { android.graphics.Paint().apply { textSize = 28f } }
+            val longestTickPx = remember(yAxisRange) {
+                yAxisRange.yTicks.maxOfOrNull { tick ->
+                    tickPaint.measureText(ChartDraw.formatTickLabel(tick.toFloat()))
+                } ?: 0f
+            }
+            val extraPx = if (showYAxisHighlight) 30f else 20f
+            maxOf(yAxisFixedWidth, with(density) { (longestTickPx + extraPx).toDp() })
+        } else yAxisFixedWidth
 
         val chartBlock: @Composable () -> Unit = {
             BoxWithConstraints {
@@ -209,31 +229,51 @@ fun StackedBarChart(
                 }
                 var tooltipSize by remember { mutableStateOf<androidx.compose.ui.unit.IntSize>(androidx.compose.ui.unit.IntSize.Zero) }
 
-                val density = LocalDensity.current
+                val yAxisPaddingPxValue = with(density) { effectiveYAxisWidth.toPx() }
 
                 Row(Modifier.fillMaxSize()) {
+                    if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                        VerticalAxisLabel(yLabel)
+                    }
                     // Left fixed axis pane
-                    if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
-                        Canvas(
+                    if (useExternalYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                        Box(
                             modifier = Modifier
-                                .width(yAxisFixedWidth)
+                                .width(effectiveYAxisWidth)
                                 .fillMaxHeight()
+                                .clipToBounds()
                         ) {
-                            chartMetrics?.let { m ->
-                                ChartDraw.drawYAxisStandalone(
-                                    drawScope = this,
-                                    metrics = m,
-                                    yAxisPosition = yAxisPosition,
-                                    paneWidthPx = size.width
-                                )
+                            Canvas(
+                                modifier = Modifier
+                                    .width(effectiveYAxisWidth)
+                                    .fillMaxHeight()
+                            ) {
+                                chartMetrics?.let { m ->
+                                    if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                        ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                            drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                            paneWidthPx = size.width, referenceLines = referenceLines
+                                        )
+                                    } else {
+                                        ChartDraw.drawYAxisStandalone(
+                                            drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
 
+                    val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+                    val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
                     val startPad =
-                        if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                        if (!showYAxis || (useExternalYAxis && yAxisPosition == YAxisPosition.LEFT) || hasLeftLabel) 0.dp
+                        else if (useExternalYAxis && !isFixedYAxis) 8.dp
+                        else marginHorizontal
                     val endPad =
-                        if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                        if (!showYAxis || (useExternalYAxis && yAxisPosition == YAxisPosition.RIGHT) || hasRightLabel) 0.dp
+                        else if (useExternalYAxis && !isFixedYAxis) 8.dp
+                        else marginHorizontal
 
                     Box(
                         modifier = Modifier
@@ -248,19 +288,25 @@ fun StackedBarChart(
                                 Modifier.fillMaxSize()
                             }
                         ) {
+                            val labelReservePx = if (referenceLines.any { it.showLabel || it.label != null }) {
+                                (if (isFixedYAxis) 80.dp else 20.dp).toPx()
+                            } else 0f
+                            val paddingBottom = if (useExternalYAxis) 10f else 0f
                             val m = ChartMath.computeMetrics(
-                                size = size,
+                                size = Size(size.width - labelReservePx, size.height),
                                 values = totals,
                                 chartType = chartType,
                                 minY = minY ?: 0.0,
                                 maxY = maxY,
-                                includeYAxisPadding = !isFixedYAxis,
-                                fixedTickStep = yTickStep
+                                includeYAxisPadding = !useExternalYAxis,
+                                yAxisPaddingPx = yAxisPaddingPxValue,
+                                fixedTickStep = yTickStep,
+                                paddingBottom = paddingBottom
                             )
                             chartMetrics = m
 
-                            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = showYAxis && !isFixedYAxis)
-                            if (showYAxis && !isFixedYAxis) ChartDraw.drawYAxis(this, m, yAxisPosition)
+                            ChartDraw.drawGrid(this, size, m, yAxisPosition, drawLabels = showYAxis && !useExternalYAxis)
+                            if (showYAxis && !useExternalYAxis) ChartDraw.drawYAxis(this, m, yAxisPosition)
                             ChartDraw.Bar.drawBarXAxisLabels(
                                 ctx = drawContext,
                                 labels = xLabels,
@@ -284,7 +330,8 @@ fun StackedBarChart(
                                     barWidthRatio = barWidthRatio,
                                     interactive = false,
                                     chartType = chartType,
-                                    unit = unit
+                                    unit = unit,
+                                    showTooltipForIndex = selectedBarIndex
                                 )
                             }
                         }
@@ -342,21 +389,14 @@ fun StackedBarChart(
                             }
                         }
 
-                        if (referenceLineType != ReferenceLineType.NONE) {
-                            ReferenceLine.ReferenceLine(
+                        if (referenceLines.isNotEmpty()) {
+                            ReferenceLine.ReferenceLines(
                                 modifier = Modifier.fillMaxSize(),
+                                specs = referenceLines,
                                 data = stackedData,
                                 metrics = m,
                                 chartType = chartType,
-                                referenceLineType = referenceLineType,
-                                color = referenceLineColor,
-                                strokeWidth = referenceLineStrokeWidth,
-                                lineStyle = referenceLineStyle,
-                                showLabel = showReferenceLineLabel,
-                                labelFormat = referenceLineLabelFormat,
                                 yAxisPosition = yAxisPosition,
-                                interactive = referenceLineInteractive,
-                                onClick = onReferenceLineClick
                             )
                         }
 
@@ -397,34 +437,68 @@ fun StackedBarChart(
                             ) {
                                 com.hdil.saluschart.core.chart.chartDraw.ChartTooltip(
                                     chartMark = spec.chartMark,
-                                    color = Color.Black
+                                    color = tooltipColor,
+                                    segmentColors = colors,
                                 )
                             }
                         }
                     }
 
                     // Right fixed axis pane
-                    if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
-                        Canvas(
+                    if (useExternalYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                        Box(
                             modifier = Modifier
-                                .width(yAxisFixedWidth)
+                                .width(effectiveYAxisWidth)
                                 .fillMaxHeight()
+                                .clipToBounds()
                         ) {
-                            chartMetrics?.let { m ->
-                                ChartDraw.drawYAxisStandalone(
-                                    drawScope = this,
-                                    metrics = m,
-                                    yAxisPosition = yAxisPosition,
-                                    paneWidthPx = size.width
-                                )
+                            Canvas(
+                                modifier = Modifier
+                                    .width(effectiveYAxisWidth)
+                                    .fillMaxHeight()
+                            ) {
+                                chartMetrics?.let { m ->
+                                    if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                        ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                            drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                            paneWidthPx = size.width, referenceLines = referenceLines
+                                        )
+                                    } else {
+                                        ChartDraw.drawYAxisStandalone(
+                                            drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                                        )
+                                    }
+                                }
                             }
                         }
+                    }
+                    if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                        VerticalAxisLabel(yLabel)
                     }
                 }
             }
         }
 
-        // Draw legend
+        val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+        val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+        val chartLeftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (useExternalYAxis && yAxisPosition == YAxisPosition.LEFT) effectiveYAxisWidth else 0.dp)
+        val chartRightOffset = (if (useExternalYAxis && yAxisPosition == YAxisPosition.RIGHT) effectiveYAxisWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+
+        val xLabelBlock: @Composable () -> Unit = {
+            if (xLabel.isNotBlank()) {
+                val xLabelSpacerHeight = with(LocalDensity.current) { (50f + 28f).toDp() }
+                Spacer(Modifier.height(xLabelSpacerHeight))
+                Row(Modifier.fillMaxWidth()) {
+                    if (chartLeftOffset > 0.dp) Spacer(Modifier.width(chartLeftOffset))
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (chartRightOffset > 0.dp) Spacer(Modifier.width(chartRightOffset))
+                }
+            }
+        }
+
+        // Draw legend — xLabel always appears directly below the chart, above any bottom legend
         when (legendPosition) {
             LegendPosition.LEFT, LegendPosition.RIGHT -> {
                 Row(
@@ -440,22 +514,25 @@ fun StackedBarChart(
                         ChartLegend(labels = segmentLabels, colors = colors, position = LegendPosition.RIGHT)
                     }
                 }
+                xLabelBlock()
             }
-            LegendPosition.TOP, LegendPosition.BOTTOM -> {
-                if (showLegend && legendPosition == LegendPosition.TOP && segmentLabels.isNotEmpty()) {
-                    CenteredLegend(segmentLabels, colors, LegendPosition.TOP)
-                    Spacer(Modifier.height(40.dp))
+            LegendPosition.TOP -> {
+                if (showLegend && segmentLabels.isNotEmpty()) {
+                    CenteredLegend(segmentLabels, colors, LegendPosition.TOP, chartLeftOffset, chartRightOffset)
+                    Spacer(Modifier.height(16.dp))
                 }
-
-                Box(Modifier.weight(1f, fill = true)) { chartBlock() }  // ← weighted chart area
-
-                if (showLegend && legendPosition == LegendPosition.BOTTOM && segmentLabels.isNotEmpty()) {
-                    Spacer(Modifier.height(40.dp))
-                    CenteredLegend(segmentLabels, colors, LegendPosition.BOTTOM)
+                Box(Modifier.weight(1f, fill = true)) { chartBlock() }
+                xLabelBlock()
+            }
+            LegendPosition.BOTTOM -> {
+                Box(Modifier.weight(1f, fill = true)) { chartBlock() }
+                xLabelBlock()
+                if (showLegend && segmentLabels.isNotEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    CenteredLegend(segmentLabels, colors, LegendPosition.BOTTOM, chartLeftOffset, chartRightOffset)
                 }
             }
         }
-
         Spacer(Modifier.height(4.dp))
     }
 }
@@ -468,7 +545,8 @@ private fun FixedPagerYAxisStacked(
     maxY: Double,
     yAxisPosition: YAxisPosition,
     step: Double,
-    width: Dp
+    width: Dp,
+    referenceLines: List<com.hdil.saluschart.core.chart.ReferenceLineSpec> = emptyList()
 ) {
     Canvas(
         modifier = Modifier
@@ -485,12 +563,22 @@ private fun FixedPagerYAxisStacked(
             fixedTickStep = step
         )
         // Call standalone y-axis drawing function
-        ChartDraw.drawYAxisStandalone(
-            drawScope = this,
-            metrics = m,
-            yAxisPosition = yAxisPosition,
-            paneWidthPx = size.width
-        )
+        if (referenceLines.isNotEmpty()) {
+            ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                drawScope = this,
+                metrics = m,
+                yAxisPosition = yAxisPosition,
+                paneWidthPx = size.width,
+                referenceLines = referenceLines
+            )
+        } else {
+            ChartDraw.drawYAxisStandalone(
+                drawScope = this,
+                metrics = m,
+                yAxisPosition = yAxisPosition,
+                paneWidthPx = size.width
+            )
+        }
     }
 }
 
@@ -498,17 +586,16 @@ private fun FixedPagerYAxisStacked(
 private fun CenteredLegend(
     labels: List<String>,
     colors: List<Color>,
-    position: LegendPosition
+    position: LegendPosition,
+    leftOffset: Dp = 0.dp,
+    rightOffset: Dp = 0.dp,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        ChartLegend(
-            labels = labels,
-            colors = colors,
-            position = position
-        )
+    Row(modifier = Modifier.fillMaxWidth()) {
+        if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            ChartLegend(labels = labels, colors = colors, position = position)
+        }
+        if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
     }
 }
 
@@ -541,9 +628,11 @@ private fun StackedBarChartPagedInternal(
     maxY: Double?,
     yAxisPosition: YAxisPosition,
     outerPadding: PaddingValues,
-    yAxisFixedWidth: Dp = 0.dp,
+    yAxisFixedWidth: Dp = 20.dp,
     xLabelAutoSkip: Boolean,
     maxXTicksLimit: Int? = null,
+    referenceLines: List<com.hdil.saluschart.core.chart.ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
 ) {
     // Transform ChartMark to StackedChartMark
     val stackedData = remember(data) {
@@ -607,6 +696,9 @@ private fun StackedBarChartPagedInternal(
 
         val chartArea: @Composable () -> Unit = {
             Row(Modifier.fillMaxSize()) {
+                if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                    VerticalAxisLabel(yLabel)
+                }
                 // Left fixed external Y-axis
                 if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     FixedPagerYAxisStacked(
@@ -615,7 +707,8 @@ private fun StackedBarChartPagedInternal(
                         maxY = maxRounded,
                         yAxisPosition = YAxisPosition.LEFT,
                         step = effectiveTickStep,
-                        width = yAxisFixedWidth
+                        width = yAxisFixedWidth,
+                        referenceLines = if (showYAxisHighlight) referenceLines else emptyList()
                     )
                 }
 
@@ -678,8 +771,31 @@ private fun StackedBarChartPagedInternal(
                         maxY = maxRounded,
                         yAxisPosition = YAxisPosition.RIGHT,
                         step = effectiveTickStep,
-                        width = yAxisFixedWidth
+                        width = yAxisFixedWidth,
+                        referenceLines = if (showYAxisHighlight) referenceLines else emptyList()
                     )
+                }
+                if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                    VerticalAxisLabel(yLabel)
+                }
+            }
+        }
+
+        val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+        val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+        val chartLeftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+        val chartRightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+
+        val xLabelBlock: @Composable () -> Unit = {
+            if (xLabel.isNotBlank()) {
+                val xLabelSpacerHeight = with(LocalDensity.current) { (50f + 28f).toDp() }
+                Spacer(Modifier.height(xLabelSpacerHeight))
+                Row(Modifier.fillMaxWidth()) {
+                    if (chartLeftOffset > 0.dp) Spacer(Modifier.width(chartLeftOffset))
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (chartRightOffset > 0.dp) Spacer(Modifier.width(chartRightOffset))
                 }
             }
         }
@@ -687,7 +803,7 @@ private fun StackedBarChartPagedInternal(
         when (legendPosition) {
             LegendPosition.LEFT, LegendPosition.RIGHT -> {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -699,23 +815,26 @@ private fun StackedBarChartPagedInternal(
                         ChartLegend(labels = segmentLabels, colors = colors, position = LegendPosition.RIGHT)
                     }
                 }
+                xLabelBlock()
             }
             LegendPosition.TOP -> {
-                Column(Modifier.fillMaxSize()) {
+                Column(Modifier.weight(1f)) {
                     if (showLegend && segmentLabels.isNotEmpty()) {
-                        CenteredLegend(segmentLabels, colors, LegendPosition.TOP)
-                        Spacer(Modifier.height(40.dp))
+                        CenteredLegend(segmentLabels, colors, LegendPosition.TOP, chartLeftOffset, chartRightOffset)
+                        Spacer(Modifier.height(8.dp))
                     }
                     Box(Modifier.weight(1f, fill = true)) { chartArea() }
                 }
+                xLabelBlock()
             }
             LegendPosition.BOTTOM -> {
-                Column(Modifier.fillMaxSize()) {
+                Column(Modifier.weight(1f)) {
                     Box(Modifier.weight(1f, fill = true)) { chartArea() }
-                    if (showLegend && segmentLabels.isNotEmpty()) {
-                        Spacer(Modifier.height(40.dp))
-                        CenteredLegend(segmentLabels, colors, LegendPosition.BOTTOM)
-                    }
+                }
+                xLabelBlock()
+                if (showLegend && segmentLabels.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    CenteredLegend(segmentLabels, colors, LegendPosition.BOTTOM, chartLeftOffset, chartRightOffset)
                 }
             }
         }

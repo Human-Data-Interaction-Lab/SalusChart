@@ -2,7 +2,9 @@ package com.hdil.saluschart.ui.compose.charts
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -20,9 +22,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,21 +32,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
+import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
+import com.hdil.saluschart.core.chart.chartDraw.TooltipContainer
+import com.hdil.saluschart.core.chart.chartDraw.VerticalAxisLabel
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
-import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 
@@ -64,15 +72,8 @@ fun ScatterPlot(
     tooltipTextSize: Float = 32f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Scatter = InteractionType.Scatter.POINT,
-    // Reference line
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE, // NONE, TREND
-    referenceLineColor: Color = Color.Red,
-    referenceLineStrokeWidth: Dp = 2.dp,
-    referenceLineStyle: LineStyle = LineStyle.DASHED,
-    showReferenceLineLabel: Boolean = false,
-    referenceLineLabelFormat: String = "평균: %.0f", // Format for reference line label
-    referenceLineInteractive: Boolean = false, // Whether to make the reference line clickable
-    onReferenceLineClick: (() -> Unit)? = null,
+    referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
@@ -85,7 +86,11 @@ fun ScatterPlot(
     contentPadding: PaddingValues = PaddingValues(16.dp), // Free-scroll paddings
     pageSize: Int? = null, // number of items per page (not null enables paging)
     initialPageIndex: Int? = null, // initial page to show (last page if null)
-    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
+    yAxisFixedWidth: Dp = 30.dp, // Padding between the chart and the y-axis
+    showLegend: Boolean = false,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    legendLabel: String = "",
+    tooltipColor: Color = pointColor,
 ) {
     if (data.isEmpty()) return
 
@@ -128,7 +133,13 @@ fun ScatterPlot(
             unit = unit,
             yAxisFixedWidth = yAxisFixedWidth,
             maxXTicksLimit = maxXTicksLimit,
-            xLabelAutoSkip = xLabelAutoSkip
+            xLabelAutoSkip = xLabelAutoSkip,
+            showLegend = showLegend,
+            legendPosition = legendPosition,
+            legendLabel = legendLabel,
+            referenceLines = referenceLines,
+            showYAxisHighlight = showYAxisHighlight,
+            tooltipColor = tooltipColor,
         )
         return
     }
@@ -155,7 +166,7 @@ fun ScatterPlot(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        BoxWithConstraints {
+        BoxWithConstraints(Modifier.weight(1f)) {
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
 
@@ -168,27 +179,38 @@ fun ScatterPlot(
             } else null
 
             Row(Modifier.fillMaxSize()) {
+                if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                    VerticalAxisLabel(yLabel)
+                }
                 // Left fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
                             .width(yAxisFixedWidth)
                             .fillMaxHeight()
+                            .clipToBounds()
                     ) {
                         chartMetrics?.let { m ->
-                            ChartDraw.drawYAxisStandalone(
-                                drawScope = this,
-                                metrics = m,
-                                yAxisPosition = yAxisPosition,
-                                paneWidthPx = size.width
-                            )
+                            if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                    paneWidthPx = size.width, referenceLines = referenceLines
+                                )
+                            } else {
+                                ChartDraw.drawYAxisStandalone(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                                )
+                            }
                         }
                     }
                 }
 
-                // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
-                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
-                val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                // Calculate padding when Y-axis is hidden (external axis handles it), when it's a fixed axis on that side,
+                // or when a vertical axis label (yLabel) is already providing visual separation on that side.
+                val hasLeftLabel  = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+                val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) || hasLeftLabel) 0.dp else marginHorizontal
+                val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) || hasRightLabel) 0.dp else marginHorizontal
 
                 Box(
                     modifier = Modifier
@@ -203,14 +225,19 @@ fun ScatterPlot(
                             Modifier.fillMaxSize()
                         }
                     ) {
+                        val labelReservePx = if (referenceLines.any { it.showLabel || it.label != null }) {
+                            (if (isFixedYAxis) 80.dp else 30.dp).toPx()
+                        } else 0f
                         val metrics = ChartMath.computeMetrics(
-                            size = size,
+                            size = Size(size.width - labelReservePx, size.height),
                             values = yValues,
                             chartType = chartType,
                             minY = minY,
                             maxY = maxY,
                             includeYAxisPadding = !isFixedYAxis,
-                            fixedTickStep = yTickStep
+                            yAxisPaddingPx = 80f,
+                            fixedTickStep = yTickStep,
+                            paddingBottom = if (isFixedYAxis) 20f else 0f
                         )
                         val points = ChartMath.Scatter.mapScatterToCanvasPoints(data, size, metrics)
 
@@ -339,14 +366,18 @@ fun ScatterPlot(
                                     unit = unit,
                                 )
 
-                                // 3) Single combined tooltip over the selected x
+                                // 3) Single combined tooltip over the selected x (high zIndex so it renders above reference lines)
                                 if (!selectedIndices.isNullOrEmpty()) {
-                                    ScatterCombinedTooltip(
-                                        indices = selectedIndices!!,
-                                        data = data,
-                                        points = canvasPoints,
-                                        unit = unit,
-                                    )
+                                    Box(modifier = Modifier.fillMaxSize().zIndex(999f)) {
+                                        ScatterCombinedTooltip(
+                                            indices = selectedIndices!!,
+                                            data = data,
+                                            points = canvasPoints,
+                                            canvasSize = canvasSize,
+                                            unit = unit,
+                                            dotColor = tooltipColor,
+                                        )
+                                    }
                                 }
                             } else {
                                 // Fallback: if metrics not ready yet, render default non-interactive points
@@ -372,23 +403,16 @@ fun ScatterPlot(
                         }
                     }
 
-                    // Draw reference line
-                    if (referenceLineType != ReferenceLineType.NONE) {
+                    // Draw reference lines
+                    if (referenceLines.isNotEmpty()) {
                         chartMetrics?.let { metrics ->
-                            ReferenceLine.ReferenceLine(
+                            ReferenceLine.ReferenceLines(
                                 modifier = Modifier.fillMaxSize(),
+                                specs = referenceLines,
                                 data = data,
                                 metrics = metrics,
                                 chartType = chartType,
-                                referenceLineType = referenceLineType,
-                                color = referenceLineColor,
-                                strokeWidth = referenceLineStrokeWidth,
-                                lineStyle = referenceLineStyle,
-                                showLabel = showReferenceLineLabel,
-                                labelFormat = referenceLineLabelFormat,
                                 yAxisPosition = yAxisPosition,
-                                interactive = referenceLineInteractive,
-                                onClick = onReferenceLineClick
                             )
                         }
                     }
@@ -400,20 +424,77 @@ fun ScatterPlot(
                         modifier = Modifier
                             .width(yAxisFixedWidth)
                             .fillMaxHeight()
+                            .clipToBounds()
                     ) {
                         chartMetrics?.let { m ->
-                            ChartDraw.drawYAxisStandalone(
-                                drawScope = this,
-                                metrics = m,
-                                yAxisPosition = yAxisPosition,
-                                paneWidthPx = size.width
-                            )
+                            if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                    paneWidthPx = size.width, referenceLines = referenceLines
+                                )
+                            } else {
+                                ChartDraw.drawYAxisStandalone(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                                )
+                            }
                         }
                     }
+                }
+                if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                    VerticalAxisLabel(yLabel)
                 }
             }
         }
 
+        if (xLabel.isNotBlank()) {
+            val xLabelSpacerHeight = with(LocalDensity.current) { (50f + 28f).toDp() }
+            Spacer(Modifier.height(xLabelSpacerHeight))
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val leftOffset = (if (hasLeftLabel) 30.dp else 0.dp) + (if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val rightOffset = (if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 30.dp else 0.dp)
+            Row(Modifier.fillMaxWidth()) {
+                if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                }
+                if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
+            }
+        }
+        if (showLegend && legendLabel.isNotBlank()) {
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val legendLeftOffset = (if (hasLeftLabel) 30.dp else 0.dp) + (if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val legendRightOffset = (if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 30.dp else 0.dp)
+            when (legendPosition) {
+                LegendPosition.TOP, LegendPosition.BOTTOM -> {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        if (legendLeftOffset > 0.dp) Spacer(Modifier.width(legendLeftOffset))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            ChartLegend(
+                                labels = listOf(legendLabel),
+                                colors = listOf(pointColor),
+                                position = legendPosition
+                            )
+                        }
+                        if (legendRightOffset > 0.dp) Spacer(Modifier.width(legendRightOffset))
+                    }
+                }
+                LegendPosition.LEFT -> {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        ChartLegend(labels = listOf(legendLabel), colors = listOf(pointColor), position = LegendPosition.LEFT)
+                    }
+                }
+                LegendPosition.RIGHT -> {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        ChartLegend(labels = listOf(legendLabel), colors = listOf(pointColor), position = LegendPosition.RIGHT)
+                    }
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(4.dp))
     }
 }
@@ -423,14 +504,14 @@ private fun ScatterCombinedTooltip(
     indices: Set<Int>,
     data: List<ChartMark>,
     points: List<Offset>,
+    canvasSize: Size,
     unit: String,
+    dotColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     if (indices.isEmpty() || points.isEmpty()) return
 
     val density = LocalDensity.current
-    val dotColor = MaterialTheme.colorScheme.primary
 
-    // Use the first selected index as the anchor point on the canvas
     val sorted = indices.sorted()
     val anchorIndex = sorted.firstOrNull() ?: return
     if (anchorIndex !in points.indices || anchorIndex !in data.indices) return
@@ -438,58 +519,46 @@ private fun ScatterCombinedTooltip(
     val anchorPoint = points[anchorIndex]
     val marks = sorted.mapNotNull { data.getOrNull(it) }
 
-    val anchorXDp = with(density) { anchorPoint.x.toDp() }
-    val anchorYDp = with(density) { anchorPoint.y.toDp() }
+    val padPx = with(density) { 8.dp.toPx() }
+    val estimatedW = with(density) { 160.dp.toPx() }
+    val estimatedH = with(density) { 84.dp.toPx() }
 
-    val tooltipWidth = 190.dp
-    val baseHeight = 52.dp
-    val perLineHeight = 20.dp
-    val tooltipHeight = baseHeight + perLineHeight * marks.size
+    // Center tooltip on the selected column; prefer above anchor, fall back below; clamp to canvas
+    val xPx = (anchorPoint.x - estimatedW / 2f)
+        .coerceIn(0f, (canvasSize.width - estimatedW).coerceAtLeast(0f))
+    val preferredY = if (anchorPoint.y - estimatedH - padPx >= 0f)
+        anchorPoint.y - estimatedH - padPx
+    else
+        anchorPoint.y + padPx
+    val yPx = preferredY.coerceIn(0f, (canvasSize.height - estimatedH).coerceAtLeast(0f))
 
-    var offsetX = anchorXDp - tooltipWidth / 10
-    var offsetY = anchorYDp - tooltipHeight + 100.dp
-
-    // Simple clamping so it doesn’t go off-screen to the top/left
-    if (offsetX < 0.dp) offsetX = 0.dp
-    if (offsetY < 0.dp) offsetY = 0.dp
-
-    Box(
-        modifier = Modifier.fillMaxSize()
+    TooltipContainer(
+        modifier = Modifier.offset { IntOffset(xPx.toInt(), yPx.toInt()) }
     ) {
-        Surface(
-            modifier = Modifier.offset(x = offsetX, y = offsetY),
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 4.dp,
-            shadowElevation = 4.dp,
-            color = Color.White
-        ) {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                // Top line: use the label from the first mark
-                Text(
-                    text = marks.firstOrNull()?.label.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
+        Text(
+            text = marks.firstOrNull()?.label.orEmpty(),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            lineHeight = 16.sp
+        )
+        marks.forEach { mark ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(dotColor, shape = CircleShape)
                 )
-
-                Spacer(Modifier.height(4.dp))
-
-                // One row per value
-                marks.forEach { mark ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 2.dp)
-                    ) {
-                        // Little colored dot
-                        Canvas(modifier = Modifier.size(6.dp)) {
-                            drawCircle(color = dotColor)
-                        }
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "${mark.y.toInt()}$unit",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                Text(
+                    text = if (unit.isNotEmpty()) "${mark.y.toInt()}$unit" else mark.y.toInt().toString(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                    lineHeight = 14.sp
+                )
             }
         }
     }
@@ -521,9 +590,15 @@ private fun ScatterPlotPagedInternal(
     maxY: Double?,
     unit: String,
     outerPadding: PaddingValues = PaddingValues(0.dp),
-    yAxisFixedWidth: Dp = 0.dp,
+    yAxisFixedWidth: Dp = 30.dp,
     maxXTicksLimit: Int? = null,
-    xLabelAutoSkip: Boolean
+    xLabelAutoSkip: Boolean,
+    showLegend: Boolean = false,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    legendLabel: String = "",
+    referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
+    tooltipColor: Color = pointColor,
 ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
@@ -553,14 +628,18 @@ private fun ScatterPlotPagedInternal(
             Spacer(Modifier.height(12.dp))
         }
 
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().weight(1f)) {
+            if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                VerticalAxisLabel(yLabel)
+            }
             // Left fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 FixedPagerYAxisScatter(
                     maxY = maxRounded,
                     yAxisPosition = yAxisPosition,
                     step = effectiveTickStep,
-                    width = yAxisFixedWidth
+                    width = yAxisFixedWidth,
+                    referenceLines = if (showYAxisHighlight) referenceLines else emptyList()
                 )
             }
 
@@ -579,8 +658,8 @@ private fun ScatterPlotPagedInternal(
                 ScatterPlot(
                     modifier = Modifier.fillMaxSize(),
                     data = slice,
-                    xLabel = xLabel,
-                    yLabel = yLabel,
+                    xLabel = "",
+                    yLabel = "",
                     title = title,
                     pointColor = pointColor,
                     pointType = pointType,
@@ -603,7 +682,8 @@ private fun ScatterPlotPagedInternal(
                         bottom = 0.dp
                     ),
                     pageSize = null,                      // don't recurse
-                    unit = unit
+                    unit = unit,
+                    tooltipColor = tooltipColor,
                 )
             }
 
@@ -613,8 +693,45 @@ private fun ScatterPlotPagedInternal(
                     maxY = maxRounded,
                     yAxisPosition = yAxisPosition,
                     step = effectiveTickStep,
-                    width = yAxisFixedWidth
+                    width = yAxisFixedWidth,
+                    referenceLines = if (showYAxisHighlight) referenceLines else emptyList()
                 )
+            }
+            if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                VerticalAxisLabel(yLabel)
+            }
+        }
+        if (xLabel.isNotBlank()) {
+            val xLabelSpacerHeight = with(LocalDensity.current) { (50f + 28f).toDp() }
+            Spacer(Modifier.height(xLabelSpacerHeight))
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val leftOffset = (if (hasLeftLabel) 30.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val rightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 30.dp else 0.dp)
+            Row(Modifier.fillMaxWidth()) {
+                if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                }
+                if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
+            }
+        }
+        if (showLegend && legendLabel.isNotBlank()) {
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val legendLeftOffset = (if (hasLeftLabel) 30.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val legendRightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 30.dp else 0.dp)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth()) {
+                if (legendLeftOffset > 0.dp) Spacer(Modifier.width(legendLeftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    ChartLegend(
+                        labels = listOf(legendLabel),
+                        colors = listOf(pointColor),
+                        position = LegendPosition.BOTTOM
+                    )
+                }
+                if (legendRightOffset > 0.dp) Spacer(Modifier.width(legendRightOffset))
             }
         }
     }
@@ -626,7 +743,8 @@ private fun FixedPagerYAxisScatter(
     maxY: Double,
     yAxisPosition: YAxisPosition,
     step: Double,
-    width: Dp
+    width: Dp,
+    referenceLines: List<ReferenceLineSpec> = emptyList()
 ) {
     Canvas(
         modifier = Modifier
@@ -640,14 +758,22 @@ private fun FixedPagerYAxisScatter(
             minY = 0.0,
             maxY = maxY,
             includeYAxisPadding = false,
-            fixedTickStep = step
+            fixedTickStep = step,
+            paddingBottom = 20f
         )
         // Call standalone y-axis drawing function
-        ChartDraw.drawYAxisStandalone(
-            drawScope = this,
-            metrics = m,
-            yAxisPosition = yAxisPosition,
-            paneWidthPx = size.width
-        )
+        if (referenceLines.isNotEmpty()) {
+            ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                paneWidthPx = size.width, referenceLines = referenceLines
+            )
+        } else {
+            ChartDraw.drawYAxisStandalone(
+                drawScope = this,
+                metrics = m,
+                yAxisPosition = yAxisPosition,
+                paneWidthPx = size.width
+            )
+        }
     }
 }

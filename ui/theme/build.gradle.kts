@@ -47,7 +47,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-ui-theme", "0.1.2")
+    coordinates("io.github.hdilys", "saluschart-ui-theme", "0.1.3")
     publishToMavenCentral()
     signAllPublications()
 }

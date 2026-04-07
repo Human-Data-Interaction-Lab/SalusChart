@@ -1,16 +1,12 @@
 package com.hdil.saluschart.ui.compose.charts
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,28 +16,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -52,17 +46,19 @@ import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
+import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
+import com.hdil.saluschart.core.chart.chartDraw.LegendShape
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
+import com.hdil.saluschart.core.chart.chartDraw.VerticalAxisLabel
 import com.hdil.saluschart.core.chart.chartDraw.TooltipSpec
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.core.chart.toRangeChartMarksByXGroup
 import com.hdil.saluschart.ui.theme.ChartColor
-import kotlin.math.abs
 import kotlin.math.min
-import kotlin.math.round
 
 /**
  * Renders a **range bar chart** where each x-position is drawn as a vertical bar spanning
@@ -132,8 +128,6 @@ data class LegendItem(
     val shape: LegendShape = LegendShape.Dot
 )
 
-enum class LegendShape { Dot, Box }
-
 @JvmName("RangeBarChartRangeMarks")
 @Composable
 fun RangeBarChart(
@@ -163,10 +157,13 @@ fun RangeBarChart(
     contentPadding: PaddingValues = PaddingValues(16.dp),
     pageSize: Int? = null,
     initialPageIndex: Int? = null,
-    yAxisFixedWidth: Dp = 0.dp,
+    yAxisFixedWidth: Dp = 30.dp,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
+    tooltipColor: Color = barColor,
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
     ) {
     if (data.isEmpty()) return
 
@@ -204,7 +201,13 @@ fun RangeBarChart(
             barCornerRadiusFractions = barCornerRadiusFractions,
             roundTopOnly = roundTopOnly,
             referenceLines = referenceLines,
+            showYAxisHighlight = showYAxisHighlight,
+            tooltipColor = tooltipColor,
             xLabel = xLabel,
+            yLabel = yLabel,
+            legendItems = legendItems,
+            showLegend = showLegend,
+            legendPosition = legendPosition,
             )
         return
     }
@@ -236,8 +239,11 @@ fun RangeBarChart(
         contentPadding = contentPadding,
         yAxisFixedWidth = yAxisFixedWidth,
         referenceLines = referenceLines,
+        showYAxisHighlight = showYAxisHighlight,
+        tooltipColor = tooltipColor,
         legendItems = legendItems,
         showLegend = showLegend,
+        legendPosition = legendPosition,
         )
 }
 
@@ -270,10 +276,13 @@ fun RangeBarChart(
     contentPadding: PaddingValues = PaddingValues(16.dp),
     pageSize: Int? = null,
     initialPageIndex: Int? = null,
-    yAxisFixedWidth: Dp = 0.dp,
+    yAxisFixedWidth: Dp = 30.dp,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
+    tooltipColor: Color = barColor,
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
     ) {
     val rangeData = remember(data) {
         data.toRangeChartMarksByXGroup(
@@ -311,8 +320,11 @@ fun RangeBarChart(
         initialPageIndex = initialPageIndex,
         yAxisFixedWidth = yAxisFixedWidth,
         referenceLines = referenceLines,
+        showYAxisHighlight = showYAxisHighlight,
+        tooltipColor = tooltipColor,
         legendItems = legendItems,
         showLegend = showLegend,
+        legendPosition = legendPosition,
         )
 }
 
@@ -344,10 +356,15 @@ private fun RangeBarChartContent(
     contentPadding: PaddingValues,
     yAxisFixedWidth: Dp,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
     forcedMinY: Double? = null,
     forcedMaxY: Double? = null,
+    forcedLabelReservePx: Float = 0f,
+    tooltipColor: Color = Color.Black,
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    onExternalTooltipSpec: ((TooltipSpec?) -> Unit)? = null,
 ) {
     if (rangeData.isEmpty()) return
 
@@ -355,6 +372,7 @@ private fun RangeBarChartContent(
 
     val useScrolling = windowSize != null && windowSize < rangeData.size
     val isFixedYAxis = showYAxis && useScrolling
+    val useExternalYAxis = isFixedYAxis || (showYAxisHighlight && showYAxis && referenceLines.isNotEmpty())
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier.padding(contentPadding)) {
@@ -371,6 +389,7 @@ private fun RangeBarChartContent(
         BoxWithConstraints {
             val availableWidth = maxWidth
             val parentWidthDp = maxWidth
+            val parentHeightDp = maxHeight
             val marginHorizontal = 16.dp
 
             // Calculate canvas width for scrolling mode
@@ -390,76 +409,107 @@ private fun RangeBarChartContent(
             var selectedIndex by remember { mutableStateOf<Int?>(null) }
             var tooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
 
+            val xLabelSpaceDp = if (xLabel.isNotBlank()) with(LocalDensity.current) { (10f + 28f).toDp() } + 8.dp else 0.dp
             val legendAndLabelSpace =
                 (if (showLegend && legendItems.isNotEmpty()) 32.dp else 0.dp) +
-                        (if (xLabel.isNotBlank()) 24.dp else 0.dp) +
-                        28.dp // padding buffer
+                        xLabelSpaceDp +
+                        8.dp // padding buffer
 
-            val chartAreaHeight = (maxHeight - legendAndLabelSpace).coerceAtLeast(220.dp)
+            val chartAreaHeight = if (constraints.hasBoundedHeight) {
+                (maxHeight - legendAndLabelSpace).coerceAtLeast(220.dp)
+            } else {
+                220.dp
+            }
+
+            val density = LocalDensity.current
+            val effectiveYAxisWidth = if (useExternalYAxis) {
+                val valuesForAdaptive = buildList {
+                    addAll(rangeData.map { it.minPoint.y })
+                    addAll(rangeData.map { it.maxPoint.y })
+                }
+                val yAxisRange = remember(valuesForAdaptive, yTickStep, forcedMinY, forcedMaxY) {
+                    ChartMath.computeYAxisRange(
+                        values = valuesForAdaptive,
+                        chartType = chartType,
+                        minY = forcedMinY,
+                        maxY = forcedMaxY,
+                        fixedTickStep = yTickStep
+                    )
+                }
+                val tickPaint = remember { android.graphics.Paint().apply { textSize = 28f } }
+                val longestTickPx = remember(yAxisRange) {
+                    yAxisRange.yTicks.maxOfOrNull { tick ->
+                        tickPaint.measureText(ChartDraw.formatTickLabel(tick.toFloat()))
+                    } ?: 0f
+                }
+                val extraPx = if (showYAxisHighlight) 30f else 20f
+                maxOf(yAxisFixedWidth, with(density) { (longestTickPx + extraPx).toDp() })
+            } else yAxisFixedWidth
+
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val chartLeftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (useExternalYAxis && yAxisPosition == YAxisPosition.LEFT) effectiveYAxisWidth else 0.dp)
+            val chartRightOffset = (if (useExternalYAxis && yAxisPosition == YAxisPosition.RIGHT) effectiveYAxisWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
 
             Column(Modifier.fillMaxWidth()) {
+                // TOP legend (before chart)
+                if (showLegend && legendItems.isNotEmpty() && legendPosition == LegendPosition.TOP) {
+                    Row(Modifier.fillMaxWidth()) {
+                        if (chartLeftOffset > 0.dp) Spacer(Modifier.width(chartLeftOffset))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            ChartLegend(
+                                labels = legendItems.map { it.label },
+                                colors = legendItems.map { it.color },
+                                shapes = legendItems.map { it.shape },
+                                position = LegendPosition.TOP
+                            )
+                        }
+                        if (chartRightOffset > 0.dp) Spacer(Modifier.width(chartRightOffset))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(chartAreaHeight)
                 ) {
-                    // Left fixed axis pane (only when scrolling + fixed y-axis)
-                    if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                    if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                        VerticalAxisLabel(yLabel)
+                    }
+                    // Left fixed axis pane
+                    if (useExternalYAxis && yAxisPosition == YAxisPosition.LEFT) {
                         Canvas(
                             modifier = Modifier
-                                .width(yAxisFixedWidth)
+                                .width(effectiveYAxisWidth)
                                 .fillMaxHeight()
+                                .clipToBounds()
                         ) {
                             chartMetrics?.let { m ->
-                                val tol = 1e-6
-                                val baseTicks = m.yTicks.map(::norm)
-
-                                fun findExistingTick(y: Double): Double? {
-                                    val ny = norm(y)
-                                    return baseTicks.firstOrNull { close(it, ny, tol) }
+                                if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                    ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                        drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                        paneWidthPx = size.width, referenceLines = referenceLines
+                                    )
+                                } else {
+                                    ChartDraw.drawYAxisStandalone(
+                                        drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                        paneWidthPx = size.width
+                                    )
                                 }
-
-                                val highlightTargets: List<Double> =
-                                    referenceLines.map { spec ->
-                                        findExistingTick(spec.y) ?: norm(
-                                            spec.y
-                                        )
-                                    }
-
-                                val extraTickValues: List<Double> =
-                                    highlightTargets.filter { target ->
-                                        baseTicks.none {
-                                            close(
-                                                it,
-                                                target,
-                                                tol
-                                            )
-                                        }
-                                    }
-
-                                ChartDraw.drawYAxisStandalone(
-                                    drawScope = this,
-                                    metrics = m,
-                                    yAxisPosition = yAxisPosition,
-                                    paneWidthPx = size.width,
-                                    highlightValues = highlightTargets,
-                                    extraTickValues = extraTickValues,
-                                    highlightColorForValue = { y ->
-                                        val match =
-                                            referenceLines.minByOrNull { abs(norm(it.y) - norm(y)) }
-                                        match?.color ?: Color.Transparent
-                                    },
-                                    highlightTolerance = tol
-                                )
                             }
                         }
                     }
 
                     // Padding rules around the chart canvas
                     val startPad =
-                        if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
+                        if (!showYAxis || (useExternalYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp
+                        else if (useExternalYAxis && !isFixedYAxis) 8.dp
+                        else marginHorizontal
                     val endPad =
-                        if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                        if (!showYAxis || (useExternalYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp
+                        else if (useExternalYAxis && !isFixedYAxis) 8.dp
+                        else marginHorizontal
 
                     Box(
                         modifier = Modifier
@@ -493,13 +543,21 @@ private fun RangeBarChartContent(
                                 addAll(rangeData.map { it.maxPoint.y })
                             }
 
+                            val labelReservePx = maxOf(
+                                forcedLabelReservePx,
+                                if (referenceLines.any { it.showLabel || it.label != null }) {
+                                    (if (useExternalYAxis) 50.dp else 20.dp).toPx()
+                                } else 0f
+                            )
                             val metrics = ChartMath.computeMetrics(
-                                size = size,
+                                size = Size(size.width - labelReservePx, size.height),
                                 values = valuesForScale,
                                 chartType = chartType,
                                 minY = forcedMinY,
                                 maxY = forcedMaxY,
-                                includeYAxisPadding = false,
+                                includeYAxisPadding = showYAxis && !useExternalYAxis,
+                                yAxisPaddingPx = 80f,
+                                paddingBottom = 20f,
                                 fixedTickStep = yTickStep
                             )
 
@@ -510,10 +568,10 @@ private fun RangeBarChartContent(
                                 size = size,
                                 metrics = metrics,
                                 yAxisPosition = yAxisPosition,
-                                drawLabels = showYAxis && !isFixedYAxis
+                                drawLabels = showYAxis && !useExternalYAxis
                             )
 
-                            if (showYAxis && !isFixedYAxis) {
+                            if (showYAxis && !useExternalYAxis) {
                                 ChartDraw.drawYAxis(this, metrics, yAxisPosition)
                             }
 
@@ -522,7 +580,8 @@ private fun RangeBarChartContent(
                                 labels = labels,
                                 metrics = metrics,
                                 maxXTicksLimit = maxXTicksLimit,
-                                xLabelAutoSkip = xLabelAutoSkip
+                                xLabelAutoSkip = xLabelAutoSkip,
+                                labelYOffset = 30f
                             )
                         }
 
@@ -550,7 +609,10 @@ private fun RangeBarChartContent(
                                             chartType = chartType,
                                             unit = unit,
                                             showTooltipForIndex = selectedIndex,
-                                            onTooltipSpec = { tooltipSpec = it },
+                                            onTooltipSpec = { spec ->
+                                                if (onExternalTooltipSpec != null) onExternalTooltipSpec(spec)
+                                                else tooltipSpec = spec
+                                            },
                                             barCornerRadiusFraction = barCornerRadiusFraction,
                                             barCornerRadiusFractions = barCornerRadiusFractions,
                                             roundTopOnly = roundTopOnly,
@@ -595,7 +657,10 @@ private fun RangeBarChartContent(
                                             chartType = chartType,
                                             unit = unit,
                                             showTooltipForIndex = selectedIndex,
-                                            onTooltipSpec = { tooltipSpec = it },
+                                            onTooltipSpec = { spec ->
+                                                if (onExternalTooltipSpec != null) onExternalTooltipSpec(spec)
+                                                else tooltipSpec = spec
+                                            },
                                             barCornerRadiusFraction = barCornerRadiusFraction,
                                             barCornerRadiusFractions = barCornerRadiusFractions,
                                             roundTopOnly = roundTopOnly,
@@ -617,7 +682,7 @@ private fun RangeBarChartContent(
                                     pointValues.forEachIndexed { index, values ->
                                         if (index >= dataSize) return@forEachIndexed
 
-                                        val centerX = m.paddingX + slotWidth * (index + 0.5f)
+                                        val slotCenterX = m.paddingX + slotWidth * (index + 0.5f)
 
                                         val dotColor =
                                             if (activeIndex == null || index == activeIndex) {
@@ -627,22 +692,14 @@ private fun RangeBarChartContent(
                                             }
 
                                         values.forEach { v ->
-                                            val minY = m.minY
-                                            val maxY = m.maxY
-
-                                            fun valueToYPx(value: Double): Float {
-                                                val ratio =
-                                                    if (maxY == minY) 0f
-                                                    else ((value - minY) / (maxY - minY)).toFloat()
-                                                return m.chartHeight * (1f - ratio)
-                                            }
-
-                                            val yDot = valueToYPx(v)
+                                            val denom = (m.maxY - m.minY).takeIf { it != 0.0 } ?: 1.0
+                                            val ratio = ((v - m.minY) / denom).toFloat().coerceIn(0f, 1f)
+                                            val dotY = m.paddingY + m.chartHeight * (1f - ratio)
 
                                             drawCircle(
                                                 color = dotColor,
                                                 radius = radiusPx,
-                                                center = Offset(centerX, yDot)
+                                                center = Offset(slotCenterX, dotY)
                                             )
                                         }
                                     }
@@ -653,119 +710,106 @@ private fun RangeBarChartContent(
                         // Reference lines overlay
                         if (referenceLines.isNotEmpty()) {
                             chartMetrics?.let { m ->
-                                Canvas(
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .zIndex(10f)
-                                ) {
-                                    ReferenceLineDraw.drawHorizontalLinesOnly(
-                                        drawScope = this,
-                                        metrics = m,
-                                        lines = referenceLines
-                                    )
-                                }
+                                ReferenceLine.ReferenceLines(
+                                    modifier = Modifier.matchParentSize().zIndex(10f),
+                                    specs = referenceLines,
+                                    data = rangeData,
+                                    metrics = m,
+                                    chartType = chartType,
+                                    yAxisPosition = yAxisPosition,
+                                )
                             }
                         }
 
-                        // Tooltip overlay
-                        tooltipSpec?.let { spec ->
+                        // Tooltip overlay (only when not handled externally by paged mode)
+                        if (onExternalTooltipSpec == null) tooltipSpec?.let { spec ->
                             val density = LocalDensity.current
                             val parentWidthPx = with(density) { parentWidthDp.toPx() }
-
-                            val estimatedWidthPx = with(density) { 160.dp.toPx() }
-                            var measuredWidthPx by remember(spec) { mutableStateOf<Float?>(null) }
-                            val tooltipWidthPx = measuredWidthPx ?: estimatedWidthPx
+                            val parentHeightPx = with(density) { parentHeightDp.toPx() }
+                            val estimatedW = with(density) { 160.dp.toPx() }
+                            val estimatedH = with(density) { 64.dp.toPx() }
+                            val gapPx = with(density) { 8.dp.toPx() }
 
                             val anchorXPx = spec.offset.x
                             val anchorYPx = spec.offset.y
-                            val gapPx = with(density) { 8.dp.toPx() }
 
-                            val wouldOverflowRight =
-                                anchorXPx + tooltipWidthPx + gapPx > parentWidthPx
-                            val targetXPx =
-                                if (wouldOverflowRight) anchorXPx - tooltipWidthPx - gapPx
-                                else anchorXPx + gapPx
+                            // Center tooltip on bar; clamp so it stays within chart bounds
+                            val xPx = (anchorXPx - estimatedW / 2f)
+                                .coerceIn(0f, (parentWidthPx - estimatedW).coerceAtLeast(0f))
 
-                            val animatedX by animateFloatAsState(
-                                targetValue = targetXPx,
-                                label = "tooltipX"
-                            )
+                            // Above bar top; fall back to below if too close to top, then clamp
+                            val preferredY = if (anchorYPx - estimatedH - gapPx >= 0f)
+                                anchorYPx - estimatedH - gapPx
+                            else
+                                anchorYPx + gapPx
+                            val yPx = preferredY.coerceIn(0f, (parentHeightPx - estimatedH).coerceAtLeast(0f))
 
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .zIndex(999f)
-                            ) {
+                            Box(modifier = Modifier.matchParentSize().zIndex(999f)) {
                                 ChartTooltip(
                                     chartMark = spec.chartMark,
                                     unit = unit,
-                                    color = barColor,
-                                    modifier = Modifier
-                                        .offset(
-                                            x = with(density) { animatedX.toDp() },
-                                            y = with(density) { anchorYPx.toDp() } - 80.dp
-                                        )
-                                        .onSizeChanged { measuredWidthPx = it.width.toFloat() }
+                                    color = tooltipColor,
+                                    modifier = Modifier.offset(
+                                        x = with(density) { xPx.toDp() },
+                                        y = with(density) { yPx.toDp() }
+                                    )
                                 )
                             }
                         }
                     }
                 }
                     // Right fixed axis pane
-                    if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                    if (useExternalYAxis && yAxisPosition == YAxisPosition.RIGHT) {
                         Canvas(
                             modifier = Modifier
-                                .width(yAxisFixedWidth)
+                                .width(effectiveYAxisWidth)
                                 .fillMaxHeight()
+                                .clipToBounds()
                         ) {
                             chartMetrics?.let { m ->
-                                val tol = 1e-6
-                                val baseTicks = m.yTicks.map(::norm)
-
-                                fun findExistingTick(y: Double): Double? {
-                                    val ny = norm(y)
-                                    return baseTicks.firstOrNull { close(it, ny, tol) }
+                                if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                    ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                        drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                        paneWidthPx = size.width, referenceLines = referenceLines
+                                    )
+                                } else {
+                                    ChartDraw.drawYAxisStandalone(
+                                        drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                        paneWidthPx = size.width
+                                    )
                                 }
-
-                                val highlightTargets: List<Double> =
-                                    referenceLines.map { spec -> findExistingTick(spec.y) ?: norm(spec.y) }
-
-                                val extraTickValues: List<Double> =
-                                    highlightTargets.filter { target -> baseTicks.none { close(it, target, tol) } }
-
-                                ChartDraw.drawYAxisStandalone(
-                                    drawScope = this,
-                                    metrics = m,
-                                    yAxisPosition = yAxisPosition,
-                                    paneWidthPx = size.width,
-                                    highlightValues = highlightTargets,
-                                    extraTickValues = extraTickValues,
-                                    highlightColorForValue = { y ->
-                                        val match = referenceLines.minByOrNull { abs(norm(it.y) - norm(y)) }
-                                        match?.color ?: Color.Transparent
-                                    },
-                                    highlightTolerance = tol
-                                )
                             }
                         }
                     }
-                }
-                if (showLegend && legendItems.isNotEmpty()) {
-                    Spacer(Modifier.height(28.dp))
-                    ChartLegend(items = legendItems)
-                }
-                if (xLabel.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                    if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                        VerticalAxisLabel(yLabel)
                     }
                 }
-
-                if (showYAxis && yLabel.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
+                if (xLabel.isNotBlank()) {
+                    val xLabelSpacerHeight = with(LocalDensity.current) { (10 + 28f).toDp() }
+                    Spacer(Modifier.height(xLabelSpacerHeight))
+                    Row(Modifier.fillMaxWidth()) {
+                        if (chartLeftOffset > 0.dp) Spacer(Modifier.width(chartLeftOffset))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (chartRightOffset > 0.dp) Spacer(Modifier.width(chartRightOffset))
+                    }
+                }
+                if (showLegend && legendItems.isNotEmpty() && legendPosition != LegendPosition.TOP) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        if (chartLeftOffset > 0.dp) Spacer(Modifier.width(chartLeftOffset))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            ChartLegend(
+                                labels = legendItems.map { it.label },
+                                colors = legendItems.map { it.color },
+                                shapes = legendItems.map { it.shape },
+                                position = LegendPosition.BOTTOM
+                            )
+                        }
+                        if (chartRightOffset > 0.dp) Spacer(Modifier.width(chartRightOffset))
+                    }
                 }
             }
         }
@@ -773,48 +817,6 @@ private fun RangeBarChartContent(
     }
 }
 
-object ReferenceLineDraw {
-    fun drawHorizontalLinesOnly(
-        drawScope: DrawScope,
-        metrics: ChartMath.ChartMetrics,
-        lines: List<ReferenceLineSpec>,
-    ) = with(drawScope) {
-        if (lines.isEmpty()) return
-
-        val dashCache = HashMap<LineStyle, PathEffect?>()
-
-        fun valueToCanvasY(v: Double): Float {
-            val minY = metrics.minY
-            val maxY = metrics.maxY
-            val ratio = if (maxY == minY) 0f else ((v - minY) / (maxY - minY)).toFloat()
-            return metrics.paddingY + metrics.chartHeight * (1f - ratio)
-        }
-
-        val startX = metrics.paddingX
-        val endX = metrics.paddingX + metrics.chartWidth
-
-        lines.forEach { spec ->
-            if (spec.y < metrics.minY || spec.y > metrics.maxY) return@forEach
-
-            val yPx = valueToCanvasY(spec.y)
-
-            val pathEffect = dashCache.getOrPut(spec.style) {
-                spec.style.dashPattern?.let { PathEffect.dashPathEffect(it, 0f) }
-            }
-
-            drawLine(
-                color = spec.color,
-                start = Offset(startX, yPx),
-                end = Offset(endX, yPx),
-                strokeWidth = spec.strokeWidth.toPx(),
-                pathEffect = pathEffect
-            )
-        }
-    }
-}
-
-private fun norm(v: Double): Double = round(v * 1_000_000.0) / 1_000_000.0
-private fun close(a: Double, b: Double, tol: Double) = abs(a - b) <= tol
 
 // Function for fixed external Y-axis in paged range bar chart
 @Composable
@@ -825,11 +827,15 @@ private fun FixedPagerYAxisRange(
     step: Double,
     width: Dp,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
+    bottomPadding: Dp = 0.dp,
 ) {
     Canvas(
         modifier = Modifier
             .width(width)
             .fillMaxHeight()
+            .padding(bottom = bottomPadding)
+            .clipToBounds()
     ) {
         val m = ChartMath.computeMetrics(
             size = size,
@@ -838,21 +844,26 @@ private fun FixedPagerYAxisRange(
             minY = minY,
             maxY = maxY,
             includeYAxisPadding = false,
+            paddingBottom = 20f,
             fixedTickStep = step
         )
 
-        ChartDraw.drawYAxisStandalone(
-            drawScope = this,
-            metrics = m,
-            yAxisPosition = yAxisPosition,
-            paneWidthPx = size.width,
-            highlightValues = referenceLines.map { it.y },
-            highlightColorForValue = { v ->
-                referenceLines.firstOrNull { it.y == v }?.color ?: Color.Transparent
-            },
-            extraTickValues = referenceLines.map { it.y },
-            highlightTolerance = 1e-6
-        )
+        if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+            ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                drawScope = this,
+                metrics = m,
+                yAxisPosition = yAxisPosition,
+                paneWidthPx = size.width,
+                referenceLines = referenceLines
+            )
+        } else {
+            ChartDraw.drawYAxisStandalone(
+                drawScope = this,
+                metrics = m,
+                yAxisPosition = yAxisPosition,
+                paneWidthPx = size.width
+            )
+        }
     }
 }
 
@@ -870,6 +881,7 @@ private fun RangeBarChartPagedInternal(
     showTitle: Boolean,
     showYAxis: Boolean,
     xLabel: String,
+    yLabel: String = "",
     maxXTicksLimit: Int? = null,
     xLabelAutoSkip: Boolean,
     unit: String,
@@ -880,11 +892,16 @@ private fun RangeBarChartPagedInternal(
     yTickStep: Double?,
     initialPageIndex: Int?,
     outerPadding: PaddingValues,
-    yAxisFixedWidth: Dp = 0.dp,
+    yAxisFixedWidth: Dp = 30.dp,
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
     roundTopOnly: Boolean = true,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
+    tooltipColor: Color = Color.Black,
+    legendItems: List<LegendItem> = emptyList(),
+    showLegend: Boolean = true,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
 ) {
     if (data.isEmpty()) return
     require(pageSize > 0) { "pageSize must be > 0" }
@@ -914,13 +931,19 @@ private fun RangeBarChartPagedInternal(
     val unifiedMaxY = yAxisRange.maxY
     val unifiedTickStep = yAxisRange.tickStep
 
+    val density = LocalDensity.current
+
     Column(modifier = modifier.padding(outerPadding)) {
         if (showTitle) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(12.dp))
         }
 
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().weight(1f)) {
+
+            if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                VerticalAxisLabel(yLabel)
+            }
 
             // LEFT fixed external Y-axis (paged mode)
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
@@ -930,14 +953,24 @@ private fun RangeBarChartPagedInternal(
                     yAxisPosition = YAxisPosition.LEFT,
                     step = unifiedTickStep,
                     width = yAxisFixedWidth,
-                    referenceLines = referenceLines
+                    referenceLines = referenceLines,
+                    showYAxisHighlight = showYAxisHighlight,
+                    bottomPadding = 8.dp
                 )
             }
+
+            var pagerBoxSizePx by remember { mutableStateOf(IntSize.Zero) }
+            val pageLabelReservePx = if (referenceLines.any { it.showLabel || it.label != null }) with(density) { 50.dp.toPx() } else 0f
+
+            // Tooltip state hoisted outside the pager so it can render above the reference line overlay
+            var pagedTooltipSpec by remember { mutableStateOf<TooltipSpec?>(null) }
+            LaunchedEffect(pagerState.currentPage) { pagedTooltipSpec = null }
 
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
+                    .onSizeChanged { pagerBoxSizePx = it }
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -985,29 +1018,66 @@ private fun RangeBarChartPagedInternal(
                         forcedMinY = unifiedMinY,
                         forcedMaxY = unifiedMaxY,
                         referenceLines = emptyList(),
+                        forcedLabelReservePx = pageLabelReservePx,
+                        tooltipColor = tooltipColor,
+                        onExternalTooltipSpec = { pagedTooltipSpec = it },
                     )
                 }
 
-                if (referenceLines.isNotEmpty()) {
-                    Canvas(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .zIndex(10f)
-                    ) {
-                        val metrics = ChartMath.computeMetrics(
-                            size = size,
+                // Fixed reference line overlay — rendered outside the pager so it doesn't move with pages
+                if (referenceLines.isNotEmpty() && pagerBoxSizePx.width > 0) {
+                    val legendSpacePx = with(density) { 8.dp.toPx() }
+                    val canvasHeightPx = (pagerBoxSizePx.height.toFloat() - legendSpacePx).coerceAtLeast(0f)
+                    val overlayMetrics = remember(pagerBoxSizePx, unifiedMinY, unifiedMaxY, unifiedTickStep, pageLabelReservePx) {
+                        ChartMath.computeMetrics(
+                            size = Size(pagerBoxSizePx.width.toFloat() - pageLabelReservePx, canvasHeightPx),
                             values = listOf(unifiedMinY, unifiedMaxY),
                             chartType = ChartType.RANGE_BAR,
                             minY = unifiedMinY,
                             maxY = unifiedMaxY,
                             includeYAxisPadding = false,
+                            paddingBottom = 20f,
                             fixedTickStep = unifiedTickStep
                         )
+                    }
+                    ReferenceLine.ReferenceLines(
+                        modifier = Modifier.matchParentSize().zIndex(10f),
+                        specs = referenceLines,
+                        data = data,
+                        metrics = overlayMetrics,
+                        chartType = ChartType.RANGE_BAR,
+                        yAxisPosition = yAxisPosition,
+                    )
+                }
 
-                        ReferenceLineDraw.drawHorizontalLinesOnly(
-                            drawScope = this,
-                            metrics = metrics,
-                            lines = referenceLines
+                // Paged tooltip overlay — rendered above the reference line overlay (zIndex > 10)
+                pagedTooltipSpec?.let { spec ->
+                    val parentWidthPx = pagerBoxSizePx.width.toFloat()
+                    val parentHeightPx = pagerBoxSizePx.height.toFloat()
+                    val estimatedW = with(density) { 160.dp.toPx() }
+                    val estimatedH = with(density) { 64.dp.toPx() }
+                    val gapPx = with(density) { 8.dp.toPx() }
+
+                    val anchorXPx = spec.offset.x
+                    val anchorYPx = spec.offset.y
+
+                    val xPx = (anchorXPx - estimatedW / 2f)
+                        .coerceIn(0f, (parentWidthPx - estimatedW).coerceAtLeast(0f))
+                    val preferredY = if (anchorYPx - estimatedH - gapPx >= 0f)
+                        anchorYPx - estimatedH - gapPx
+                    else
+                        anchorYPx + gapPx
+                    val yPx = preferredY.coerceIn(0f, (parentHeightPx - estimatedH).coerceAtLeast(0f))
+
+                    Box(modifier = Modifier.matchParentSize().zIndex(999f)) {
+                        ChartTooltip(
+                            chartMark = spec.chartMark,
+                            unit = unit,
+                            color = tooltipColor,
+                            modifier = Modifier.offset(
+                                x = with(density) { xPx.toDp() },
+                                y = with(density) { yPx.toDp() }
+                            )
                         )
                     }
                 }
@@ -1021,65 +1091,49 @@ private fun RangeBarChartPagedInternal(
                     yAxisPosition = YAxisPosition.RIGHT,
                     step = unifiedTickStep,
                     width = yAxisFixedWidth,
-                    referenceLines = referenceLines
+                    referenceLines = referenceLines,
+                    showYAxisHighlight = showYAxisHighlight,
+                    bottomPadding = 8.dp
                 )
+            }
+
+            if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                VerticalAxisLabel(yLabel)
             }
         }
         if (xLabel.isNotBlank()) {
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = xLabel,
-                    style = MaterialTheme.typography.bodySmall
-                )
+            Spacer(Modifier.height(4.dp))
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val leftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val rightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+            Row(Modifier.fillMaxWidth()) {
+                if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                }
+                if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
             }
         }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ChartLegend(
-    items: List<LegendItem>,
-    modifier: Modifier = Modifier
-) {
-    if (items.isEmpty()) return
-
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalArrangement = Arrangement.Center
-    ) {
-        items.forEach { item ->
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val markerModifier = Modifier.size(10.dp)
-
-                when (item.shape) {
-                    LegendShape.Dot -> Box(
-                        modifier = markerModifier
-                            .clip(CircleShape)
-                            .background(item.color)
-                    )
-                    LegendShape.Box -> Box(
-                        modifier = markerModifier
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(item.color)
+        if (showLegend && legendItems.isNotEmpty()) {
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val leftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val rightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth()) {
+                if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    ChartLegend(
+                        labels = legendItems.map { it.label },
+                        colors = legendItems.map { it.color },
+                        shapes = legendItems.map { it.shape },
+                        position = LegendPosition.BOTTOM
                     )
                 }
-
-                Spacer(Modifier.width(6.dp))
-
-                Text(
-                    text = item.label,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
             }
         }
     }
 }
+

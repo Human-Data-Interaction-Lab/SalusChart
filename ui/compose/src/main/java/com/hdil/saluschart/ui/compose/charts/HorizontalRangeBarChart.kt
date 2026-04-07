@@ -155,7 +155,7 @@ fun HorizontalRangeBarChart(
         title?.let {
             Text(
                 text = it,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             )
         }

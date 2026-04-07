@@ -300,6 +300,7 @@ object ChartMath {
      * @param maxY Optional explicit maximum Y value.
      * @param includeYAxisPadding Whether to include horizontal padding for Y-axis labels.
      * @param yAxisPaddingPx Horizontal padding to use when [includeYAxisPadding] is true.
+     * @param paddingBottom Bottom padding in pixels reserved for x-axis tick labels (default 0).
      * @param fixedTickStep Optional fixed tick step.
      */
     fun computeMetrics(
@@ -314,12 +315,9 @@ object ChartMath {
         maxY: Double? = null,
         includeYAxisPadding: Boolean = true,
         yAxisPaddingPx: Float = paddingX,
+        paddingBottom: Float = 0f,
         fixedTickStep: Double? = null
     ): ChartMetrics {
-        val effectivePaddingX = if (includeYAxisPadding) yAxisPaddingPx else 0f
-
-        Log.e("ChartMath", "includYAxisPadding: $includeYAxisPadding, yAxisPaddingPx: $yAxisPaddingPx")
-
         val yAxisRange = computeYAxisRange(
             values = values,
             chartType = chartType,
@@ -329,8 +327,35 @@ object ChartMath {
             tickCount = tickCount
         )
 
-        val chartWidth = size.width - effectivePaddingX * 2f
-        val chartHeight = size.height - paddingY
+        // effectivePaddingX = left chart offset (where tick labels live for LEFT y-axis).
+        // When includeYAxisPadding is false the external axis handles labels, so 0 is correct.
+        // When yAxisPaddingPx == 0 the caller explicitly wants no padding (e.g. inner paged pages).
+        val effectivePaddingX = if (!includeYAxisPadding || yAxisPaddingPx == 0f) {
+            0f
+        } else {
+            // Adaptive: expand left padding to fit the widest tick label.
+            val tickPaint = android.graphics.Paint().apply { textSize = 28f }
+            val longestTickWidth = yAxisRange.yTicks.maxOfOrNull { tick ->
+                val label = when {
+                    tick == 0.0 -> "0"
+                    tick >= 1_000_000.0 -> "%.1fM".format(tick / 1_000_000.0)
+                    tick >= 1_000.0 -> "%.1fK".format(tick / 1_000.0)
+                    tick % 1.0 == 0.0 -> "%.0f".format(tick)
+                    else -> "%.1f".format(tick)
+                }
+                tickPaint.measureText(label)
+            } ?: 0f
+            maxOf(yAxisPaddingPx, longestTickWidth + 16f)
+        }
+
+        // Right side keeps the original yAxisPaddingPx so only the tick-label side grows.
+        // This prevents a visible gap appearing on the opposite side when labels are long.
+        val rightPaddingX = if (includeYAxisPadding) yAxisPaddingPx else 0f
+
+        Log.e("ChartMath", "includeYAxisPadding: $includeYAxisPadding, effectivePaddingX: $effectivePaddingX, rightPaddingX: $rightPaddingX")
+
+        val chartWidth = size.width - effectivePaddingX - rightPaddingX
+        val chartHeight = size.height - paddingY - paddingBottom
 
         Log.e(
             "ChartMath",
@@ -387,10 +412,14 @@ object ChartMath {
 
         val labelWidths = labels.map { label -> paint.measureText(label) }
 
-        val avgLabelWidth = labelWidths.average().toFloat()
-
-        val autoSkipPadding = textSize * 0.3f
-        val spacePerLabel = avgLabelWidth + autoSkipPadding
+        // Use max label width and multiply by 1.5× as the effective slot size.
+        //
+        // Why 1.5×: the first displayed label is clamped rightward against the y-axis edge
+        // (to prevent it from drawing over the axis). That clamp can shift it by up to
+        // maxLabelWidth/2 pixels, which the skip calculation must absorb so that the
+        // clamped first label does not overlap the second displayed label.
+        val maxLabelWidth = labelWidths.maxOrNull() ?: 0f
+        val spacePerLabel = maxLabelWidth * 1.5f
         val estimatedCapacity = (chartWidth / spacePerLabel).toInt().coerceAtLeast(1)
 
         val finalCapacity = if (maxXTicksLimit != null) {

@@ -6,7 +6,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import kotlin.math.abs
+import kotlin.math.round
 
 /**
  * Placement for the Y-axis within a chart.
@@ -109,8 +112,8 @@ object ChartDraw {
             val labelText = formatTickLabel(yVal.toFloat())
 
             val labelX = when (yAxisPosition) {
-                YAxisPosition.RIGHT -> yAxisX + 20f
-                YAxisPosition.LEFT -> 20f
+                YAxisPosition.RIGHT -> yAxisX + 5f
+                YAxisPosition.LEFT -> (metrics.paddingX - 5f).coerceAtLeast(15f)
             }
 
             val textAlign = when (yAxisPosition) {
@@ -214,8 +217,9 @@ object ChartDraw {
         val denom = (metrics.maxY - metrics.minY)
         if (denom == 0.0) return
 
-        // Axis X anchored to the pane edge (slightly inset for crisp rendering).
-        val axisX = if (yAxisPosition == YAxisPosition.RIGHT) paneWidthPx - 0.5f else 0.5f
+        // Axis X anchored to the inner edge of the pane (the side touching the chart area).
+        // LEFT pane: axis at right edge (touching chart). RIGHT pane: axis at left edge.
+        val axisX = if (yAxisPosition == YAxisPosition.LEFT) paneWidthPx - 0.5f else 0.5f
 
         // Axis line.
         drawScope.drawLine(
@@ -230,7 +234,9 @@ object ChartDraw {
             .sorted()
 
         val tickLen = 8f
-        val labelGap = 10f
+        val padX = 12f
+        val padY = 8f
+        val labelGap = padX + 2f
 
         val normalPaint = android.graphics.Paint().apply {
             isAntiAlias = true
@@ -267,9 +273,10 @@ object ChartDraw {
                             metrics.chartHeight -
                             (((yVal - metrics.minY) / denom) * metrics.chartHeight).toFloat()
 
-                // Tick mark.
+                // Tick mark extends inward (away from the chart area).
+                // LEFT pane: axis at right edge → tick extends left. RIGHT pane: axis at left edge → tick extends right.
                 val tickEndX =
-                    if (yAxisPosition == YAxisPosition.RIGHT) axisX - tickLen else axisX + tickLen
+                    if (yAxisPosition == YAxisPosition.LEFT) axisX - tickLen else axisX + tickLen
 
                 drawScope.drawLine(
                     color = Color.DarkGray,
@@ -279,6 +286,9 @@ object ChartDraw {
                 )
 
                 val label = formatTickLabel(yVal.toFloat())
+
+                // Center text visually on the tick mark.
+                val centeredY = y - (fm.ascent + fm.descent) / 2f
 
                 val isHighlighted = highlightValues.any { hv ->
                     kotlin.math.abs(hv - yVal) <= highlightTolerance
@@ -293,47 +303,86 @@ object ChartDraw {
                     highlightPaint.color = c.toArgb()
                     pillPaint.color = c.copy(alpha = 0.18f).toArgb()
 
-                    val textWidth = highlightPaint.measureText(label)
+                    val advance = highlightPaint.measureText(label)
 
-                    val padX = 14f
-                    val padY = 8f
                     val pillH = textHeight + padY * 2f
                     val pillRadius = pillH / 2f
 
-                    val left: Float
-                    val right: Float
-
-                    if (yAxisPosition == YAxisPosition.RIGHT) {
-                        // textAlign LEFT => labelX is left edge.
-                        left = labelX - padX
-                        right = labelX + textWidth + padX
+                    // Center the pill on the text's visual midpoint.
+                    val textCenterX = if (yAxisPosition == YAxisPosition.RIGHT) {
+                        labelX + advance / 2f
                     } else {
-                        // textAlign RIGHT => labelX is right edge.
-                        left = labelX - textWidth - padX
-                        right = labelX + padX
+                        labelX - advance / 2f
                     }
+                    val halfPill = advance / 2f + padX
+                    val left = textCenterX - halfPill
+                    val right = textCenterX + halfPill
 
-                    val top = y + fm.ascent - padY
-                    val bottom = y + fm.descent + padY
-
-                    val clampedLeft = left.coerceIn(0f, paneWidthPx)
-                    val clampedRight = right.coerceIn(0f, paneWidthPx)
+                    val top = centeredY + fm.ascent - padY
+                    val bottom = centeredY + fm.descent + padY
 
                     drawRoundRect(
-                        clampedLeft,
+                        left,
                         top,
-                        clampedRight,
+                        right,
                         bottom,
                         pillRadius,
                         pillRadius,
                         pillPaint
                     )
 
-                    drawText(label, labelX, y, highlightPaint)
+                    drawText(label, labelX, centeredY, highlightPaint)
                 } else {
-                    drawText(label, labelX, y, normalPaint)
+                    drawText(label, labelX, centeredY, normalPaint)
                 }
             }
         }
+    }
+
+    /**
+     * Convenience wrapper around [drawYAxisStandalone] that automatically derives highlight pills
+     * from [referenceLines]: each line's y-value (and yEnd for ZONE) is highlighted in the axis
+     * using the corresponding reference line color.
+     */
+    fun drawYAxisStandaloneWithReferenceHighlights(
+        drawScope: DrawScope,
+        metrics: ChartMath.ChartMetrics,
+        yAxisPosition: YAxisPosition,
+        paneWidthPx: Float,
+        referenceLines: List<ReferenceLineSpec>
+    ) {
+        val tol = 1e-6
+        fun norm(v: Double) = round(v * 1_000_000.0) / 1_000_000.0
+
+        val allRefYValues = referenceLines.flatMap { spec ->
+            if (spec.type == ReferenceLineType.ZONE) listOfNotNull(spec.y, spec.yEnd)
+            else listOf(spec.y)
+        }
+        val baseTicks = metrics.yTicks.map(::norm)
+        val highlightTargets = allRefYValues.map { y ->
+            val ny = norm(y)
+            baseTicks.firstOrNull { abs(it - ny) <= tol } ?: ny
+        }
+        val extraTicks = highlightTargets.filter { target ->
+            baseTicks.none { abs(it - target) <= tol }
+        }
+
+        drawYAxisStandalone(
+            drawScope = drawScope,
+            metrics = metrics,
+            yAxisPosition = yAxisPosition,
+            paneWidthPx = paneWidthPx,
+            highlightValues = highlightTargets,
+            extraTickValues = extraTicks,
+            highlightColorForValue = { v ->
+                val nv = norm(v)
+                referenceLines.firstOrNull { spec ->
+                    abs(norm(spec.y) - nv) <= tol ||
+                    (spec.type == ReferenceLineType.ZONE && spec.yEnd != null &&
+                     abs(norm(spec.yEnd!!) - nv) <= tol)
+                }?.color ?: Color.Transparent
+            },
+            highlightTolerance = tol
+        )
     }
 }

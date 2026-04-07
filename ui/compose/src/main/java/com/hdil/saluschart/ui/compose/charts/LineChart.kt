@@ -2,6 +2,7 @@ package com.hdil.saluschart.ui.compose.charts
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -25,16 +26,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -43,10 +44,11 @@ import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
 import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
+import com.hdil.saluschart.core.chart.chartDraw.VerticalAxisLabel
+import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
-import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.ui.theme.ChartColor
@@ -68,18 +70,12 @@ fun LineChart(
     interactionType: InteractionType.Line = InteractionType.Line.POINT,
     pointRadius: Pair<Dp, Dp> = Pair(4.dp, 2.dp),
     showLegend: Boolean = false,
+    legendLabel: String = "",
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
     maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
-    // Reference line
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE, // NONE, TREND
-    referenceLineColor: Color = Color.Red,
-    referenceLineStrokeWidth: Dp = 2.dp,
-    referenceLineStyle: LineStyle = LineStyle.DASHED,
-    showReferenceLineLabel: Boolean = false,
-    referenceLineLabelFormat: String = "평균: %.0f", // Format for reference line label
-    referenceLineInteractive: Boolean = false, // Whether to make the reference line clickable
-    onReferenceLineClick: (() -> Unit)? = null,
+    referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
     // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
@@ -94,9 +90,10 @@ fun LineChart(
     unifyYAxisAcrossPages: Boolean = true,
     initialPageIndex: Int? = null, // initial page to show (last page if null)
     renderTooltipExternally: Boolean = true, // Whether to render tooltip outside the chart canvas
-    yAxisFixedWidth: Dp = 0.dp, // Padding between the chart and the y-axis
+    yAxisFixedWidth: Dp = 30.dp, // Padding between the chart and the y-axis
     includeYAxisPaddingOverride: Boolean? = null,
     onMetricsCalculated: ((ChartMath.ChartMetrics) -> Unit)? = null,
+    tooltipColor: Color = lineColor,
     ) {
     if (data.isEmpty()) return
 
@@ -129,14 +126,8 @@ fun LineChart(
             showPoint = showPoint,
             showValue = showValue,
             showYAxis = showYAxis,
-            referenceLineType = referenceLineType,
-            referenceLineColor = referenceLineColor,
-            referenceLineStrokeWidth = referenceLineStrokeWidth,
-            referenceLineStyle = referenceLineStyle,
-            showReferenceLineLabel = showReferenceLineLabel,
-            referenceLineLabelFormat = referenceLineLabelFormat,
-            referenceLineInteractive = referenceLineInteractive,
-            onReferenceLineClick = onReferenceLineClick,
+            referenceLines = referenceLines,
+            showYAxisHighlight = showYAxisHighlight,
             // scale/paging
             showTitle = showTitle,
             outerPadding = contentPadding,
@@ -148,7 +139,10 @@ fun LineChart(
             unit = unit,
             yAxisFixedWidth = yAxisFixedWidth,
             maxXTicksLimit = maxXTicksLimit,
-            xLabelAutoSkip = xLabelAutoSkip
+            xLabelAutoSkip = xLabelAutoSkip,
+            showLegend = showLegend,
+            legendLabel = legendLabel,
+            legendPosition = legendPosition,
         )
         return
     }
@@ -163,9 +157,10 @@ fun LineChart(
             Text(title, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
         }
-        BoxWithConstraints {
+        BoxWithConstraints(Modifier.weight(1f)) {
             val availableWidth = maxWidth
             val marginHorizontal = 16.dp
+            val yAxisPaddingPxValue = with(LocalDensity.current) { yAxisFixedWidth.toPx() }
 
             // Calculate canvas width for scrolling mode
             val canvasWidth = if (useScrolling) {
@@ -184,27 +179,37 @@ fun LineChart(
             var canvasSize by remember { mutableStateOf(Size.Zero) }
 
             Row(Modifier.fillMaxSize()) {
+                if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                    VerticalAxisLabel(yLabel)
+                }
                 // Left fixed axis pane
                 if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) {
                     Canvas(
                         modifier = Modifier
                             .width(yAxisFixedWidth)
                             .fillMaxHeight()
+                            .clipToBounds()
                     ) {
                         chartMetrics?.let { m ->
-                            ChartDraw.drawYAxisStandalone(
-                                drawScope = this,
-                                metrics = m,
-                                yAxisPosition = yAxisPosition,
-                                paneWidthPx = size.width
-                            )
+                            if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                    paneWidthPx = size.width, referenceLines = referenceLines
+                                )
+                            } else {
+                                ChartDraw.drawYAxisStandalone(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                                )
+                            }
                         }
                     }
                 }
 
-                // Calculate padding when Y-axis is hidden (external axis handles it) or when it's a fixed axis on that side
-                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT)) 0.dp else marginHorizontal
-                val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT)) 0.dp else marginHorizontal
+                // Calculate padding when Y-axis is hidden (external axis handles it), fixed axis, or VerticalAxisLabel already provides margin
+                val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+                val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+                val startPad = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) || hasLeftLabel) 0.dp else marginHorizontal
+                val endPad   = if (!showYAxis || (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) || hasRightLabel) 0.dp else marginHorizontal
 
                 Box(
                     modifier = Modifier
@@ -223,14 +228,19 @@ fun LineChart(
                         }
                     ) {
                         canvasSize = size
+                        val labelReservePx = if (referenceLines.any { it.showLabel || it.label != null }) {
+                            (if (!includeYAxisPadding) 80.dp else 20.dp).toPx()
+                        } else 0f
                         val metrics = ChartMath.computeMetrics(
-                            size = size,
+                            size = Size(size.width - labelReservePx, size.height),
                             values = yValues,
                             chartType = chartType,
                             minY = minY,
                             maxY = maxY,
                             includeYAxisPadding = includeYAxisPadding,  // no inner L/R padding when fixed axis is used
-                            fixedTickStep = yTickStep
+                            yAxisPaddingPx = yAxisPaddingPxValue,
+                            fixedTickStep = yTickStep,
+                            paddingBottom = 10f
                         )
                         chartMetrics = metrics
                         onMetricsCalculated?.invoke(metrics)
@@ -333,68 +343,47 @@ fun LineChart(
                         }
                     }
 
-                    // Draw reference line
-                    if (referenceLineType != ReferenceLineType.NONE) {
+                    // Draw reference lines
+                    if (referenceLines.isNotEmpty()) {
                         chartMetrics?.let { metrics ->
-                            ReferenceLine.ReferenceLine(
+                            ReferenceLine.ReferenceLines(
                                 modifier = Modifier.fillMaxSize(),
+                                specs = referenceLines,
                                 data = data,
                                 metrics = metrics,
                                 chartType = chartType,
-                                referenceLineType = referenceLineType,
-                                color = referenceLineColor,
-                                strokeWidth = referenceLineStrokeWidth,
-                                lineStyle = referenceLineStyle,
-                                showLabel = showReferenceLineLabel,
-                                labelFormat = referenceLineLabelFormat,
                                 yAxisPosition = yAxisPosition,
-                                interactive = referenceLineInteractive,
-                                onClick = onReferenceLineClick
                             )
                         }
                     }
 
-                    // External tooltip overlay (top-most, with clamping)
+                    // External tooltip overlay (top-most, no size-measurement cycle)
                     if (renderTooltipExternally &&
                         selectedPointIndex != null &&
                         selectedPointIndex in canvasPoints.indices
                     ) {
                         val i = selectedPointIndex!!
-                        val pt = canvasPoints[i] // canvas-space point
+                        val pt = canvasPoints[i]
                         val density = LocalDensity.current
+                        val pad = with(density) { 8.dp.toPx() }
+                        val estimatedW = with(density) { 160.dp.toPx() }
+                        val estimatedH = with(density) { 64.dp.toPx() }
 
-                        var hostSize by remember { mutableStateOf(IntSize.Zero) }
-                        var tipSize  by remember { mutableStateOf(IntSize.Zero) }
+                        // X: right of point, clamped so tooltip stays within canvas
+                        val xClamped = (pt.x + pad)
+                            .coerceAtMost((canvasSize.width - estimatedW).coerceAtLeast(0f))
+                        // Y: above point if room, else below
+                        val yPlaced = if (pt.y - pad - estimatedH >= 0f)
+                            pt.y - pad - estimatedH
+                        else
+                            pt.y + pad
 
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .zIndex(2f)                    // above everything in this Box
-                                .onSizeChanged { hostSize = it }
-                        ) {
-                            val pad = with(density) { 8.dp.toPx() }
-
-                            // Desired position: to the right and above the point
-                            val desiredX = pt.x + pad
-                            val desiredYAbove = pt.y - pad - tipSize.height
-
-                            // If there isn't room above, place it below the point
-                            val yPlaced = if (desiredYAbove < 0f) (pt.y + pad)
-                            else desiredYAbove
-
-                            // Clamp inside the host box on both axes
-                            val maxX = (hostSize.width  - tipSize.width ).coerceAtLeast(0)
-                            val maxY = (hostSize.height - tipSize.height).coerceAtLeast(0)
-                            val xClamped = desiredX.coerceIn(0f, maxX.toFloat())
-                            val yClamped = yPlaced.coerceIn(0f, maxY.toFloat())
-
+                        Box(modifier = Modifier.matchParentSize().zIndex(2f)) {
                             ChartTooltip(
                                 chartMark = data[i],
                                 unit = unit,
-                                modifier = Modifier
-                                    .offset { IntOffset(xClamped.toInt(), yClamped.toInt()) }
-                                    .onSizeChanged { tipSize = it },   // measure so clamping is exact
-                                color = lineColor
+                                modifier = Modifier.offset { IntOffset(xClamped.toInt(), yPlaced.toInt()) },
+                                color = tooltipColor
                             )
                         }
                     }
@@ -406,20 +395,85 @@ fun LineChart(
                         modifier = Modifier
                             .width(yAxisFixedWidth)
                             .fillMaxHeight()
+                            .clipToBounds()
                     ) {
                         chartMetrics?.let { m ->
-                            ChartDraw.drawYAxisStandalone(
-                                drawScope = this,
-                                metrics = m,
-                                yAxisPosition = yAxisPosition,
-                                paneWidthPx = size.width
-                            )
+                            if (showYAxisHighlight && referenceLines.isNotEmpty()) {
+                                ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                                    paneWidthPx = size.width, referenceLines = referenceLines
+                                )
+                            } else {
+                                ChartDraw.drawYAxisStandalone(
+                                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                                )
+                            }
                         }
                     }
+                }
+                if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                    VerticalAxisLabel(yLabel)
                 }
             }
         }
 
+        if (xLabel.isNotBlank()) {
+            val xLabelSpacerHeight = with(LocalDensity.current) { (50f + xLabelTextSize).toDp() }
+            Spacer(Modifier.height(xLabelSpacerHeight))
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val leftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val rightOffset = (if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+            Row(Modifier.fillMaxWidth()) {
+                if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                }
+                if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
+            }
+        }
+        if (showLegend && legendLabel.isNotBlank()) {
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val legendLeftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (isFixedYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val legendRightOffset = (if (isFixedYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+            when (legendPosition) {
+                LegendPosition.TOP, LegendPosition.BOTTOM -> {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        if (legendLeftOffset > 0.dp) Spacer(Modifier.width(legendLeftOffset))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            ChartLegend(
+                                labels = listOf(legendLabel),
+                                colors = listOf(lineColor),
+                                position = legendPosition
+                            )
+                        }
+                        if (legendRightOffset > 0.dp) Spacer(Modifier.width(legendRightOffset))
+                    }
+                }
+                LegendPosition.LEFT -> {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        ChartLegend(
+                            labels = listOf(legendLabel),
+                            colors = listOf(lineColor),
+                            position = LegendPosition.LEFT
+                        )
+                    }
+                }
+                LegendPosition.RIGHT -> {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        ChartLegend(
+                            labels = listOf(legendLabel),
+                            colors = listOf(lineColor),
+                            position = LegendPosition.RIGHT
+                        )
+                    }
+                }
+            }
+        }
         Spacer(Modifier.height(4.dp))
     }
 }
@@ -444,14 +498,8 @@ private fun LineChartPagedInternal(
     showPoint: Boolean,
     showValue: Boolean,
     showYAxis: Boolean,
-    referenceLineType: ReferenceLineType,
-    referenceLineColor: Color,
-    referenceLineStrokeWidth: Dp,
-    referenceLineStyle: LineStyle,
-    showReferenceLineLabel: Boolean,
-    referenceLineLabelFormat: String,
-    referenceLineInteractive: Boolean,
-    onReferenceLineClick: (() -> Unit)?,
+    referenceLines: List<ReferenceLineSpec> = emptyList(),
+    showYAxisHighlight: Boolean = false,
     // scale/paging
     showTitle: Boolean,
     unifyYAxisAcrossPages: Boolean,
@@ -461,9 +509,12 @@ private fun LineChartPagedInternal(
     maxY: Double?,
     unit: String,
     outerPadding: PaddingValues = PaddingValues(0.dp),
-    yAxisFixedWidth: Dp = 0.dp,
+    yAxisFixedWidth: Dp = 30.dp,
     maxXTicksLimit: Int? = null,
-    xLabelAutoSkip: Boolean
+    xLabelAutoSkip: Boolean,
+    showLegend: Boolean = false,
+    legendLabel: String = "",
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
 ) {
     val pageCount = remember(data.size, pageSize) {
         kotlin.math.ceil(data.size / pageSize.toFloat()).toInt()
@@ -496,13 +547,17 @@ private fun LineChartPagedInternal(
             Spacer(Modifier.height(12.dp))
         }
 
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().weight(1f)) {
+            if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT) {
+                VerticalAxisLabel(yLabel)
+            }
             // Left fixed external Y-axis
             if (showYAxis && yAxisPosition == YAxisPosition.LEFT) {
                 FixedPagerYAxisLine(
                     metrics = sharedMetrics,
                     yAxisPosition = yAxisPosition,
-                    width = yAxisFixedWidth
+                    width = yAxisFixedWidth,
+                    referenceLines = if (showYAxisHighlight) referenceLines else emptyList()
                 )
             }
 
@@ -521,8 +576,8 @@ private fun LineChartPagedInternal(
                 LineChart(
                     modifier = Modifier.fillMaxSize(),
                     data = slice,
-                    xLabel = xLabel,
-                    yLabel = yLabel,
+                    xLabel = "",
+                    yLabel = "",
                     title = title,
                     lineColor = lineColor,
                     strokeWidth = strokeWidth,
@@ -534,14 +589,7 @@ private fun LineChartPagedInternal(
                     showValue = showValue,
                     maxXTicksLimit = maxXTicksLimit,
                     xLabelAutoSkip = xLabelAutoSkip,
-                    referenceLineType = referenceLineType,
-                    referenceLineColor = referenceLineColor,
-                    referenceLineStrokeWidth = referenceLineStrokeWidth,
-                    referenceLineStyle = referenceLineStyle,
-                    showReferenceLineLabel = showReferenceLineLabel,
-                    referenceLineLabelFormat = referenceLineLabelFormat,
-                    referenceLineInteractive = referenceLineInteractive,
-                    onReferenceLineClick = onReferenceLineClick,
+                    referenceLines = referenceLines,
                     minY = if (unifyYAxisAcrossPages) minRounded else minY,
                     maxY = if (unifyYAxisAcrossPages) maxRounded else maxY,
                     yTickStep = if (unifyYAxisAcrossPages) effectiveTickStep else yTickStep,
@@ -561,8 +609,45 @@ private fun LineChartPagedInternal(
                 FixedPagerYAxisLine(
                     metrics = sharedMetrics,
                     yAxisPosition = yAxisPosition,
-                    width = yAxisFixedWidth
+                    width = yAxisFixedWidth,
+                    referenceLines = if (showYAxisHighlight) referenceLines else emptyList()
                 )
+            }
+            if (yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT) {
+                VerticalAxisLabel(yLabel)
+            }
+        }
+        if (xLabel.isNotBlank()) {
+            val xLabelSpacerHeight = with(LocalDensity.current) { (50f + xLabelTextSize).toDp() }
+            Spacer(Modifier.height(xLabelSpacerHeight))
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val leftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val rightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+            Row(Modifier.fillMaxWidth()) {
+                if (leftOffset > 0.dp) Spacer(Modifier.width(leftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(text = xLabel, style = MaterialTheme.typography.bodySmall)
+                }
+                if (rightOffset > 0.dp) Spacer(Modifier.width(rightOffset))
+            }
+        }
+        if (showLegend && legendLabel.isNotBlank()) {
+            val hasLeftLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.LEFT
+            val hasRightLabel = yLabel.isNotBlank() && showYAxis && yAxisPosition == YAxisPosition.RIGHT
+            val legendLeftOffset = (if (hasLeftLabel) 20.dp else 0.dp) + (if (showYAxis && yAxisPosition == YAxisPosition.LEFT) yAxisFixedWidth else 0.dp)
+            val legendRightOffset = (if (showYAxis && yAxisPosition == YAxisPosition.RIGHT) yAxisFixedWidth else 0.dp) + (if (hasRightLabel) 20.dp else 0.dp)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth()) {
+                if (legendLeftOffset > 0.dp) Spacer(Modifier.width(legendLeftOffset))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    ChartLegend(
+                        labels = listOf(legendLabel),
+                        colors = listOf(lineColor),
+                        position = LegendPosition.BOTTOM
+                    )
+                }
+                if (legendRightOffset > 0.dp) Spacer(Modifier.width(legendRightOffset))
             }
         }
     }
@@ -573,7 +658,8 @@ private fun LineChartPagedInternal(
 private fun FixedPagerYAxisLine(
     metrics: ChartMath.ChartMetrics?,
     yAxisPosition: YAxisPosition,
-    width: Dp
+    width: Dp,
+    referenceLines: List<ReferenceLineSpec> = emptyList()
 ) {
     Canvas(
         modifier = Modifier
@@ -581,12 +667,16 @@ private fun FixedPagerYAxisLine(
             .fillMaxHeight()
     ) {
         metrics?.let { m ->
-            ChartDraw.drawYAxisStandalone(
-                drawScope = this,
-                metrics = m,
-                yAxisPosition = yAxisPosition,
-                paneWidthPx = size.width
-            )
+            if (referenceLines.isNotEmpty()) {
+                ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
+                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
+                    paneWidthPx = size.width, referenceLines = referenceLines
+                )
+            } else {
+                ChartDraw.drawYAxisStandalone(
+                    drawScope = this, metrics = m, yAxisPosition = yAxisPosition, paneWidthPx = size.width
+                )
+            }
         }
     }
 }

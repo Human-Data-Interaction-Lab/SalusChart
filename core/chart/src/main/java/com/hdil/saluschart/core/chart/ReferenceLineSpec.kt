@@ -5,26 +5,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
+import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 
 /**
- * Configuration for a single horizontal reference line drawn at a specific Y value (data-space).
+ * Configuration for a single reference line or zone drawn on a chart.
  *
- * This is typically used to highlight thresholds such as goals, averages, or clinically meaningful cutoffs.
+ * The [type] field determines what is rendered:
+ * - [ReferenceLineType.AVERAGE]   — horizontal line at the dataset's mean Y value (auto-computed)
+ * - [ReferenceLineType.TREND]     — diagonal trend line via linear regression (auto-computed)
+ * - [ReferenceLineType.THRESHOLD] — horizontal line at a user-specified [y] value
+ * - [ReferenceLineType.ZONE]      — shaded horizontal band from [y] (lower) to [yEnd] (upper)
  *
- * @property y Reference Y value in the chart's data coordinate space (not pixels).
- * @property color Line color.
- * @property strokeWidth Line thickness.
- * @property style Line style (solid/dashed/dotted, etc.).
- * @property label Optional label text shown near the line.
- * @property labelBackground Optional background color for the label pill/badge.
- * If null, the renderer may choose a derived background (e.g., based on [color]).
+ * @property type  Which kind of reference line to draw.
+ * @property y     For [ReferenceLineType.THRESHOLD]: the exact Y value of the line.
+ *                 For [ReferenceLineType.ZONE]: the lower bound of the band.
+ *                 Ignored for AVERAGE and TREND (the value is computed from chart data).
+ * @property yEnd  Upper bound for [ReferenceLineType.ZONE]. Ignored for all other types.
+ * @property color Line or band color.
+ * @property strokeWidth Line thickness (not used for ZONE bands).
+ * @property style Line dash style.
+ * @property label Optional label text displayed near the line.
+ *                 For AVERAGE and TREND, the auto-computed value is formatted via [labelFormat]
+ *                 when no explicit [label] is provided.
+ * @property labelFormat Format string used to display the auto-computed value for AVERAGE/TREND
+ *                       (e.g. `"Avg: %.0f"`). Ignored when [label] is set.
+ * @property showLabel Whether to show the value label next to the line.
+ * @property interactive If true, tapping the line toggles label visibility (AVERAGE/THRESHOLD).
+ * @property onClick Optional click callback invoked when the line is tapped.
  */
 @Immutable
 data class ReferenceLineSpec(
-    val y: Double,
+    val type: ReferenceLineType = ReferenceLineType.THRESHOLD,
+    val y: Double = 0.0,
+    val yEnd: Double? = null,
     val color: Color = Color.Red,
     val strokeWidth: Dp = 2.dp,
     val style: LineStyle = LineStyle.DASHED,
     val label: String? = null,
-    val labelBackground: Color? = null
+    val labelFormat: String = "%.0f",
+    val showLabel: Boolean = false,
+    val interactive: Boolean = false,
+    val onClick: (() -> Unit)? = null,
 )

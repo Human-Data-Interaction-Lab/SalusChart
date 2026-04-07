@@ -1129,40 +1129,40 @@ object SampleDataProvider {
      * Returns List<ChartMark> where multiple points with same x-value represent different segments
      */
     fun getNutritionStackedData(): List<ChartMark> = listOf(
-        // Monday (x = 0)
-        ChartMark(x = 0.0, y = 80.0, label = "월"),
-        ChartMark(x = 0.0, y = 45.0, label = "월"),
-        ChartMark(x = 0.0, y = 120.0, label = "월"),
+        // Monday (x = 0) — total ~1810 kcal
+        ChartMark(x = 0.0, y = 480.0, label = "월"),   // protein kcal
+        ChartMark(x = 0.0, y = 450.0, label = "월"),   // fat kcal
+        ChartMark(x = 0.0, y = 880.0, label = "월"),   // carbs kcal
 
-        // Tuesday (x = 1)
-        ChartMark(x = 1.0, y = 75.0, label = "화"),
-        ChartMark(x = 1.0, y = 38.0, label = "화"),
-        ChartMark(x = 1.0, y = 110.0, label = "화"),
+        // Tuesday (x = 1) — total ~1940 kcal
+        ChartMark(x = 1.0, y = 440.0, label = "화"),
+        ChartMark(x = 1.0, y = 540.0, label = "화"),
+        ChartMark(x = 1.0, y = 960.0, label = "화"),
 
-        // Wednesday (x = 2)
-        ChartMark(x = 2.0, y = 90.0, label = "수"),
-        ChartMark(x = 2.0, y = 52.0, label = "수"),
-        ChartMark(x = 2.0, y = 140.0, label = "수"),
+        // Wednesday (x = 2) — total ~2050 kcal
+        ChartMark(x = 2.0, y = 520.0, label = "수"),
+        ChartMark(x = 2.0, y = 510.0, label = "수"),
+        ChartMark(x = 2.0, y = 1020.0, label = "수"),
 
-        // Thursday (x = 3)
-        ChartMark(x = 3.0, y = 85.0, label = "목"),
-        ChartMark(x = 3.0, y = 41.0, label = "목"),
-        ChartMark(x = 3.0, y = 135.0, label = "목"),
+        // Thursday (x = 3) — total ~1910 kcal
+        ChartMark(x = 3.0, y = 460.0, label = "목"),
+        ChartMark(x = 3.0, y = 480.0, label = "목"),
+        ChartMark(x = 3.0, y = 970.0, label = "목"),
 
-        // Friday (x = 4)
-        ChartMark(x = 4.0, y = 95.0, label = "금"),
-        ChartMark(x = 4.0, y = 58.0, label = "금"),
-        ChartMark(x = 4.0, y = 150.0, label = "금"),
+        // Friday (x = 4) — total ~2260 kcal
+        ChartMark(x = 4.0, y = 560.0, label = "금"),
+        ChartMark(x = 4.0, y = 600.0, label = "금"),
+        ChartMark(x = 4.0, y = 1100.0, label = "금"),
 
-        // Saturday (x = 5)
-        ChartMark(x = 5.0, y = 70.0, label = "토"),
-        ChartMark(x = 5.0, y = 35.0, label = "토"),
-        ChartMark(x = 5.0, y = 100.0, label = "토"),
+        // Saturday (x = 5) — total ~1640 kcal
+        ChartMark(x = 5.0, y = 400.0, label = "토"),
+        ChartMark(x = 5.0, y = 420.0, label = "토"),
+        ChartMark(x = 5.0, y = 820.0, label = "토"),
 
-        // Sunday (x = 6)
-        ChartMark(x = 6.0, y = 88.0, label = "일"),
-        ChartMark(x = 6.0, y = 48.0, label = "일"),
-        ChartMark(x = 6.0, y = 125.0, label = "일")
+        // Sunday (x = 6) — total ~2030 kcal
+        ChartMark(x = 6.0, y = 500.0, label = "일"),
+        ChartMark(x = 6.0, y = 540.0, label = "일"),
+        ChartMark(x = 6.0, y = 990.0, label = "일")
     )
 
     fun getNutritionHorizontalStackedRows(): List<HorizontalStackedBarRow> = listOf(

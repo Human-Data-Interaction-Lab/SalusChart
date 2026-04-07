@@ -1,6 +1,5 @@
 package com.hdil.saluschart.ui.compose.charts
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -13,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -24,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
+import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -55,7 +55,10 @@ fun HorizontalStackedBarChartList(
         Color(0xFFFF8A3D)
     ),
     barTrackColor: Color = Color(0xFFF1F1F1),
-    onRowClick: ((Int, Int?, Float) -> Unit)? = null
+    onRowClick: ((Int, Int?, Float) -> Unit)? = null,
+    showLegend: Boolean = false,
+    legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    legendLabels: List<String> = emptyList(),
 ) {
     val density = LocalDensity.current
 
@@ -65,8 +68,6 @@ fun HorizontalStackedBarChartList(
 
     // Tooltip
     var tooltip by remember { mutableStateOf<TooltipUiState?>(null) }
-    var tooltipSize by remember { mutableStateOf(IntSize.Zero) }
-    var tooltipMeasuredOnce by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -76,12 +77,14 @@ fun HorizontalStackedBarChartList(
             .onGloballyPositioned { coords ->
                 rootTopLeftOnScreen = coords.localToWindow(Offset.Zero)
             }
+            .pointerInput(Unit) {
+                detectTapGestures { tooltip = null }
+            }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.titleMedium
             )
 
             datePeriodText?.takeIf { it.isNotBlank() }?.let {
@@ -94,6 +97,16 @@ fun HorizontalStackedBarChartList(
             }
 
             Spacer(Modifier.height(16.dp))
+
+            val showLegendContent = showLegend && legendLabels.isNotEmpty()
+            val legendColors = colors.take(legendLabels.size)
+
+            if (showLegendContent && (legendPosition == LegendPosition.TOP || legendPosition == LegendPosition.LEFT)) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    ChartLegend(labels = legendLabels, colors = legendColors, position = legendPosition)
+                }
+                Spacer(Modifier.height(12.dp))
+            }
 
             rows.forEachIndexed { rowIndex, row ->
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
@@ -167,7 +180,6 @@ fun HorizontalStackedBarChartList(
                                                             m.x.toInt() == rowIndex && m.label == segLabel && abs(m.y.toFloat() - segValue) < 0.0001f
                                                         } == true
 
-                                                        tooltipMeasuredOnce = false // prevent visible jump
                                                         tooltip = if (same) {
                                                             null
                                                         } else {
@@ -215,29 +227,36 @@ fun HorizontalStackedBarChartList(
                     }
                 }
             }
+
+            if (showLegendContent && legendPosition != LegendPosition.TOP && legendPosition != LegendPosition.LEFT) {
+                Spacer(Modifier.height(8.dp))
+                val resolvedPosition = when (legendPosition) {
+                    LegendPosition.RIGHT -> LegendPosition.RIGHT
+                    else -> LegendPosition.BOTTOM
+                }
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    ChartLegend(labels = legendLabels, colors = legendColors, position = resolvedPosition)
+                }
+            }
         }
 
         tooltip?.let { t ->
             val rootW = rootSize.width.toFloat().coerceAtLeast(1f)
             val rootH = rootSize.height.toFloat().coerceAtLeast(1f)
-
-            val tipW = tooltipSize.width.toFloat().takeIf { it > 0f } ?: with(density) { 160.dp.toPx() }
-            val tipH = tooltipSize.height.toFloat().takeIf { it > 0f } ?: with(density) { 72.dp.toPx() }
-
             val gapPx = with(density) { 8.dp.toPx() }
+            // Fixed-size estimates — position is computed purely from anchor geometry,
+            // never from the tooltip's own measured size, so there is no two-pass jump.
+            val estimatedW = with(density) { 160.dp.toPx() }
+            val estimatedH = with(density) { 64.dp.toPx() }
 
-            val preferRight = t.anchorInRootPx.x + tipW + gapPx <= rootW
-            var xPx = if (preferRight) t.anchorInRootPx.x + gapPx else t.anchorInRootPx.x - tipW - gapPx
-            xPx = xPx.coerceIn(0f, max(0f, rootW - tipW))
-
-            val preferAbove = t.anchorInRootPx.y - tipH - gapPx >= 0f
-            var yPx = if (preferAbove) t.anchorInRootPx.y - tipH - gapPx else t.anchorInRootPx.y + gapPx
-            yPx = yPx.coerceIn(0f, max(0f, rootH - tipH))
-
-            val alpha by animateFloatAsState(
-                targetValue = if (tooltipMeasuredOnce) 1f else 0f,
-                label = "tooltipAlpha"
-            )
+            // Center horizontally on tap, clamp to root bounds
+            val xPx = (t.anchorInRootPx.x - estimatedW / 2f)
+                .coerceIn(gapPx, max(gapPx, rootW - estimatedW - gapPx))
+            // Show above tap; fall back to below if too close to top
+            val yPx = if (t.anchorInRootPx.y - estimatedH - gapPx >= 0f)
+                t.anchorInRootPx.y - estimatedH - gapPx
+            else
+                t.anchorInRootPx.y + gapPx
 
             Box(
                 modifier = Modifier
@@ -248,16 +267,10 @@ fun HorizontalStackedBarChartList(
                     chartMark = t.mark,
                     unit = rows.getOrNull(t.mark.x.toInt())?.unit ?: "",
                     color = t.dotColor,
-                    modifier = Modifier
-                        .offset(
-                            x = with(density) { xPx.toDp() },
-                            y = with(density) { yPx.toDp() }
-                        )
-                        .onSizeChanged {
-                            tooltipSize = it
-                            tooltipMeasuredOnce = true
-                        }
-                        .graphicsLayer { this.alpha = alpha }
+                    modifier = Modifier.offset(
+                        x = with(density) { xPx.toDp() },
+                        y = with(density) { yPx.toDp() }
+                    )
                 )
             }
         }

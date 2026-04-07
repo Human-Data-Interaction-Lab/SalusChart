@@ -6,15 +6,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.ChartMark
 import com.hdil.saluschart.core.chart.ChartType
+import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
-import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
-import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.dp
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 
@@ -25,9 +24,8 @@ import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
  * @param modifier 모디파이어
  * @param data 바 차트 데이터 값들
  * @param color 바 색상
- * @param width 차트 너비
- * @param height 차트 높이
  * @param padding 차트 주변 패딩
+ * @param referenceLines Optional reference lines drawn across the plot area.
  */
 @Composable
 fun MinimalBarChart(
@@ -39,13 +37,7 @@ fun MinimalBarChart(
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
     roundTopOnly: Boolean = true,
-    referenceLineType: ReferenceLineType = ReferenceLineType.NONE,
-    referenceLineColor: Color = Color.Red,
-    referenceLineStrokeWidth: Dp = 1.dp,
-    referenceLineStyle: LineStyle = LineStyle.DASHED,
-    showReferenceLineLabel: Boolean = false, // 미니멀 차트는 기본적으로 레이블 비활성화
-    referenceLineLabelFormat: String = "%.0f",
-    referenceLineInteractive: Boolean = false
+    referenceLines: List<ReferenceLineSpec> = emptyList(),
 ) {
     if (data.isEmpty()) return
 
@@ -58,8 +50,9 @@ fun MinimalBarChart(
         modifier = modifier
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            val labelReservePx = if (referenceLines.any { it.showLabel || it.label != null }) 20.dp.toPx() else 0f
             val metrics = ChartMath.computeMetrics(
-                size = size,
+                size = Size(size.width - labelReservePx, size.height),
                 values = yValues,
                 isMinimal = true,
                 paddingX = padding,
@@ -87,23 +80,16 @@ fun MinimalBarChart(
                 roundTopOnly = roundTopOnly,
             )
         }
-        
-        // 기준선 표시
-        if (referenceLineType != ReferenceLineType.NONE) {
+
+        if (referenceLines.isNotEmpty()) {
             chartMetrics?.let { metrics ->
-                ReferenceLine.ReferenceLine(
+                ReferenceLine.ReferenceLines(
                     modifier = Modifier.fillMaxSize(),
+                    specs = referenceLines,
                     data = data,
                     metrics = metrics,
                     chartType = chartType,
-                    referenceLineType = referenceLineType,
-                    color = referenceLineColor,
-                    strokeWidth = referenceLineStrokeWidth,
-                    lineStyle = referenceLineStyle,
-                    showLabel = showReferenceLineLabel,
-                    labelFormat = referenceLineLabelFormat,
-                    yAxisPosition = YAxisPosition.LEFT, // 미니멀 차트는 기본 왼쪽
-                    interactive = referenceLineInteractive
+                    yAxisPosition = YAxisPosition.LEFT,
                 )
             }
         }

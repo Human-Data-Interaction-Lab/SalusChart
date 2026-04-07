@@ -67,7 +67,7 @@ import com.hdil.saluschart.ui.compose.charts.HorizontalRangeBarChart
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarChartList
 import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarRow
 import com.hdil.saluschart.ui.compose.charts.LegendItem
-import com.hdil.saluschart.ui.compose.charts.LegendShape
+import com.hdil.saluschart.core.chart.chartDraw.LegendShape
 import com.hdil.saluschart.ui.compose.charts.LineChart
 import com.hdil.saluschart.ui.compose.charts.MiniActivityRings
 import com.hdil.saluschart.ui.compose.charts.MinimalBarChart
@@ -151,7 +151,20 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Sleep Consistency - Horizontal Range Bar Chart",
         "Nutrition - Horizontal Stacked Bar Chart",
         "Heart Rate - Range Gauge Chart",
-        "Fitness Level - Multi Segment Gauge Chart"
+        "Fitness Level - Multi Segment Gauge Chart",
+        "Step Count - Bar Chart with Legend",
+        "Weight - Line Chart with Legend",
+        "Blood Pressure - Scatter Plot with Legend",
+        "Nutrition - Horizontal Stacked Bar Chart with Legend",
+        "Reference Lines - Line Chart",
+        "Reference Lines - Bar Chart",
+        "Reference Lines - Scatter Plot",
+        "Reference Lines - Range Bar Chart",
+        "Y-Axis Highlight - Line Chart",
+        "Y-Axis Highlight - Bar Chart",
+        "Y-Axis Highlight - Scatter Plot",
+        "Y-Axis Highlight - Stacked Bar Chart",
+        "Y-Axis Highlight - Range Bar Chart",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Diet - Stacked Bar Chart FreeScroll") }
@@ -217,6 +230,19 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Nutrition - Horizontal Stacked Bar Chart" -> HorizontalStackedBarChart()
                 "Heart Rate - Range Gauge Chart" -> RangeGaugeChart()
                 "Fitness Level - Multi Segment Gauge Chart" -> MultiSegmentGauge_Fitness()
+                "Step Count - Bar Chart with Legend" -> BarChart_StepCount_Legend()
+                "Weight - Line Chart with Legend" -> LineChart_Weight_Legend()
+                "Blood Pressure - Scatter Plot with Legend" -> ScatterPlot_BloodPressure_Legend()
+                "Nutrition - Horizontal Stacked Bar Chart with Legend" -> HorizontalStackedBarChart_Legend()
+                "Reference Lines - Line Chart" -> ReferenceLinesDemo_LineChart()
+                "Reference Lines - Bar Chart" -> ReferenceLinesDemo_BarChart()
+                "Reference Lines - Scatter Plot" -> ReferenceLinesDemo_ScatterPlot()
+                "Reference Lines - Range Bar Chart" -> ReferenceLinesDemo_RangeBarChart()
+                "Y-Axis Highlight - Line Chart" -> YAxisHighlightDemo_LineChart()
+                "Y-Axis Highlight - Bar Chart" -> YAxisHighlightDemo_BarChart()
+                "Y-Axis Highlight - Scatter Plot" -> YAxisHighlightDemo_ScatterPlot()
+                "Y-Axis Highlight - Stacked Bar Chart" -> YAxisHighlightDemo_StackedBarChart()
+                "Y-Axis Highlight - Range Bar Chart" -> YAxisHighlightDemo_RangeBarChart()
                 else -> Text("Unknown Chart Type")
             }
         }
@@ -425,8 +451,7 @@ fun BarChart_Exercise() {
             windowSize = 7,
 //            pageSize = 7,
             interactionType = InteractionType.Bar.TOUCH_AREA,
-            referenceLineType = ReferenceLineType.AVERAGE,
-            showReferenceLineLabel = true,
+            referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.AVERAGE, showLabel = true)),
             unit = "분",
         )
     }
@@ -642,8 +667,7 @@ fun RoundedBarChart_Exercise() {
             windowSize = 7,
 //            pageSize = 7,
             interactionType = InteractionType.Bar.TOUCH_AREA,
-            referenceLineType = ReferenceLineType.AVERAGE,
-            showReferenceLineLabel = true,
+            referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.AVERAGE, showLabel = true)),
             unit = "분",
             barCornerRadiusFractions = BarCornerRadiusFractions(
                 topStart = 0.5f,
@@ -853,9 +877,7 @@ fun LineChart_BodyFat() {
         strokeWidth = 4f,
         interactionType = InteractionType.Line.TOUCH_AREA,
         yAxisPosition = YAxisPosition.RIGHT,
-        referenceLineType = ReferenceLineType.TREND,
-        showReferenceLineLabel = true,
-        referenceLineStyle = LineStyle.DASHDOT,
+        referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.TREND, showLabel = true, style = LineStyle.DASHDOT)),
         windowSize = 8
     )
 }
@@ -880,9 +902,7 @@ fun LineChart_BodyFat_2() {
         strokeWidth = 4f,
         interactionType = InteractionType.Line.TOUCH_AREA,
         yAxisPosition = YAxisPosition.LEFT,
-        referenceLineType = ReferenceLineType.TREND,
-        showReferenceLineLabel = true,
-        referenceLineStyle = LineStyle.DASHDOT,
+        referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.TREND, showLabel = true, style = LineStyle.DASHDOT)),
         pageSize = 8
     )
 }
@@ -1081,7 +1101,7 @@ fun Minimal_Chart() {
                 MinimalBarChart(
                     data = ChartMarks,
                     color = Primary_Purple,
-                    referenceLineType = ReferenceLineType.AVERAGE,
+                    referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.AVERAGE)),
 //                    barWidthRatio = 0.85f,
 //                    barCornerRadiusFraction = 0.6f,
 //                    roundTopOnly = false
@@ -1132,7 +1152,7 @@ fun Minimal_Chart() {
                 MinimalLineChart(
                     data = ChartMarks,
                     color = Primary_Purple,
-                    referenceLineType = ReferenceLineType.TREND
+                    referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.TREND)),
                 )
             }
         }
@@ -1881,7 +1901,6 @@ fun StackedBarChart_1() {
         legendPosition = LegendPosition.BOTTOM,
         yAxisPosition = YAxisPosition.RIGHT,
         interactionType = InteractionType.StackedBar.TOUCH_AREA,
-        yAxisFixedWidth = 10.dp,
         colors = listOf(
             Color(0xFF2196F3), // 파랑 (단백질)
             Color(0xFFFF9800), // 주황 (지방)
@@ -1949,17 +1968,20 @@ fun RangeBarChart_HeartRate() {
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "bpm",
         pageSize = 24,
+        showYAxisHighlight = true,
         referenceLines = listOf(
             ReferenceLineSpec(
                 y = 120.0,
-                label = "120",
+                label = "120 bpm",
+                showLabel = true,
                 color = Color(0xFFFF7A00),
                 strokeWidth = 2.dp,
                 style = LineStyle.DASHED
             ),
             ReferenceLineSpec(
                 y = 70.0,
-                label = "70",
+                label = "70 bpm",
+                showLabel = true,
                 color = Color(0xFFFF7A00),
                 strokeWidth = 2.dp,
                 style = LineStyle.DASHED
@@ -1970,35 +1992,53 @@ fun RangeBarChart_HeartRate() {
 
 @Composable
 fun VerticalRangePlot_HeartRate() {
-    val marks: List<BaseChartMark> = heartRateHealthData.transform(
+    val baseMarks: List<BaseChartMark> = heartRateHealthData.transform(
         timeUnit = TimeUnitGroup.HOUR,
         aggregationType = AggregationType.MIN_MAX
     )
-
-    val rangeMarks: List<RangeChartMark> = remember(marks) {
-        marks.filterIsInstance<RangeChartMark>()
-    }
+    val baseRangeMarks = remember(baseMarks) { baseMarks.filterIsInstance<RangeChartMark>() }
 
     val allHeartRateBlocks = remember { getHeartRateData() }
-
     val allSamples = remember(allHeartRateBlocks) {
         allHeartRateBlocks.flatMap { it.samples }
     }
 
-    val pointValues = remember(allSamples, rangeMarks) {
-
+    // Group individual readings by hour bucket (4 samples per hour)
+    val hourlyValues = remember(allSamples, baseRangeMarks) {
         val sortedSamples = allSamples.sortedBy { it.time }
         val grouped = sortedSamples
-            .mapIndexed { index, sample ->
-                (index / 4) to sample.beatsPerMinute.toDouble() // 4 samples per hour → group into hourly buckets
-            }
-            .groupBy(
-                keySelector = { it.first },
-                valueTransform = { it.second }
-            )
+            .mapIndexed { index, sample -> (index / 4) to sample.beatsPerMinute.toDouble() }
+            .groupBy({ it.first }, { it.second })
+        List(baseRangeMarks.size) { hourIndex ->
+            grouped[hourIndex]?.sorted() ?: emptyList()
+        }
+    }
 
-        List(rangeMarks.size) { hourIndex ->
-            grouped[hourIndex] ?: emptyList()
+    // Bar = IQR (Q1 → Q3) — the dense middle cluster
+    val rangeMarks = remember(baseRangeMarks, hourlyValues) {
+        baseRangeMarks.mapIndexed { i, mark ->
+            val v = hourlyValues[i]
+            if (v.size < 2) return@mapIndexed mark
+            val q1 = v[v.size / 4]
+            val q3 = v[3 * v.size / 4]
+            if (q1 >= q3) return@mapIndexed mark
+            RangeChartMark(
+                x = mark.x,
+                minPoint = ChartMark(x = mark.x, y = q1),
+                maxPoint = ChartMark(x = mark.x, y = q3),
+                label = mark.label
+            )
+        }
+    }
+
+    // Dots = only values outside the IQR bar (outliers above Q3 or below Q1)
+    val pointValues = remember(baseRangeMarks, hourlyValues) {
+        baseRangeMarks.mapIndexed { i, _ ->
+            val v = hourlyValues[i]
+            if (v.size < 2) return@mapIndexed v
+            val q1 = v[v.size / 4]
+            val q3 = v[3 * v.size / 4]
+            v.filter { it < q1 || it > q3 }
         }
     }
 
@@ -2008,7 +2048,7 @@ fun VerticalRangePlot_HeartRate() {
         title = "심박수 범위 (일간)",
         yLabel = "심박수 (bpm)",
         xLabel = "시간",
-        barWidthRatio = 0.45f,
+        barWidthRatio = 0.4f,
         barColor = Color(0xFFE91E63),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
         unit = "bpm",
@@ -2034,6 +2074,8 @@ fun RangeBarChart_BloodGlucose() {
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = rangeMarks,
         title = "일별 혈당 범위",
+        xLabel = "날짜",
+        yLabel = "혈당 (mg/dL)",
         legendItems = listOf(
             LegendItem(label = "목표 수면 시간대", color = Color(0xFFFF7A00), shape = LegendShape.Box),
             LegendItem(label = "범위(최소~최대)", color = Color(0xFF4CAF50), shape = LegendShape.Dot),
@@ -2045,17 +2087,20 @@ fun RangeBarChart_BloodGlucose() {
         windowSize = 7,
         barCornerRadiusFraction = 0.3f,
         roundTopOnly = false,
+        showYAxisHighlight = true,
         referenceLines = listOf(
             ReferenceLineSpec(
                 y = 62.0,
-                label = "62",
+                label = "62 mg/dL",
+                showLabel = true,
                 color = Color(0xFFFF7A00),
                 strokeWidth = 2.dp,
                 style = LineStyle.DASHED
             ),
             ReferenceLineSpec(
                 y = 42.0,
-                label = "42",
+                label = "42 mg/dL",
+                showLabel = true,
                 color = Color(0xFFFF7A00),
                 strokeWidth = 2.dp,
                 style = LineStyle.DASHED
@@ -2070,6 +2115,7 @@ fun RangeBarChart_FreeScroll_FixedAxis() {
         modifier = Modifier.fillMaxWidth().height(400.dp),
         data = rangeData,
         title = "Free-scroll + Fixed Y-Axis",
+        yLabel = "심박수 (bpm)",
         windowSize = 7,
         yTickStep = 10.0,
         barWidthRatio = 0.7f,
@@ -2341,6 +2387,733 @@ fun MultiSegmentGauge_Fitness() {
 
         modifier = Modifier.fillMaxWidth()
     )
+}
+
+@Composable
+fun BarChart_StepCount_Legend() {
+    BarChart(
+        modifier = Modifier.fillMaxWidth().height(300.dp),
+        data = stepCountHealthData.transform(
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.SUM
+        ),
+        title = "일별 걸음 수",
+        yLabel = "걸음 수",
+        xLabel = "날짜",
+        barColor = Color(0xFF4CAF50),
+        barWidthRatio = 0.6f,
+        showLegend = true,
+        legendLabel = "걸음 수",
+        legendPosition = LegendPosition.BOTTOM,
+        unit = "보"
+    )
+}
+
+@Composable
+fun LineChart_Weight_Legend() {
+    LineChart(
+        modifier = Modifier.fillMaxWidth().height(300.dp),
+        data = weightHealthData.transform(
+            massUnit = MassUnit.KILOGRAM,
+            timeUnit = TimeUnitGroup.DAY,
+            aggregationType = AggregationType.DAILY_AVERAGE
+        ),
+        title = "일별 체중",
+        yLabel = "체중 (kg)",
+        xLabel = "날짜",
+        lineColor = Color(0xFF2196F3),
+        showLegend = true,
+        showPoint = true,
+        legendLabel = "체중 (kg)",
+        legendPosition = LegendPosition.BOTTOM,
+        unit = "kg"
+    )
+}
+
+@Composable
+fun ScatterPlot_BloodPressure_Legend() {
+    val allPoints = bloodPressureHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    ).flatMap { (_, marks) -> marks }
+
+    ScatterPlot(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = allPoints,
+        title = "일별 혈압",
+        yLabel = "혈압 (mmHg)",
+        xLabel = "날짜",
+        pointColor = Color(0xFFE91E63),
+        pointType = PointType.Circle,
+        pointSize = 3.dp,
+        showLegend = true,
+        legendLabel = "혈압 (mmHg)",
+        legendPosition = LegendPosition.BOTTOM,
+        unit = "mmHg"
+    )
+}
+
+@Composable
+fun HorizontalStackedBarChart_Legend() {
+    val rows = remember {
+        listOf(
+            HorizontalStackedBarRow(
+                title = "탄수화물",
+                unit = "g",
+                total = 287.4f,
+                segments = listOf(131.0f, 87.3f, 40.1f),
+                trackMax = 300f
+            ),
+            HorizontalStackedBarRow(
+                title = "포화 지방",
+                unit = "g",
+                total = 18.4f,
+                segments = listOf(15.2f, 2.6f, 0.6f),
+                trackMax = 45f
+            ),
+            HorizontalStackedBarRow(
+                title = "나트륨",
+                unit = "mg",
+                total = 3775.3f,
+                segments = listOf(2913f, 672.3f, 190f),
+                trackMax = 5000f
+            )
+        )
+    }
+    HorizontalStackedBarChartList(
+        title = "영양정보",
+        datePeriodText = "11월 3일 - 9일",
+        rows = rows,
+        colors = listOf(Color(0xFF20C95A), Color(0xFF0FA958), Color(0xFFFF8A3D)),
+        showLegend = true,
+        legendLabels = listOf("부대찌개", "토마토파스타", "붕어빵"),
+        legendPosition = LegendPosition.BOTTOM
+    )
+}
+
+// ─── Reference line demo composables ────────────────────────────────────────
+
+/**
+ * LineChart: AVERAGE, THRESHOLD, ZONE
+ * (TREND already shown in LineChart_BodyFat / LineChart_BodyFat_2)
+ */
+@Composable
+fun ReferenceLinesDemo_LineChart() {
+    val data = weightHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("AVERAGE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "체중 - 평균선",
+            unit = "kg",
+            yLabel = "kg",
+            lineColor = Primary_Purple,
+            showPoint = true,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.AVERAGE,
+                    color = Color(0xFFE91E63),
+                    showLabel = true,
+                    labelFormat = "평균: %.1f",
+                )
+            )
+        )
+
+        Text("TREND", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "체중 - 추세선",
+            unit = "kg",
+            yLabel = "kg",
+            lineColor = Primary_Purple,
+            showPoint = true,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.TREND,
+                    color = Color(0xFF9C27B0),
+                    style = LineStyle.DASHDOT,
+                    showLabel = true,
+                    labelFormat = "추세: %.1f",
+                )
+            )
+        )
+
+        Text("THRESHOLD", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "체중 - 목표선 (68kg)",
+            unit = "kg",
+            yLabel = "kg",
+            lineColor = Primary_Purple,
+            showPoint = true,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 68.0,
+                    color = Color(0xFFFF7A00),
+                    style = LineStyle.DASHED,
+                    label = "목표 68kg",
+                    showLabel = true,
+                )
+            )
+        )
+
+        Text("ZONE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "체중 - 정상 범위 (65~70kg)",
+            unit = "kg",
+            yLabel = "kg",
+            lineColor = Primary_Purple,
+            showPoint = true,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 65.0,
+                    yEnd = 70.0,
+                    color = Color(0xFF4CAF50),
+                    label = "정상 범위",
+                    showLabel = true,
+                )
+            )
+        )
+    }
+}
+
+/**
+ * BarChart: AVERAGE, TREND, THRESHOLD, ZONE
+ */
+@Composable
+fun ReferenceLinesDemo_BarChart() {
+    val data = stepCountHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.SUM
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("AVERAGE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "걸음수 - 평균선",
+            unit = "보",
+            barColor = Primary_Purple,
+            showLabel = false,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.AVERAGE,
+                    color = Color(0xFFE91E63),
+                    showLabel = true,
+                    labelFormat = "평균: %.0f",
+                )
+            )
+        )
+
+        Text("TREND", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "걸음수 - 추세선",
+            unit = "보",
+            barColor = Primary_Purple,
+            showLabel = false,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.TREND,
+                    color = Color(0xFF9C27B0),
+                    style = LineStyle.DASHDOT,
+                    showLabel = true,
+                    labelFormat = "추세: %.0f",
+                )
+            )
+        )
+
+        Text("THRESHOLD", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "걸음수 - 목표선 (10,000보)",
+            unit = "보",
+            barColor = Primary_Purple,
+            showLabel = false,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 10000.0,
+                    color = Color(0xFFFF7A00),
+                    style = LineStyle.DASHED,
+                    label = "목표 10,000보",
+                    showLabel = true,
+                )
+            )
+        )
+
+        Text("ZONE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "걸음수 - 권장 범위 (7,500~12,000보)",
+            unit = "보",
+            barColor = Primary_Purple,
+            showLabel = false,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 7500.0,
+                    yEnd = 12000.0,
+                    color = Color(0xFF4CAF50),
+                    label = "권장 범위",
+                    showLabel = true,
+                )
+            )
+        )
+    }
+}
+
+/**
+ * ScatterPlot: AVERAGE, TREND, THRESHOLD, ZONE (none currently shown)
+ */
+@Composable
+fun ReferenceLinesDemo_ScatterPlot() {
+    val bloodPressureMap = bloodPressureHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    )
+    val data = bloodPressureMap.flatMap { (_, marks) ->
+        marks.map { ChartMark(x = it.x, y = it.y, label = it.label) }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("AVERAGE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        ScatterPlot(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "혈압 - 평균선",
+            unit = "mmHg",
+            yLabel = "mmHg",
+            pointColor = Primary_Purple,
+            pointType = PointType.Circle,
+            pointSize = 3.dp,
+            interactionType = InteractionType.Scatter.TOUCH_AREA,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.AVERAGE,
+                    color = Color(0xFFE91E63),
+                    showLabel = true,
+                    labelFormat = "평균: %.0f",
+                )
+            )
+        )
+
+        Text("TREND", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        ScatterPlot(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "혈압 - 추세선",
+            unit = "mmHg",
+            yLabel = "mmHg",
+            pointColor = Primary_Purple,
+            pointType = PointType.Circle,
+            pointSize = 3.dp,
+            interactionType = InteractionType.Scatter.TOUCH_AREA,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.TREND,
+                    color = Color(0xFF9C27B0),
+                    style = LineStyle.DASHDOT,
+                    showLabel = true,
+                )
+            )
+        )
+
+        Text("THRESHOLD", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        ScatterPlot(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "혈압 - 고혈압 경계선 (140mmHg)",
+            unit = "mmHg",
+            yLabel = "mmHg",
+            pointColor = Primary_Purple,
+            pointType = PointType.Circle,
+            pointSize = 3.dp,
+            interactionType = InteractionType.Scatter.TOUCH_AREA,
+            showYAxisHighlight = true,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 120.0,
+                    color = Color(0xFFE53935),
+                    style = LineStyle.DASHED,
+                    label = "고혈압 경계",
+                    showLabel = true,
+                )
+            )
+        )
+
+        Text("ZONE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        ScatterPlot(
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            data = data,
+            title = "혈압 - 정상 범위 (90~120mmHg)",
+            unit = "mmHg",
+            yLabel = "mmHg",
+            pointColor = Primary_Purple,
+            pointType = PointType.Circle,
+            pointSize = 3.dp,
+            interactionType = InteractionType.Scatter.TOUCH_AREA,
+            showYAxisHighlight = true,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 90.0,
+                    yEnd = 120.0,
+                    color = Color(0xFF4CAF50),
+                    label = "정상 범위",
+                    showLabel = true,
+                )
+            )
+        )
+    }
+}
+
+/**
+ * RangeBarChart: THRESHOLD, ZONE
+ * (AVERAGE and TREND are not supported in canvas-based rendering)
+ */
+@Composable
+fun ReferenceLinesDemo_RangeBarChart() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("THRESHOLD", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        RangeBarChart(
+            modifier = Modifier.fillMaxWidth().height(350.dp),
+            data = rangeData,
+            title = "심박수 - 경계선 (120bpm)",
+            yLabel = "심박수 (bpm)",
+            xLabel = "시간",
+            barColor = Color(0xFFE91E63),
+            barWidthRatio = 0.7f,
+            unit = "bpm",
+            pageSize = 7,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 120.0,
+                    color = Color(0xFFFF7A00),
+                    style = LineStyle.DASHED,
+                    label = "경고",
+                    showLabel = true,
+                )
+            )
+        )
+
+        Text("ZONE", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        RangeBarChart(
+            modifier = Modifier.fillMaxWidth().height(350.dp),
+            data = rangeData,
+            title = "심박수 - 정상 범위 (60~100bpm)",
+            yLabel = "심박수 (bpm)",
+            xLabel = "시간",
+            barColor = Color(0xFFE91E63),
+            barWidthRatio = 0.7f,
+            unit = "bpm",
+            pageSize = 7,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 60.0,
+                    yEnd = 100.0,
+                    color = Color(0xFF4CAF50),
+                    label = "정상 범위",
+                    showLabel = true,
+                )
+            )
+        )
+    }
+}
+
+@Composable
+fun YAxisHighlightDemo_LineChart() {
+    val data = weightHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("THRESHOLD — goal line highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = data,
+            title = "Weight - Goal 68 kg",
+            unit = "kg",
+            yLabel = "kg",
+            lineColor = Primary_Purple,
+            showPoint = true,
+            windowSize = 14,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 68.0,
+                    color = Color(0xFFFF7A00),
+                    label = "Goal 68 kg",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+
+        Text("ZONE — normal range highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = data,
+            title = "Weight - Normal Range 65–70 kg",
+            unit = "kg",
+            yLabel = "kg",
+            lineColor = Primary_Purple,
+            showPoint = true,
+            windowSize = 14,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 65.0,
+                    yEnd = 70.0,
+                    color = Color(0xFF4CAF50),
+                    label = "Normal",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+    }
+}
+
+@Composable
+fun YAxisHighlightDemo_BarChart() {
+    val data = stepCountHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.SUM
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("THRESHOLD — daily goal highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = data,
+            title = "Steps - Daily Goal 8,000",
+            unit = "steps",
+            yLabel = "Steps",
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 8000.0,
+                    color = Color(0xFF4CAF50),
+                    label = "Goal",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+
+        Text("ZONE — target range highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        BarChart(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = data,
+            title = "Steps - Target Zone 7,000–10,000",
+            unit = "steps",
+            yLabel = "Steps",
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 7000.0,
+                    yEnd = 10000.0,
+                    color = Color(0xFF2196F3),
+                    label = "Target",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+    }
+}
+
+@Composable
+fun YAxisHighlightDemo_ScatterPlot() {
+    val data = bloodPressureHealthData.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.DAILY_AVERAGE
+    ).flatMap { (_, marks) -> marks.map { ChartMark(x = it.x, y = it.y, label = it.label) } }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("THRESHOLD — high BP warning highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        ScatterPlot(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = data,
+            title = "Blood Pressure - High Warning 140",
+            unit = "mmHg",
+            yLabel = "mmHg",
+            pointSize = 3.dp,
+            windowSize = 14,
+            interactionType = InteractionType.Scatter.TOUCH_AREA,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 140.0,
+                    color = Color(0xFFE91E63),
+                    label = "High",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+
+        Text("ZONE — normal range highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        ScatterPlot(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = data,
+            title = "Blood Pressure - Normal Range 90–120",
+            unit = "mmHg",
+            yLabel = "mmHg",
+            windowSize = 14,
+            pointSize = 3.dp,
+            interactionType = InteractionType.Scatter.TOUCH_AREA,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 90.0,
+                    yEnd = 120.0,
+                    color = Color(0xFF4CAF50),
+                    label = "Normal",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+    }
+}
+
+@Composable
+fun YAxisHighlightDemo_StackedBarChart() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("THRESHOLD — calorie goal highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        StackedBarChart(
+            modifier = Modifier.fillMaxWidth().height(280.dp),
+            data = stackedData,
+            segmentLabels = segmentLabels,
+            title = "Nutrition - Calorie Goal 2,000 kcal",
+            unit = "kcal",
+            yLabel = "kcal",
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 2000.0,
+                    color = Color(0xFFFF7A00),
+                    label = "Goal",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+    }
+}
+
+@Composable
+fun YAxisHighlightDemo_RangeBarChart() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp)
+    ) {
+        Text("THRESHOLD — warning line highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        RangeBarChart(
+            modifier = Modifier.fillMaxWidth().height(350.dp),
+            data = rangeData,
+            title = "Heart Rate - Warning 120 bpm",
+            yLabel = "bpm",
+            xLabel = "Time",
+            barColor = Color(0xFFE91E63),
+            barWidthRatio = 0.7f,
+            unit = "bpm",
+            pageSize = 7,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.THRESHOLD,
+                    y = 120.0,
+                    color = Color(0xFFFF7A00),
+                    style = LineStyle.DASHED,
+                    label = "Warning",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+
+        Text("ZONE — normal range highlighted on Y-axis", fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        RangeBarChart(
+            modifier = Modifier.fillMaxWidth().height(350.dp),
+            data = rangeData,
+            title = "Heart Rate - Normal Range 60–100 bpm",
+            yLabel = "bpm",
+            xLabel = "Time",
+            barColor = Color(0xFFE91E63),
+            barWidthRatio = 0.7f,
+            unit = "bpm",
+            pageSize = 7,
+            referenceLines = listOf(
+                ReferenceLineSpec(
+                    type = ReferenceLineType.ZONE,
+                    y = 60.0,
+                    yEnd = 100.0,
+                    color = Color(0xFF4CAF50),
+                    label = "Normal",
+                    showLabel = true,
+                )
+            ),
+            showYAxisHighlight = true
+        )
+    }
 }
 
 @Preview(showBackground = true)

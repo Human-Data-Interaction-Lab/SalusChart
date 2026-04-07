@@ -1,18 +1,16 @@
 package com.hdil.saluschart.ui.compose.charts
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -20,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.hdil.saluschart.core.chart.chartDraw.TooltipContainer
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.data.model.model.SleepSession
 import com.hdil.saluschart.data.model.model.SleepStage
@@ -495,6 +495,11 @@ fun SleepStageChart(
 
                         var hostSize by remember { mutableStateOf(IntSize.Zero) }
                         var tipSize by remember { mutableStateOf(IntSize.Zero) }
+                        var tooltipMeasuredOnce by remember { mutableStateOf(false) }
+                        val tooltipAlpha by animateFloatAsState(
+                            targetValue = if (tooltipMeasuredOnce) 1f else 0f,
+                            label = "tooltipAlpha"
+                        )
 
                         val stageColor = when (stage.stage) {
                             SleepStageType.AWAKE -> Color(0xFFFF4D4F)
@@ -535,7 +540,11 @@ fun SleepStageChart(
                                     .offset {
                                         IntOffset(xClamped.toInt(), yClamped.toInt())
                                     }
-                                    .onSizeChanged { tipSize = it }
+                                    .onSizeChanged {
+                                        tipSize = it
+                                        tooltipMeasuredOnce = true
+                                    }
+                                    .graphicsLayer { alpha = tooltipAlpha }
                             )
                         }
                     }
@@ -620,47 +629,27 @@ private fun SleepStageTooltip(
         SleepStageType.UNKNOWN -> "Unknown"
     }
 
-    Box(
-        modifier = modifier
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(16.dp),
-                spotColor = Color.Black.copy(alpha = 0.1f),
-                ambientColor = Color.Black.copy(alpha = 0.05f)
+    TooltipContainer(modifier = modifier) {
+        Text(
+            text = title,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .background(color, shape = CircleShape)
             )
-            .background(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(12.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = title,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyMedium
+                text = "$startStr – $endStr · $durationText",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .background(color, shape = CircleShape)
-                )
-                Text(
-                    text = "$startStr – $endStr · $durationText",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
         }
     }
 }

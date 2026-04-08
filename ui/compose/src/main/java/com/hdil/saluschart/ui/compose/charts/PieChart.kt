@@ -42,7 +42,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.chartMath.PieChartMath
-import com.hdil.saluschart.ui.theme.ColorUtils
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Displays a pie (or donut) chart with optional legend, labels, and tap interaction.
@@ -71,13 +71,15 @@ fun PieChart(
     data: List<ChartMark>,
     title: String = "Pie Chart Example",
     isDonut: Boolean = true,
-    colors: List<Color> = ColorUtils.rainbowPalette(data.size.coerceAtLeast(1)),
+    colors: List<Color> = emptyList(),
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     showLabel: Boolean = false,
     interactionsEnabled: Boolean = true,
 ) {
     if (data.isEmpty()) return
+
+    val colors = colors.ifEmpty { LocalSalusChartColors.current.palette }
 
     // Selection + tooltip state
     var selectedSectionIndex by remember { mutableStateOf(-1) }

@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 private fun ceilToStep(v: Double, step: Double): Double {
     if (step <= 0.0) return v
@@ -96,43 +97,36 @@ fun StackedBarChart(
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Stacked Bar Chart",
-    colors: List<Color> = listOf(
-        Color(0xFF2196F3),
-        Color(0xFFFF9800),
-        Color(0xFF4CAF50),
-        Color(0xFF9C27B0),
-        Color(0xFFE91E63),
-        Color(0xFFFFEB3B),
-    ),
+    colors: List<Color> = emptyList(),
     barWidthRatio: Float = 0.6f,
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.StackedBar = InteractionType.StackedBar.TOUCH_AREA,
     onBarClick: ((barIndex: Int, segmentIndex: Int?, value: Float) -> Unit)? = null,
-    // Reference lines
     referenceLines: List<com.hdil.saluschart.core.chart.ReferenceLineSpec> = emptyList(),
     showYAxisHighlight: Boolean = false,
-    // Display
     showTitle: Boolean = true,
     showYAxis: Boolean = true,
     showLabel: Boolean = false,
-    xLabelAutoSkip: Boolean = true, // Automatically skip labels if they overlap
-    maxXTicksLimit: Int? = null, // Maximum number of x-axis labels to display
-    minY: Double? = null, // Minimum Y value for chart
-    maxY: Double? = null, // Maximum Y value for chart
-    yTickStep: Double? = null, // y-axis grid tick step (automatically calculated if null)
+    xLabelAutoSkip: Boolean = true,
+    maxXTicksLimit: Int? = null,
+    minY: Double? = null,
+    maxY: Double? = null,
+    yTickStep: Double? = null,
     unit: String = "",
-    // Scroll/Page
-    windowSize: Int? = null, // number of visible items in scroll window (enables scrolling if not null)
-    contentPadding: PaddingValues = PaddingValues(16.dp), // Free-scroll paddings
-    pageSize: Int? = null, // number of items per page (enables paging if not null)
+    windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
-    initialPageIndex: Int? = null, // initial page to show (last page if null)
-    yAxisFixedWidth: Dp = 20.dp, // Padding between the chart and the y-axis
-    tooltipColor: Color = Color.Black,
+    initialPageIndex: Int? = null,
+    yAxisFixedWidth: Dp = 20.dp,
+    tooltipColor: Color = Color.Unspecified,
 ) {
     if (data.isEmpty()) return
+
+    val colors = colors.ifEmpty { LocalSalusChartColors.current.palette }
+    val tooltipColor = tooltipColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
 
     // Validate that scrolling and paging modes are not both enabled
     require(!(windowSize != null && pageSize != null)) {

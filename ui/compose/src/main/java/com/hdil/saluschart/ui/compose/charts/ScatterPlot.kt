@@ -56,6 +56,7 @@ import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Displays a scatter plot for the provided data points, with support for interactive tooltips,
@@ -110,7 +111,7 @@ fun ScatterPlot(
     xLabel: String = "X Axis",
     yLabel: String = "Y Axis",
     title: String = "Scatter Plot Example",
-    pointColor: Color = com.hdil.saluschart.ui.theme.ChartColor.Default,
+    pointColor: Color = Color.Unspecified,
     pointType: PointType = PointType.Circle,
     pointSize: Dp = 8.dp,
     minY: Double? = null,
@@ -134,9 +135,12 @@ fun ScatterPlot(
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     legendLabel: String = "",
-    tooltipColor: Color = pointColor,
+    tooltipColor: Color = Color.Unspecified,
 ) {
     if (data.isEmpty()) return
+
+    val pointColor = pointColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
+    val tooltipColor = tooltipColor.takeIf { it != Color.Unspecified } ?: pointColor
 
     // Validate that scrolling and paging modes are not both enabled
     require(!(windowSize != null && pageSize != null)) {

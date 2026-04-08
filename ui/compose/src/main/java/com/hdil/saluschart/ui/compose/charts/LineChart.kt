@@ -51,7 +51,7 @@ import com.hdil.saluschart.core.chart.ReferenceLineSpec
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLine
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.ui.theme.ChartColor
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Displays a line chart connecting the provided data points, with support for interactive
@@ -112,7 +112,7 @@ fun LineChart(
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Line Chart Example",
-    lineColor: Color = ChartColor.Default,
+    lineColor: Color = Color.Unspecified,
     strokeWidth: Float = 4f,
     minY: Double? = null,
     maxY: Double? = null,
@@ -143,9 +143,12 @@ fun LineChart(
     yAxisFixedWidth: Dp = 30.dp,
     includeYAxisPaddingOverride: Boolean? = null,
     onMetricsCalculated: ((ChartMath.ChartMetrics) -> Unit)? = null,
-    tooltipColor: Color = lineColor,
+    tooltipColor: Color = Color.Unspecified,
 ) {
     if (data.isEmpty()) return
+
+    val lineColor = lineColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
+    val tooltipColor = tooltipColor.takeIf { it != Color.Unspecified } ?: lineColor
 
     // Validate that scrolling and paging modes are not both enabled
     require(!(windowSize != null && pageSize != null)) {

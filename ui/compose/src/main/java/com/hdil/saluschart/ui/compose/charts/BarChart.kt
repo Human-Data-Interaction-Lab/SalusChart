@@ -50,7 +50,7 @@ import com.hdil.saluschart.core.chart.chartDraw.TooltipSpec
 import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
-import com.hdil.saluschart.ui.theme.ChartColor
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Displays a vertical bar chart for the provided data, with support for interactive tooltips,
@@ -108,7 +108,7 @@ fun BarChart(
     xLabel: String = "Time",
     yLabel: String = "Value",
     title: String = "Bar Chart Example",
-    barColor: Color = ChartColor.Default,
+    barColor: Color = Color.Unspecified,
     minY: Double? = null,
     maxY: Double? = null,
     barWidthRatio: Float = 0.8f,
@@ -138,9 +138,12 @@ fun BarChart(
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     legendLabel: String = "",
-    tooltipColor: Color = barColor,
+    tooltipColor: Color = Color.Unspecified,
 ) {
     if (data.isEmpty()) return
+
+    val barColor = barColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
+    val tooltipColor = tooltipColor.takeIf { it != Color.Unspecified } ?: barColor
 
     // Validate that scrolling and paging modes are not both enabled
     require(!(windowSize != null && pageSize != null)) {

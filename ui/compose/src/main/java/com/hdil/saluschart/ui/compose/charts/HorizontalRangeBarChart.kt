@@ -48,6 +48,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.TooltipSpec
 import kotlin.math.max
 import kotlin.math.min
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 private fun hourDecimalToHm(
     value: Double,
@@ -103,7 +104,7 @@ fun HorizontalRangeBarChart(
     labelTextSizeSp: Float = 14f,
 
     // Good/bad styling
-    goodColor: Color = Color(0xFF6E86FF),
+    goodColor: Color = Color.Unspecified,
     badColor: Color = Color(0xFFD6D6D6),
     isGood: (RangeChartMark) -> Boolean = { true },
 
@@ -131,6 +132,8 @@ fun HorizontalRangeBarChart(
     ) {
     if (data.isEmpty()) return
     require(maxX > minX) { "maxX must be > minX" }
+
+    val goodColor = goodColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
     require(rowLabels.size >= data.size) { "rowLabels must have >= data.size" }
 
     val density = LocalDensity.current

@@ -27,6 +27,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import kotlin.math.abs
 import kotlin.math.max
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Data model for a single row in a [HorizontalStackedBarChartList].
@@ -79,17 +80,14 @@ fun HorizontalStackedBarChartList(
     title: String,
     datePeriodText: String? = null,
     rows: List<HorizontalStackedBarRow>,
-    colors: List<Color> = listOf(
-        Color(0xFF20C95A),
-        Color(0xFF0FA958),
-        Color(0xFFFF8A3D)
-    ),
+    colors: List<Color> = emptyList(),
     barTrackColor: Color = Color(0xFFF1F1F1),
     onRowClick: ((Int, Int?, Float) -> Unit)? = null,
     showLegend: Boolean = false,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     legendLabels: List<String> = emptyList(),
 ) {
+    val colors = colors.ifEmpty { LocalSalusChartColors.current.palette }
     val density = LocalDensity.current
 
     // Root (overlay) geometry in WINDOW coords

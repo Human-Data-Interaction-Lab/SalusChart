@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.chartDraw.ChartDraw
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Minimal gauge chart for small screens such as widgets or smartwatches.
@@ -35,10 +36,11 @@ fun MinimalGaugeChart(
     containerMin: Double,
     containerMax: Double,
     containerColor: Color = Color.LightGray,
-    rangeColor: Color = Color(0xFFFF9500),
+    rangeColor: Color = Color.Unspecified,
     textColor: Color = Color.Black,
     showRangeText: Boolean = true,
 ) {
+    val rangeColor = rangeColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
     val clampedDataMin = data.minPoint.y.coerceIn(containerMin, containerMax)
     val clampedDataMax = data.maxPoint.y.coerceIn(containerMin, containerMax)
 

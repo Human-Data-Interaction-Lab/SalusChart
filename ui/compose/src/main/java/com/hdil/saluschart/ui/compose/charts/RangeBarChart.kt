@@ -57,7 +57,7 @@ import com.hdil.saluschart.core.chart.chartDraw.YAxisPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.core.chart.toRangeChartMarksByXGroup
-import com.hdil.saluschart.ui.theme.ChartColor
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 import kotlin.math.min
 
 /**
@@ -143,7 +143,7 @@ fun RangeBarChart(
     xLabel: String = "",
     yLabel: String = "",
     title: String = "Range Bar Chart",
-    barColor: Color = ChartColor.Default,
+    barColor: Color = Color.Unspecified,
     barWidthRatio: Float = 0.6f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
@@ -155,7 +155,7 @@ fun RangeBarChart(
     yTickStep: Double? = null,
     unit: String = "",
     pointValues: List<List<Double>>? = null,
-    pointColor: Color = barColor,
+    pointColor: Color = Color.Unspecified,
     pointRadius: Dp = 3.dp,
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
@@ -167,12 +167,16 @@ fun RangeBarChart(
     yAxisFixedWidth: Dp = 30.dp,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
     showYAxisHighlight: Boolean = false,
-    tooltipColor: Color = barColor,
+    tooltipColor: Color = Color.Unspecified,
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
     ) {
     if (data.isEmpty()) return
+
+    val barColor = barColor.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
+    val pointColor = pointColor.takeIf { it != Color.Unspecified } ?: barColor
+    val tooltipColor = tooltipColor.takeIf { it != Color.Unspecified } ?: barColor
 
     require(windowSize == null || pageSize == null) {
         "Cannot enable both scrolling mode (windowSize) and paging mode (pageSize) simultaneously"
@@ -302,7 +306,7 @@ fun RangeBarChart(
     xLabel: String = "",
     yLabel: String = "",
     title: String = "Range Bar Chart",
-    barColor: Color = ChartColor.Default,
+    barColor: Color = Color.Unspecified,
     barWidthRatio: Float = 0.6f,
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.RangeBar = InteractionType.RangeBar.BAR,
@@ -314,7 +318,7 @@ fun RangeBarChart(
     yTickStep: Double? = null,
     unit: String = "",
     pointValues: List<List<Double>>? = null,
-    pointColor: Color = barColor,
+    pointColor: Color = Color.Unspecified,
     pointRadius: Dp = 3.dp,
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
@@ -326,7 +330,7 @@ fun RangeBarChart(
     yAxisFixedWidth: Dp = 30.dp,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
     showYAxisHighlight: Boolean = false,
-    tooltipColor: Color = barColor,
+    tooltipColor: Color = Color.Unspecified,
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
@@ -933,7 +937,7 @@ private fun RangeBarChartPagedInternal(
     xLabelAutoSkip: Boolean,
     unit: String,
     pointValues: List<List<Double>>? = null,
-    pointColor: Color = barColor,
+    pointColor: Color = Color.Unspecified,
     pointRadius: Dp = 3.dp,
     pageSize: Int,
     yTickStep: Double?,

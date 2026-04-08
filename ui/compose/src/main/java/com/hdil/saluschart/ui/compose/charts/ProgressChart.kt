@@ -37,7 +37,7 @@ import com.hdil.saluschart.core.chart.chartDraw.ChartLegend
 import com.hdil.saluschart.core.chart.chartDraw.ChartTooltip
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartMath.ChartMath
-import com.hdil.saluschart.ui.theme.ColorUtils
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 import kotlin.math.hypot
 
 /**
@@ -160,9 +160,9 @@ fun ProgressChart(
 ) {
     if (data.isEmpty()) return
 
-    val resolvedColors = remember(data.size, colors) {
-        val base = colors ?: ColorUtils.rainbowPalette(data.size.coerceAtLeast(1))
-        // Repeat colors if the caller provided fewer than data.size
+    val palette = LocalSalusChartColors.current.palette
+    val resolvedColors = remember(data.size, colors, palette) {
+        val base = colors?.takeIf { it.isNotEmpty() } ?: palette
         List(data.size) { i -> base[i % base.size] }
     }
 

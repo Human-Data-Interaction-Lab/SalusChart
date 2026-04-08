@@ -40,6 +40,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.min
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 /**
  * Renders an Apple Health-style sleep stage chart displaying a [SleepSession] as
@@ -90,6 +91,12 @@ fun SleepStageChart(
     val mergedStages = remember(sleepSession.stages) {
         mergeConsecutiveStages(sleepSession.stages)
     }
+
+    val palette = LocalSalusChartColors.current.palette
+    val deepColor = palette.getOrElse(0) { Color(0xFF3A2B96) }
+    val coreColor = palette.getOrElse(1) { Color(0xFF0099FF) }
+    val remColor = palette.getOrElse(2) { Color(0xFF00D4FF) }
+    val awakeColor = palette.getOrElse(3) { Color(0xFFFF4D4F) }
 
     // Stage order bottom → top (Deep, Core, REM, Awake)
     val stageLabels = listOf("Deep", "Core", "REM", "Awake")
@@ -367,12 +374,6 @@ fun SleepStageChart(
                                 width = width
                             )
                         }
-
-                        // Base colors for stages
-                        val awakeColor = Color(0xFFFF4D4F)
-                        val remColor = Color(0xFF00D4FF)
-                        val coreColor = Color(0xFF0099FF)
-                        val deepColor = Color(0xFF3A2B96)
 
                         fun colorForStage(type: SleepStageType): Color =
                             when (type) {

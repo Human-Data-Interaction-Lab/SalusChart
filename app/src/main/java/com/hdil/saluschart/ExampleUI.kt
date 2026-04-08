@@ -95,8 +95,11 @@ import com.hdil.saluschart.ui.compose.charts.StackedBarSegment
 import com.hdil.saluschart.ui.compose.charts.markerColorForRatio
 import com.hdil.saluschart.ui.theme.Orange
 import com.hdil.saluschart.ui.theme.Primary_Purple
+import com.hdil.saluschart.ui.theme.SalusChartColorScheme
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 import com.hdil.saluschart.ui.theme.Teel
 import com.hdil.saluschart.ui.theme.Yellow
+import androidx.compose.runtime.CompositionLocalProvider
 import java.time.YearMonth
 import kotlin.math.abs
 
@@ -165,6 +168,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Y-Axis Highlight - Scatter Plot",
         "Y-Axis Highlight - Stacked Bar Chart",
         "Y-Axis Highlight - Range Bar Chart",
+        "Color Schemes Demo",
     )
 
     var selectedChartType by remember { mutableStateOf<String?>("Diet - Stacked Bar Chart FreeScroll") }
@@ -243,6 +247,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Y-Axis Highlight - Scatter Plot" -> YAxisHighlightDemo_ScatterPlot()
                 "Y-Axis Highlight - Stacked Bar Chart" -> YAxisHighlightDemo_StackedBarChart()
                 "Y-Axis Highlight - Range Bar Chart" -> YAxisHighlightDemo_RangeBarChart()
+                "Color Schemes Demo" -> ColorSchemesDemo()
                 else -> Text("Unknown Chart Type")
             }
         }
@@ -3113,6 +3118,85 @@ fun YAxisHighlightDemo_RangeBarChart() {
             ),
             showYAxisHighlight = true
         )
+    }
+}
+
+@Composable
+fun ColorSchemesDemo() {
+    val schemes = listOf(
+        "Default" to SalusChartColorScheme.Default,
+        "Ocean" to SalusChartColorScheme.Ocean,
+        "Sunset" to SalusChartColorScheme.Sunset,
+        "Forest" to SalusChartColorScheme.Forest,
+        "Lavender" to SalusChartColorScheme.Lavender,
+        "Monochrome" to SalusChartColorScheme.Monochrome,
+        "Rose" to SalusChartColorScheme.Rose,
+        "Spring" to SalusChartColorScheme.Spring,
+        "Summer" to SalusChartColorScheme.Summer,
+        "Fall" to SalusChartColorScheme.Fall,
+        "Winter" to SalusChartColorScheme.Winter,
+    )
+
+    val barData = ChartMarks
+    val stackedData = SampleDataProvider.getNutritionStackedData()
+    val pieData = listOf(
+        ChartMark(x = 0.0, y = 40.0, label = "Carbs"),
+        ChartMark(x = 1.0, y = 30.0, label = "Protein"),
+        ChartMark(x = 2.0, y = 20.0, label = "Fat"),
+        ChartMark(x = 3.0, y = 10.0, label = "Fiber"),
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 32.dp)
+    ) {
+        schemes.forEach { (name, scheme) ->
+            CompositionLocalProvider(LocalSalusChartColors provides scheme) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 4.dp)
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                        BarChart(
+                            data = barData,
+                            xLabel = "Day",
+                            yLabel = "Steps",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                        )
+
+                        StackedBarChart(
+                            data = stackedData,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                        )
+
+                        PieChart(
+                            data = pieData,
+                            isDonut = true,
+                            showLegend = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

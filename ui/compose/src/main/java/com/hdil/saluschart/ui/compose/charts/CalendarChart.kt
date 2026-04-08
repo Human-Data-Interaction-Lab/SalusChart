@@ -57,6 +57,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.min
 import kotlin.math.roundToInt
+import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 
 
 /**
@@ -105,8 +106,9 @@ fun CalendarChart(
     bubbleType: BubbleType = BubbleType.CIRCLE,
     maxBubbleSize: Float = 10f,
     minBubbleSize: Float = 6f,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = Color.Unspecified,
 ) {
+    val color = color.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
     SingleMonthCalendarChart(
         modifier = modifier,
         entries = entries,
@@ -140,8 +142,9 @@ fun SingleMonthCalendarChart(
     bubbleType: BubbleType,
     maxBubbleSize: Float,
     minBubbleSize: Float,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = Color.Unspecified,
 ) {
+    val color = color.takeIf { it != Color.Unspecified } ?: LocalSalusChartColors.current.primary
     val maxValue = entries.maxOfOrNull { it.value } ?: 1f
     val entriesByDate = entries.associateBy { it.date }
     val dayOfWeeks = listOf(
@@ -543,7 +546,7 @@ fun PagedCalendarChart(
     markerType: CellMarkerType = CellMarkerType.BUBBLE,
     maxBubbleSize: Float = 10f,
     minBubbleSize: Float = 6f,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = Color.Unspecified,
     virtualSpanMonths: Int = 2400,
     onMonthChanged: ((YearMonth) -> Unit)? = null,
 ) {

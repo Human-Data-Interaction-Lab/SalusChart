@@ -14,12 +14,11 @@ kotlin {
 }
 
 dependencies {
-//    implementation(project(":core:chart")) // ChartMark 사용
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+    implementation(libs.kotlinx.datetime)
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-data-model", "0.1.3")
+    coordinates(project.findProperty("GROUP").toString(), "saluschart-data-model", project.findProperty("VERSION_NAME").toString())
     publishToMavenCentral()
     signAllPublications()
 }

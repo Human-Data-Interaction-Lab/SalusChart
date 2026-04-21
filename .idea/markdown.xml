@@ -4,5 +4,6 @@
     <option name="previewPanelProviderInfo">
       <ProviderInfo name="Compose (experimental)" className="com.intellij.markdown.compose.preview.ComposePanelProvider" />
     </option>
+    <option name="splitLayout" value="SHOW_PREVIEW" />
   </component>
 </project>

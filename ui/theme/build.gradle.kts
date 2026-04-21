@@ -38,12 +38,13 @@ android {
 }
 
 dependencies {
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
 
-    implementation(libs.androidx.ui.versioned)
-    implementation(libs.androidx.material3.versioned)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.material3)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -51,7 +52,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-ui-theme", "0.1.3")
+    coordinates(project.findProperty("GROUP").toString(), "saluschart-ui-theme", project.findProperty("VERSION_NAME").toString())
     publishToMavenCentral()
     signAllPublications()
 }

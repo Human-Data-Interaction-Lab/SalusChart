@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -39,43 +37,26 @@ android {
 }
 
 dependencies {
-    // Core module dependencies
     implementation(project(":core:util"))
     implementation(project(":data:model"))
-
-    // Core Android dependencies
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-
-    // Compose BOM - manages all Compose library versions
     implementation(platform(libs.androidx.compose.bom))
-
-    // Compose UI dependencies
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-
-    // Compose Foundation dependencies (for Canvas, layouts, shapes)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.foundation.layout)
-    implementation(libs.androidx.compose.runtime)
-
-    // Material3 for UI components and theming
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.runtime)
+    implementation(libs.androidx.foundation)
     implementation(libs.androidx.foundation.layout)
-    implementation(libs.androidx.compose.ui.unit)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.animation.core)
+    implementation(libs.androidx.ui.unit)
+    implementation(libs.androidx.core.ktx)
 
-    // Testing dependencies
     testImplementation(libs.junit)
-
-    // compose shape
-    implementation("androidx.graphics:graphics-shapes:1.0.1")
+    implementation(libs.androidx.graphics.shapes)
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-core-chart", "0.1.3")
+    coordinates(project.findProperty("GROUP").toString(), "saluschart-core-chart", project.findProperty("VERSION_NAME").toString())
     publishToMavenCentral()
     signAllPublications()
 }

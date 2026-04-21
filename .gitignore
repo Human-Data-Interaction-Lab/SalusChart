@@ -9,7 +9,13 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+**/build/
+**/bin/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+.firebender/
+.idea/firebender/
+.idea/shelf/
+.idea/json_assistant_history.xml

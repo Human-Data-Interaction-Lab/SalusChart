@@ -1,6 +1,5 @@
 package com.hdil.saluschart.core.transform
 
-import androidx.compose.runtime.Immutable
 import com.hdil.saluschart.core.util.TimeUnitGroup
 import java.time.Instant
 
@@ -20,7 +19,6 @@ import java.time.Instant
  * @param yMultiple Multi-value series map (nullable if single-value).
  * @param timeUnit Granularity of the dataset.
  */
-@Immutable
 data class TemporalDataSet(
     val x: List<Instant>,
     val y: List<Double>? = null,

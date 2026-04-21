@@ -43,13 +43,14 @@ dependencies {
     api(project(":ui:theme"))
     implementation(project(":data:model"))
 
-    implementation(libs.androidx.ui.versioned)
-    implementation(libs.androidx.ui.graphics.versioned)
-    implementation(libs.androidx.ui.tooling.preview.versioned)
-    implementation(libs.androidx.material3.versioned)
-    implementation(libs.androidx.foundation.versioned)
-    implementation(libs.androidx.foundation.layout.versioned)
-    implementation(libs.androidx.animation.core.versioned)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.animation.core)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -61,7 +62,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.hdilys", "saluschart-ui-compose", "0.1.3")
+    coordinates(project.findProperty("GROUP").toString(), "saluschart-ui-compose", project.findProperty("VERSION_NAME").toString())
     publishToMavenCentral()
     signAllPublications()
 }

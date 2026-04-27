@@ -172,7 +172,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Color Schemes Demo",
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Diet - Stacked Bar Chart FreeScroll") }
+    var selectedChartType by remember { mutableStateOf<String?>("Heart Rate - Range Bar Chart (with dots)") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -1251,7 +1251,7 @@ fun Minimal_Chart() {
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp)
-                    .height(52.dp)
+                    .height(80.dp)
                     .align(androidx.compose.ui.Alignment.CenterVertically)
             ) {
                 val singleRangeData = RangeChartMark(
@@ -1266,6 +1266,8 @@ fun Minimal_Chart() {
                     containerMax = 120.0, // 정상 심박수 범위 끝
                     containerColor = Color.LightGray,
                     rangeColor = Orange,
+                    label = "높음",
+                    showRangeText = false,
                 )
             }
         }
@@ -1942,14 +1944,14 @@ fun MinimalMultiSegmentGaugeCard() {
             Box(
                 modifier = Modifier
                     .width(120.dp)
-                    .height(52.dp)
-                    .padding(top = 32.dp),
+                    .height(52.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
                 MinimalMultiSegmentGauge(
                     modifier = Modifier.fillMaxSize(),
                     segments = segments,
                     markerRatio = markerRatio,
+                    label = "높음",
                     barHeight = 14.dp,
                     markerWidth = 36.dp,
                     markerHeight = 20.dp,
@@ -2117,7 +2119,7 @@ fun VerticalRangePlot_HeartRate() {
     }
 
     RangeBarChart(
-        modifier = Modifier.fillMaxWidth().height(400.dp),
+        modifier = Modifier.fillMaxWidth().height(200.dp),
         data = rangeMarks,
         title = "심박수 범위 (일간)",
         yLabel = "심박수 (bpm)",
@@ -2125,8 +2127,9 @@ fun VerticalRangePlot_HeartRate() {
         barWidthRatio = 0.4f,
         barColor = Color(0xFFE91E63),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        yAxisPosition = YAxisPosition.RIGHT,
         unit = "bpm",
-        pageSize = 24,
+        pageSize = 7,
         pointValues = pointValues,
         pointColor = Color(0xFFE91E63),
         pointRadius = 3.dp,

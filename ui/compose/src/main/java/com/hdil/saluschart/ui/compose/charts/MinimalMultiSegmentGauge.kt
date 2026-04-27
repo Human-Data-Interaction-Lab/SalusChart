@@ -10,8 +10,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.max
 import kotlin.math.min
 
@@ -36,12 +40,22 @@ data class MinimalGaugeSegment(
  * @param modifier Modifier applied to the Canvas.
  * @param segments Ordered list of gauge segments that partition the bar from left to right.
  * @param markerRatio Position of the marker along the gauge (0 = left edge, 1 = right edge).
+ * @param label Text displayed inside the callout bubble.
+ * @param bubbleColor Background color of the callout bubble.
+ * @param bubbleTextColor Text color inside the callout bubble.
  * @param barHeight Height of the gauge bar.
  * @param cornerRadius Corner radius of the gauge bar; defaults to fully rounded (pill).
  * @param markerWidth Requested width of the marker capsule; clamped to the containing segment width.
  * @param markerHeight Height of the marker capsule.
  * @param markerColor Fill color of the marker capsule.
  * @param markerShadowAlpha Alpha of the drop shadow rendered below the marker.
+ * @param bubblePaddingH Horizontal padding inside the bubble.
+ * @param bubblePaddingV Vertical padding inside the bubble.
+ * @param bubbleCornerRadius Corner radius of the bubble rectangle.
+ * @param pointerWidth Width of the triangular pointer.
+ * @param pointerHeight Height of the triangular pointer.
+ * @param bubbleGapFromBar Gap between the bottom of the bubble pointer and the top of the marker.
+ * @param bubbleTextSizeSp Font size of the bubble label in sp.
  */
 @Composable
 fun MinimalMultiSegmentGauge(
@@ -50,6 +64,11 @@ fun MinimalMultiSegmentGauge(
 
     // 0..1 position along the gauge
     markerRatio: Float,
+    label: String = "높음",
+
+    // bubble styling
+    bubbleColor: Color = Color(0xFFD6F5DF),
+    bubbleTextColor: Color = Color(0xFF0A7A32),
 
     // sizing
     barHeight: Dp = 14.dp,
@@ -60,17 +79,30 @@ fun MinimalMultiSegmentGauge(
     markerHeight: Dp = 22.dp,
     markerColor: Color = Color(0xFF7BE64C),
     markerShadowAlpha: Float = 0.10f,
+
+    // bubble sizing
+    bubblePaddingH: Dp = 10.dp,
+    bubblePaddingV: Dp = 6.dp,
+    bubbleCornerRadius: Dp = 18.dp,
+    pointerWidth: Dp = 14.dp,
+    pointerHeight: Dp = 8.dp,
+    bubbleGapFromBar: Dp = 8.dp,
+    bubbleTextSizeSp: Float = 12f,
 ) {
     if (segments.isEmpty()) return
 
     val p = markerRatio.coerceIn(0f, 1f)
+    val textMeasurer = rememberTextMeasurer()
 
     Canvas(modifier = modifier) {
         val h = barHeight.toPx()
         val r = min(cornerRadius.toPx(), h / 2f)
+        val requestedMW = markerWidth.toPx()
+        val mH = markerHeight.toPx()
+        val markerVerticalOverflow = ((mH - h) / 2f).coerceAtLeast(0f)
 
         val barLeft = 0f
-        val barTop = (size.height - h) / 2f
+        val barTop = size.height - h - markerVerticalOverflow
         val barW = size.width
 
         val total = segments.sumOf { it.fraction.toDouble() }.toFloat().let { if (it <= 0f) 1f else it }
@@ -125,9 +157,6 @@ fun MinimalMultiSegmentGauge(
             }
         }
 
-        val requestedMW = markerWidth.toPx()
-        val mH = markerHeight.toPx()
-
         val segLeft = segStarts[selectedIndex]
         val segRight = segEnds[selectedIndex]
         val segW = (segRight - segLeft).coerceAtLeast(0f)
@@ -156,6 +185,59 @@ fun MinimalMultiSegmentGauge(
             topLeft = Offset(mLeft, mTop),
             size = Size(mW, mH),
             cornerRadius = CornerRadius(markerR, markerR)
+        )
+
+        val style = TextStyle(
+            color = bubbleTextColor,
+            fontSize = bubbleTextSizeSp.sp
+        )
+        val textLayout = textMeasurer.measure(label, style)
+
+        val padH = bubblePaddingH.toPx()
+        val padV = bubblePaddingV.toPx()
+        val bubbleW = textLayout.size.width + padH * 2f
+        val bubbleH = textLayout.size.height + padV * 2f
+        val bubbleR = min(bubbleCornerRadius.toPx(), min(bubbleW / 2f, bubbleH / 2f))
+        val pointerW = pointerWidth.toPx()
+        val pointerH = pointerHeight.toPx()
+        val gap = bubbleGapFromBar.toPx()
+        val textBaselineCorrection = (textLayout.firstBaseline - textLayout.size.height / 2f)
+            .coerceAtLeast(0f)
+
+        val bubbleMaxLeft = (size.width - bubbleW).coerceAtLeast(0f)
+        val bubbleLeft = (cx - bubbleW / 2f).coerceIn(0f, bubbleMaxLeft)
+        val bubbleTop = (mTop - gap - pointerH - bubbleH).coerceAtLeast(0f)
+
+        drawRoundRect(
+            color = bubbleColor,
+            topLeft = Offset(bubbleLeft, bubbleTop),
+            size = Size(bubbleW, bubbleH),
+            cornerRadius = CornerRadius(bubbleR, bubbleR)
+        )
+
+        val pointerCenterX = cx.coerceIn(
+            bubbleLeft + bubbleR,
+            bubbleLeft + bubbleW - bubbleR
+        )
+        val pLeft = pointerCenterX - pointerW / 2f
+        val pRight = pointerCenterX + pointerW / 2f
+        val pTop = bubbleTop + bubbleH
+        val pBottom = pTop + pointerH
+
+        val pointerPath = Path().apply {
+            moveTo(pLeft, pTop)
+            lineTo(pRight, pTop)
+            lineTo(pointerCenterX, pBottom)
+            close()
+        }
+        drawPath(pointerPath, bubbleColor)
+
+        drawText(
+            textLayoutResult = textLayout,
+            topLeft = Offset(
+                x = bubbleLeft + (bubbleW - textLayout.size.width) / 2f,
+                y = bubbleTop + (bubbleH - textLayout.size.height) / 2f - textBaselineCorrection
+            )
         )
     }
 }
@@ -188,4 +270,3 @@ fun markerColorForRatio(
     }
     return segments.last().color
 }
-

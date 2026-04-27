@@ -77,6 +77,7 @@ object GaugeChartDraw {
      * @param containerMax Maximum value represented by the full container bar.
      * @param containerColor Background/container bar color.
      * @param rangeColor Highlight segment color.
+     * @param barHeight Height of the gauge bar.
      */
     @Composable
     fun GaugeBar(
@@ -85,7 +86,8 @@ object GaugeChartDraw {
         containerMin: Float,
         containerMax: Float,
         containerColor: Color,
-        rangeColor: Color
+        rangeColor: Color,
+        barHeight: Dp = 24.dp
     ) {
         val density = LocalDensity.current
         var containerWidth by remember { mutableStateOf(0.dp) }
@@ -93,7 +95,7 @@ object GaugeChartDraw {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(24.dp)
+                .height(barHeight)
                 .onGloballyPositioned { coordinates ->
                     // Measure container width in dp for placing the range segment.
                     containerWidth = with(density) { coordinates.size.width.toDp() }
@@ -117,7 +119,7 @@ object GaugeChartDraw {
                 containerColor = containerColor,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(24.dp)
+                    .height(barHeight)
             )
 
             // Range segment (data range), positioned precisely within the container.
@@ -126,7 +128,7 @@ object GaugeChartDraw {
                     rangeColor = rangeColor,
                     startOffset = containerWidth * startRatio,
                     barWidth = containerWidth * widthRatio,
-                    modifier = Modifier.height(24.dp)
+                    modifier = Modifier.height(barHeight)
                 )
             }
         }

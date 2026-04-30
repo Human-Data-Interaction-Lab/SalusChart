@@ -8,6 +8,10 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.SalusChartWear">
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

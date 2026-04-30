@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.8
+- Add configurable Y-axis label formatting for range bar charts.
+- Add a default hour-decimal time formatter for sleep range charts.
+- Add a weekly sleep range bar chart example.
+
 ## 0.1.0
 - Initial public release.
 - Published modules:

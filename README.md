@@ -2,7 +2,7 @@
 
 A modular Jetpack Compose charting library for Android health apps.
 
-**Latest version:** `0.1.7` — [Maven Central](https://central.sonatype.com/search?q=io.github.hdilys)
+**Latest version:** `0.1.8` — [Maven Central](https://central.sonatype.com/search?q=io.github.hdilys)
 
 **[→ Documentation](https://hdil-ys.github.io/SalusChart/)**
 
@@ -14,7 +14,7 @@ repositories { mavenCentral() }
 
 // build.gradle.kts
 dependencies {
-    val salusVersion = "0.1.7"
+    val salusVersion = "0.1.8"
     implementation("io.github.hdilys:saluschart-ui-compose:$salusVersion")
     implementation("io.github.hdilys:saluschart-ui-theme:$salusVersion")
     implementation("io.github.hdilys:saluschart-data-model:$salusVersion")

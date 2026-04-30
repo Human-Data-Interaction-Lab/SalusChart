@@ -97,6 +97,7 @@ import com.hdil.saluschart.ui.compose.charts.PagedCalendarChart
 import com.hdil.saluschart.ui.compose.charts.PieChart
 import com.hdil.saluschart.ui.compose.charts.ProgressChart
 import com.hdil.saluschart.ui.compose.charts.RangeBarChart
+import com.hdil.saluschart.ui.compose.charts.RangeBarChartDefaults
 import com.hdil.saluschart.ui.compose.charts.RangeGaugeChart
 import com.hdil.saluschart.ui.compose.charts.ScatterPlot
 import com.hdil.saluschart.ui.compose.charts.SleepColumn
@@ -164,6 +165,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Progress Bar Chart",
         "Progress Ring Chart",
         "Sleep Session - Sleep Stage Chart",
+        "Weekly Sleep - Range Bar Chart",
         "Sleep Consistency - Horizontal Range Bar Chart",
         "Nutrition - Horizontal Stacked Bar Chart",
         "Heart Rate - Range Gauge Chart",
@@ -244,6 +246,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Progress Bar Chart" -> ProgressBarChart_1()
                 "Progress Ring Chart" -> ProgressBarChart_2()
                 "Sleep Session - Sleep Stage Chart" -> SleepStageChart_1()
+                "Weekly Sleep - Range Bar Chart" -> WeeklySleepRangeBarChart()
                 "Sleep Consistency - Horizontal Range Bar Chart" -> HorizontalRangeBarChart()
                 "Nutrition - Horizontal Stacked Bar Chart" -> HorizontalStackedBarChart()
                 "Heart Rate - Range Gauge Chart" -> RangeGaugeChart()
@@ -2071,6 +2074,92 @@ fun RangeBarChart_HeartRate() {
             ReferenceLineSpec(
                 y = 70.0,
                 label = "70 bpm",
+                showLabel = true,
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            )
+        )
+    )
+}
+
+@Composable
+fun WeeklySleepRangeBarChart() {
+    val weeklySleepRanges = remember {
+        listOf(
+            RangeChartMark(
+                x = 0.0,
+                minPoint = ChartMark(x = 0.0, y = 23.25),
+                maxPoint = ChartMark(x = 0.0, y = 30.75),
+                label = "Mon"
+            ),
+            RangeChartMark(
+                x = 1.0,
+                minPoint = ChartMark(x = 1.0, y = 22.80),
+                maxPoint = ChartMark(x = 1.0, y = 30.40),
+                label = "Tue"
+            ),
+            RangeChartMark(
+                x = 2.0,
+                minPoint = ChartMark(x = 2.0, y = 24.10),
+                maxPoint = ChartMark(x = 2.0, y = 31.25),
+                label = "Wed"
+            ),
+            RangeChartMark(
+                x = 3.0,
+                minPoint = ChartMark(x = 3.0, y = 23.60),
+                maxPoint = ChartMark(x = 3.0, y = 31.10),
+                label = "Thu"
+            ),
+            RangeChartMark(
+                x = 4.0,
+                minPoint = ChartMark(x = 4.0, y = 25.00),
+                maxPoint = ChartMark(x = 4.0, y = 32.00),
+                label = "Fri"
+            ),
+            RangeChartMark(
+                x = 5.0,
+                minPoint = ChartMark(x = 5.0, y = 24.50),
+                maxPoint = ChartMark(x = 5.0, y = 32.25),
+                label = "Sat"
+            ),
+            RangeChartMark(
+                x = 6.0,
+                minPoint = ChartMark(x = 6.0, y = 23.10),
+                maxPoint = ChartMark(x = 6.0, y = 30.90),
+                label = "Sun"
+            )
+        )
+    }
+
+    RangeBarChart(
+        modifier = Modifier.fillMaxWidth().height(500.dp),
+        data = weeklySleepRanges,
+        title = "Weekly Sleep Range",
+        xLabel = "Day",
+        yLabel = "Time",
+        barColor = Color(0xFF6E86FF),
+        barWidthRatio = 0.56f,
+        barCornerRadiusFraction = 0.5f,
+        roundTopOnly = false,
+        yTickStep = 2.0,
+        yAxisFixedWidth = 58.dp,
+        interactionType = InteractionType.RangeBar.TOUCH_AREA,
+        unit = "hr",
+        showLegend = false,
+        yAxisLabelFormatter = RangeBarChartDefaults.HourDecimalTimeLabelFormatter,
+        referenceLines = listOf(
+            ReferenceLineSpec(
+                y = 23.0,
+                label = "23:00",
+                showLabel = true,
+                color = Color(0xFFFF7A00),
+                strokeWidth = 2.dp,
+                style = LineStyle.DASHED
+            ),
+            ReferenceLineSpec(
+                y = 31.0,
+                label = "07:00",
                 showLabel = true,
                 color = Color(0xFFFF7A00),
                 strokeWidth = 2.dp,

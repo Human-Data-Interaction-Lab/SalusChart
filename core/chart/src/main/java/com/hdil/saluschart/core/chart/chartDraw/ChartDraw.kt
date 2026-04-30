@@ -79,7 +79,8 @@ object ChartDraw {
         size: Size,
         metrics: ChartMath.ChartMetrics,
         yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
-        drawLabels: Boolean = true
+        drawLabels: Boolean = true,
+        yLabelFormatter: (Double) -> String = { formatTickLabel(it.toFloat()) }
     ) {
         val denom = (metrics.maxY - metrics.minY)
         if (denom == 0.0) return
@@ -109,7 +110,7 @@ object ChartDraw {
 
             if (!drawLabels) return@forEach
 
-            val labelText = formatTickLabel(yVal.toFloat())
+            val labelText = yLabelFormatter(yVal)
 
             val labelX = when (yAxisPosition) {
                 YAxisPosition.RIGHT -> yAxisX + 5f
@@ -212,7 +213,8 @@ object ChartDraw {
         highlightValues: List<Double> = emptyList(),
         highlightColorForValue: (Double) -> Color = { Color.Transparent },
         extraTickValues: List<Double> = emptyList(),
-        highlightTolerance: Double = 1e-6
+        highlightTolerance: Double = 1e-6,
+        yLabelFormatter: (Double) -> String = { formatTickLabel(it.toFloat()) }
     ) {
         val denom = (metrics.maxY - metrics.minY)
         if (denom == 0.0) return
@@ -285,7 +287,7 @@ object ChartDraw {
                     strokeWidth = 1f
                 )
 
-                val label = formatTickLabel(yVal.toFloat())
+                val label = yLabelFormatter(yVal)
 
                 // Center text visually on the tick mark.
                 val centeredY = y - (fm.ascent + fm.descent) / 2f
@@ -349,7 +351,8 @@ object ChartDraw {
         metrics: ChartMath.ChartMetrics,
         yAxisPosition: YAxisPosition,
         paneWidthPx: Float,
-        referenceLines: List<ReferenceLineSpec>
+        referenceLines: List<ReferenceLineSpec>,
+        yLabelFormatter: (Double) -> String = { formatTickLabel(it.toFloat()) }
     ) {
         val tol = 1e-6
         fun norm(v: Double) = round(v * 1_000_000.0) / 1_000_000.0
@@ -382,7 +385,8 @@ object ChartDraw {
                      abs(norm(spec.yEnd!!) - nv) <= tol)
                 }?.color ?: Color.Transparent
             },
-            highlightTolerance = tol
+            highlightTolerance = tol,
+            yLabelFormatter = yLabelFormatter
         )
     }
 }

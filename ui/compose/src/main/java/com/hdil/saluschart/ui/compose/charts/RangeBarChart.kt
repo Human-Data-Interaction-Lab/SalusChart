@@ -58,6 +58,7 @@ import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 import com.hdil.saluschart.core.chart.toRangeChartMarksByXGroup
 import com.hdil.saluschart.ui.theme.LocalSalusChartColors
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * A single entry in a [RangeBarChart] legend.
@@ -71,6 +72,28 @@ data class LegendItem(
     val color: Color,
     val shape: LegendShape = LegendShape.Dot
 )
+
+/**
+ * Default helpers for [RangeBarChart].
+ */
+object RangeBarChartDefaults {
+    /**
+     * Formats hour-decimal Y values as a clock time in `HH:mm`.
+     *
+     * This is useful for sleep ranges that cross midnight. For example:
+     * - `23.25` -> `23:15`
+     * - `24.0` -> `00:00`
+     * - `30.75` -> `06:45`
+     */
+    val HourDecimalTimeLabelFormatter: (Double) -> String = { value ->
+        val totalMinutes = (value * 60.0).roundToInt()
+        val minutesPerDay = 24 * 60
+        val minutesInDay = ((totalMinutes % minutesPerDay) + minutesPerDay) % minutesPerDay
+        val hour = minutesInDay / 60
+        val minute = minutesInDay % 60
+        "%02d:%02d".format(hour, minute)
+    }
+}
 
 private data class RangeBarAutoSizing(
     val barWidthRatio: Float,
@@ -207,6 +230,7 @@ fun RangeBarChart(
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    yAxisLabelFormatter: (Double) -> String = { ChartDraw.formatTickLabel(it.toFloat()) },
     ) {
     if (data.isEmpty()) return
 
@@ -242,6 +266,7 @@ fun RangeBarChart(
             autoFitOverlayPoints = autoFitOverlayPoints,
             pageSize = requestedPageSize,
             yTickStep = yTickStep,
+            yAxisLabelFormatter = yAxisLabelFormatter,
             initialPageIndex = initialPageIndex,
             outerPadding = contentPadding,
             yAxisFixedWidth = yAxisFixedWidth,
@@ -276,6 +301,7 @@ fun RangeBarChart(
         xLabelAutoSkip = xLabelAutoSkip,
         maxXTicksLimit = maxXTicksLimit,
         yTickStep = yTickStep,
+        yAxisLabelFormatter = yAxisLabelFormatter,
         unit = unit,
         pointValues = pointValues,
         pointColor = pointColor,
@@ -375,6 +401,7 @@ fun RangeBarChart(
     legendItems: List<LegendItem> = emptyList(),
     showLegend: Boolean = true,
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
+    yAxisLabelFormatter: (Double) -> String = { ChartDraw.formatTickLabel(it.toFloat()) },
     ) {
     val rangeData = remember(data) {
         data.toRangeChartMarksByXGroup(
@@ -399,6 +426,7 @@ fun RangeBarChart(
         xLabelAutoSkip = xLabelAutoSkip,
         maxXTicksLimit = maxXTicksLimit,
         yTickStep = yTickStep,
+        yAxisLabelFormatter = yAxisLabelFormatter,
         unit = unit,
         pointValues = pointValues,
         pointColor = pointColor,
@@ -438,6 +466,7 @@ private fun RangeBarChartContent(
     xLabelAutoSkip: Boolean,
     maxXTicksLimit: Int?,
     yTickStep: Double?,
+    yAxisLabelFormatter: (Double) -> String,
     unit: String,
     pointValues: List<List<Double>>?,
     pointColor: Color,
@@ -532,9 +561,9 @@ private fun RangeBarChartContent(
                     )
                 }
                 val tickPaint = remember { android.graphics.Paint().apply { textSize = 28f } }
-                val longestTickPx = remember(yAxisRange) {
+                val longestTickPx = remember(yAxisRange, yAxisLabelFormatter) {
                     yAxisRange.yTicks.maxOfOrNull { tick ->
-                        tickPaint.measureText(ChartDraw.formatTickLabel(tick.toFloat()))
+                        tickPaint.measureText(yAxisLabelFormatter(tick))
                     } ?: 0f
                 }
                 val extraPx = if (showYAxisHighlight) 30f else 20f
@@ -584,12 +613,14 @@ private fun RangeBarChartContent(
                                 if (showYAxisHighlight && referenceLines.isNotEmpty()) {
                                     ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
                                         drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
-                                        paneWidthPx = size.width, referenceLines = referenceLines
+                                        paneWidthPx = size.width, referenceLines = referenceLines,
+                                        yLabelFormatter = yAxisLabelFormatter
                                     )
                                 } else {
                                     ChartDraw.drawYAxisStandalone(
                                         drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
-                                        paneWidthPx = size.width
+                                        paneWidthPx = size.width,
+                                        yLabelFormatter = yAxisLabelFormatter
                                     )
                                 }
                             }
@@ -663,7 +694,8 @@ private fun RangeBarChartContent(
                                 size = size,
                                 metrics = metrics,
                                 yAxisPosition = yAxisPosition,
-                                drawLabels = showYAxis && !useExternalYAxis
+                                drawLabels = showYAxis && !useExternalYAxis,
+                                yLabelFormatter = yAxisLabelFormatter
                             )
 
                             if (showYAxis && !useExternalYAxis) {
@@ -890,12 +922,14 @@ private fun RangeBarChartContent(
                                 if (showYAxisHighlight && referenceLines.isNotEmpty()) {
                                     ChartDraw.drawYAxisStandaloneWithReferenceHighlights(
                                         drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
-                                        paneWidthPx = size.width, referenceLines = referenceLines
+                                        paneWidthPx = size.width, referenceLines = referenceLines,
+                                        yLabelFormatter = yAxisLabelFormatter
                                     )
                                 } else {
                                     ChartDraw.drawYAxisStandalone(
                                         drawScope = this, metrics = m, yAxisPosition = yAxisPosition,
-                                        paneWidthPx = size.width
+                                        paneWidthPx = size.width,
+                                        yLabelFormatter = yAxisLabelFormatter
                                     )
                                 }
                             }
@@ -946,6 +980,7 @@ private fun FixedPagerYAxisRange(
     yAxisPosition: YAxisPosition,
     step: Double,
     width: Dp,
+    yAxisLabelFormatter: (Double) -> String,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
     showYAxisHighlight: Boolean = false,
     bottomPadding: Dp = 0.dp,
@@ -974,14 +1009,16 @@ private fun FixedPagerYAxisRange(
                 metrics = m,
                 yAxisPosition = yAxisPosition,
                 paneWidthPx = size.width,
-                referenceLines = referenceLines
+                referenceLines = referenceLines,
+                yLabelFormatter = yAxisLabelFormatter
             )
         } else {
             ChartDraw.drawYAxisStandalone(
                 drawScope = this,
                 metrics = m,
                 yAxisPosition = yAxisPosition,
-                paneWidthPx = size.width
+                paneWidthPx = size.width,
+                yLabelFormatter = yAxisLabelFormatter
             )
         }
     }
@@ -1011,6 +1048,7 @@ private fun RangeBarChartPagedInternal(
     autoFitOverlayPoints: Boolean = true,
     pageSize: Int,
     yTickStep: Double?,
+    yAxisLabelFormatter: (Double) -> String,
     initialPageIndex: Int?,
     outerPadding: PaddingValues,
     yAxisFixedWidth: Dp = 30.dp,
@@ -1074,6 +1112,7 @@ private fun RangeBarChartPagedInternal(
                     yAxisPosition = YAxisPosition.LEFT,
                     step = unifiedTickStep,
                     width = yAxisFixedWidth,
+                    yAxisLabelFormatter = yAxisLabelFormatter,
                     referenceLines = referenceLines,
                     showYAxisHighlight = showYAxisHighlight,
                     bottomPadding = 8.dp
@@ -1126,6 +1165,7 @@ private fun RangeBarChartPagedInternal(
                         xLabelAutoSkip = xLabelAutoSkip,
                         maxXTicksLimit = maxXTicksLimit,
                         yTickStep = unifiedTickStep,
+                        yAxisLabelFormatter = yAxisLabelFormatter,
                         unit = unit,
                         pointValues = pagePoints,
                         pointColor = pointColor,
@@ -1213,6 +1253,7 @@ private fun RangeBarChartPagedInternal(
                     yAxisPosition = YAxisPosition.RIGHT,
                     step = unifiedTickStep,
                     width = yAxisFixedWidth,
+                    yAxisLabelFormatter = yAxisLabelFormatter,
                     referenceLines = referenceLines,
                     showYAxisHighlight = showYAxisHighlight,
                     bottomPadding = 8.dp

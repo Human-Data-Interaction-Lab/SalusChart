@@ -72,7 +72,7 @@ object ScatterPlotDraw {
      * @param selectedIndices Optional multi-selection set (takes precedence over [selectedPointIndex]).
      * @param onPointClick Callback for point tap (index).
      * @param interactive If true, points are clickable.
-     * @param showPoint If false, points can be hidden (selection may still influence visibility).
+     * @param showPoint If false, point markers are not drawn.
      * @param pointType Marker shape.
      * @param showValue If true, draw value labels near points.
      * @param chartType Chart type (currently unused here; kept for API stability).
@@ -128,7 +128,7 @@ object ScatterPlotDraw {
             val pointColor = if (showPoint) {
                 if (isSelected) color else Color.Gray
             } else {
-                if ((selectedIndices?.contains(index) == true) || selectedPointIndex == index) color else Color.Transparent
+                Color.Transparent
             }
 
             // Tooltip targeting: set-based targeting takes precedence.
@@ -150,7 +150,7 @@ object ScatterPlotDraw {
                             .clickable(enabled = interactive) { onPointClick?.invoke(index) }
                     )
 
-                    if (innerRadius > 0.dp && (showPoint || isSelected)) {
+                    if (innerRadius > 0.dp && showPoint) {
                         Box(
                             modifier = Modifier
                                 .offset(x = xDp - innerRadius, y = yDp - innerRadius)

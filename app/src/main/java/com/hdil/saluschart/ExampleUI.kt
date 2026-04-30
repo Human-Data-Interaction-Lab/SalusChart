@@ -1,9 +1,12 @@
 package com.hdil.saluschart
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -32,7 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,11 +50,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hdil.saluschart.core.chart.BaseChartMark
 import com.hdil.saluschart.core.chart.ChartMark
+import com.hdil.saluschart.core.chart.ChartType
 import com.hdil.saluschart.core.chart.InteractionType
 import com.hdil.saluschart.core.chart.PointType
 import com.hdil.saluschart.core.chart.ProgressChartMark
 import com.hdil.saluschart.core.chart.RangeChartMark
 import com.hdil.saluschart.core.chart.ReferenceLineSpec
+import com.hdil.saluschart.core.chart.chartMath.ChartMath
 import com.hdil.saluschart.core.chart.chartDraw.LegendPosition
 import com.hdil.saluschart.core.chart.chartDraw.LineStyle
 import com.hdil.saluschart.core.chart.chartDraw.ReferenceLineType
@@ -103,6 +114,7 @@ import com.hdil.saluschart.ui.theme.Yellow
 import androidx.compose.runtime.CompositionLocalProvider
 import java.time.YearMonth
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 // Note: Sample data moved to SampleDataProvider for better organization
 
@@ -169,10 +181,11 @@ fun ExampleUI(modifier: Modifier = Modifier) {
         "Y-Axis Highlight - Scatter Plot",
         "Y-Axis Highlight - Stacked Bar Chart",
         "Y-Axis Highlight - Range Bar Chart",
+        "Paper Figure - Marks & Primitives",
         "Color Schemes Demo",
     )
 
-    var selectedChartType by remember { mutableStateOf<String?>("Heart Rate - Range Bar Chart (with dots)") }
+    var selectedChartType by remember { mutableStateOf<String?>("Paper Figure - Marks & Primitives") }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (selectedChartType == null) {
@@ -201,7 +214,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
                     tint = Color.Black,
-                    modifier = Modifier.size(32.dp) // 아이콘 크기 조정
+                    modifier = Modifier.size(32.dp) // icon size
                 )
             }
 
@@ -248,6 +261,7 @@ fun ExampleUI(modifier: Modifier = Modifier) {
                 "Y-Axis Highlight - Scatter Plot" -> YAxisHighlightDemo_ScatterPlot()
                 "Y-Axis Highlight - Stacked Bar Chart" -> YAxisHighlightDemo_StackedBarChart()
                 "Y-Axis Highlight - Range Bar Chart" -> YAxisHighlightDemo_RangeBarChart()
+                "Paper Figure - Marks & Primitives" -> PaperFigureMarksAndPrimitives()
                 "Color Schemes Demo" -> ColorSchemesDemo()
                 else -> Text("Unknown Chart Type")
             }
@@ -271,7 +285,7 @@ fun BarChart_StepCount() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "시간 단위:",
+                text = "Time Unit:",
                 modifier = Modifier.padding(end = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -338,14 +352,14 @@ fun BarChart_StepCount() {
                     else -> AggregationType.SUM
                 }
             ),
-            unit = "걸음",
+            unit = "steps",
             xLabel = when (selectedTimeUnit) {
-                "Hour" -> "시간"
-                "Day" -> "날짜"
-                else -> "시간"
+                "Hour" -> "Hour"
+                "Day" -> "Date"
+                else -> "Hour"
             },
-            yLabel = "걸음수",
-            title = "걸음수 데이터 ($selectedTimeUnit 단위)",
+            yLabel = "Steps",
+            title = "Step Count ($selectedTimeUnit)",
             barColor = Primary_Purple,
             barWidthRatio = 0.8f,
             xLabelTextSize = 28f,
@@ -366,7 +380,7 @@ fun BarChart_StepCount() {
                 "Hour" -> null
                 "Day" -> 24000.0
                 else -> null
-            }, // 임시 (tooltip 잘 보이기 위해)
+            }, // temporary (for tooltip visibility)
             showLabel = false,
             xLabelAutoSkip = true,
             yAxisPosition = YAxisPosition.RIGHT,
@@ -390,7 +404,7 @@ fun BarChart_Exercise() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "간격 채우기:",
+                text = "Fill Gaps:",
                 modifier = Modifier.padding(end = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -450,7 +464,7 @@ fun BarChart_Exercise() {
                 aggregationType = AggregationType.DURATION_SUM,
                 fillGaps = selectedFillGaps == "Fill Gaps"
             ),
-            title = "일별 운동 시간 (${if (selectedFillGaps == "Fill Gaps") "간격 채움" else "간격 비움"})",
+            title = "Daily Exercise Duration (${if (selectedFillGaps == "Fill Gaps") "Gaps Filled" else "Gaps Skipped"})",
             barColor = Primary_Purple,
             yAxisPosition = YAxisPosition.LEFT,
             showLabel = true,
@@ -458,7 +472,7 @@ fun BarChart_Exercise() {
 //            pageSize = 7,
             interactionType = InteractionType.Bar.TOUCH_AREA,
             referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.AVERAGE, showLabel = true)),
-            unit = "분",
+            unit = "min",
         )
     }
 }
@@ -479,7 +493,7 @@ fun RoundedBarChart_StepCount() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "시간 단위:",
+                text = "Time Unit:",
                 modifier = Modifier.padding(end = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -546,14 +560,14 @@ fun RoundedBarChart_StepCount() {
                     else -> AggregationType.SUM
                 }
             ),
-            unit = "걸음",
+            unit = "steps",
             xLabel = when (selectedTimeUnit) {
-                "Hour" -> "시간"
-                "Day" -> "날짜"
-                else -> "시간"
+                "Hour" -> "Hour"
+                "Day" -> "Date"
+                else -> "Hour"
             },
-            yLabel = "걸음수",
-            title = "걸음수 데이터 ($selectedTimeUnit 단위)",
+            yLabel = "Steps",
+            title = "Step Count ($selectedTimeUnit)",
             barColor = Primary_Purple,
             barWidthRatio = 0.8f,
             xLabelTextSize = 28f,
@@ -574,7 +588,7 @@ fun RoundedBarChart_StepCount() {
                 "Hour" -> null
                 "Day" -> 24000.0
                 else -> null
-            }, // 임시 (tooltip 잘 보이기 위해)
+            }, // temporary (for tooltip visibility)
             showLabel = false,
             xLabelAutoSkip = true,
             yAxisPosition = YAxisPosition.RIGHT,
@@ -606,7 +620,7 @@ fun RoundedBarChart_Exercise() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "간격 채우기:",
+                text = "Fill Gaps:",
                 modifier = Modifier.padding(end = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -666,7 +680,7 @@ fun RoundedBarChart_Exercise() {
                 aggregationType = AggregationType.DURATION_SUM,
                 fillGaps = selectedFillGaps == "Fill Gaps"
             ),
-            title = "일별 운동 시간 (${if (selectedFillGaps == "Fill Gaps") "간격 채움" else "간격 비움"})",
+            title = "Daily Exercise Duration (${if (selectedFillGaps == "Fill Gaps") "Gaps Filled" else "Gaps Skipped"})",
             barColor = Primary_Purple,
             yAxisPosition = YAxisPosition.LEFT,
             showLabel = true,
@@ -674,7 +688,7 @@ fun RoundedBarChart_Exercise() {
 //            pageSize = 7,
             interactionType = InteractionType.Bar.TOUCH_AREA,
             referenceLines = listOf(ReferenceLineSpec(type = ReferenceLineType.AVERAGE, showLabel = true)),
-            unit = "분",
+            unit = "min",
             barCornerRadiusFractions = BarCornerRadiusFractions(
                 topStart = 0.5f,
                 topEnd = 0.1f,
@@ -692,7 +706,7 @@ fun DonutChart_1() {
     PieChart(
         modifier = Modifier.fillMaxWidth().height(250.dp),
         data = ChartMarks.subList(0, 4),
-        title = "요일별 활동량",
+        title = "Activity by Day of Week",
         isDonut = true,
         colors = listOf(Primary_Purple, Teel, Orange, Yellow),
         showLegend = true,
@@ -721,7 +735,7 @@ fun LineChart_Weight() {
         ) {
             // Unit Selection Dropdown
             Text(
-                text = "체중 단위:",
+                text = "Weight Unit:",
                 modifier = Modifier.padding(end = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -776,7 +790,7 @@ fun LineChart_Weight() {
 
             // Auto Skip Selection Dropdown
             Text(
-                text = "라벨 자동 생략:",
+                text = "Auto Skip Labels:",
                 modifier = Modifier.padding(end = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -841,10 +855,10 @@ fun LineChart_Weight() {
                     timeUnit = TimeUnitGroup.DAY,
                     aggregationType = AggregationType.DAILY_AVERAGE
                 ),
-                title = "일별 체중 변화",
+                title = "Daily Weight Change",
                 unit = selectedUnit,
-                yLabel = "체중 ($selectedUnit)",
-                xLabel = "날짜",
+                yLabel = "Weight ($selectedUnit)",
+                xLabel = "Date",
                 minY = when (selectedUnit) {
                     "kg" -> 50.0
                     "lb" -> 110.0
@@ -871,10 +885,10 @@ fun LineChart_BodyFat() {
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.SUM
         ),
-        title = "일별 체지방률 변화",
+        title = "Daily Body Fat Change",
         unit = "%",
-        yLabel = "활동량",
-        xLabel = "요일",
+        yLabel = "Activity",
+        xLabel = "Day",
         minY = 10.0,
         maxY = 30.0,
         lineColor = Primary_Purple,
@@ -896,10 +910,10 @@ fun LineChart_BodyFat_2() {
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.SUM
         ),
-        title = "일별 체지방률 변화",
+        title = "Daily Body Fat Change",
         unit = "%",
-        yLabel = "활동량",
-        xLabel = "요일",
+        yLabel = "Activity",
+        xLabel = "Day",
         minY = 10.0,
         maxY = 30.0,
         lineColor = Primary_Purple,
@@ -921,7 +935,7 @@ fun LineChart_HeartRate() {
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.DAILY_AVERAGE
         ),
-        title = "일별 심박수 평균 변화",
+        title = "Daily Average Heart Rate Change",
         unit = "bpm",
         lineColor = Color(0xFFE91E63),
         showPoint = true,
@@ -936,7 +950,7 @@ fun PieChart_1() {
     PieChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = ChartMarks.subList(0, 4),
-        title = "요일별 활동량",
+        title = "Activity by Day of Week",
         isDonut = false,
         colors = listOf(Primary_Purple, Teel, Orange, Yellow),
         showLegend = true,
@@ -1043,10 +1057,10 @@ fun ScatterPlot_BloodPressure() {
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = allBloodPressurePoints,
         pointColor = Primary_Purple,
-        title = "혈압 데이터 (수축기 + 이완기)",
+        title = "Blood Pressure Data (Systolic + Diastolic)",
         unit = "mmHg",
-        yLabel = "혈압 (mmHg)",
-        xLabel = "일자",
+        yLabel = "Blood Pressure (mmHg)",
+        xLabel = "Date",
         interactionType = InteractionType.Scatter.TOUCH_AREA,
         pointType = PointType.Circle,
         pointSize = 4.dp,
@@ -1085,13 +1099,13 @@ fun Minimal_Chart() {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "오늘 운동",
+                    text = "Today's Exercise",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "1시간 20분",
+                    text = "1h 20min",
                     color = Primary_Purple,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -1136,13 +1150,13 @@ fun Minimal_Chart() {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "오늘 운동",
+                    text = "Today's Exercise",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "1시간 20분",
+                    text = "1h 20min",
                     color = Primary_Purple,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -1186,7 +1200,7 @@ fun Minimal_Chart() {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "일일 심박수",
+                    text = "Daily Heart Rate",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
@@ -1235,7 +1249,7 @@ fun Minimal_Chart() {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "심박수",
+                    text = "Heart Rate",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
@@ -1262,11 +1276,11 @@ fun Minimal_Chart() {
                 )
                 MinimalGaugeChart(
                     data = singleRangeData,
-                    containerMin = 60.0,  // 정상 심박수 범위 시작
-                    containerMax = 120.0, // 정상 심박수 범위 끝
+                    containerMin = 60.0,  // normal heart rate range start
+                    containerMax = 120.0, // normal heart rate range end
                     containerColor = Color.LightGray,
                     rangeColor = Orange,
-                    label = "높음",
+                    label = "High",
                     showRangeText = false,
                 )
             }
@@ -1311,7 +1325,7 @@ private fun ActivityRingsCard() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "오늘 활동",
+                        text = "Today's Activity",
                         color = Color.Black,
                         letterSpacing = 0.2.sp
                     )
@@ -1341,7 +1355,7 @@ private fun ActivityRingsCard() {
                         title = "Exercise",
                         titleColor = Color(0xFF00C853),
                         value = exercise.toString(),
-                        unit = "분",
+                        unit = "min",
                         modifier = Modifier.weight(1f)
                     )
 
@@ -1351,7 +1365,7 @@ private fun ActivityRingsCard() {
                         title = "Stand",
                         titleColor = Color(0xFF00B0FF),
                         value = stand.toString(),
-                        unit = "시간",
+                        unit = "hr",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -1528,7 +1542,7 @@ fun SleepMinimalCard() {
                     .padding(end = 8.dp)
             ) {
                 Text(
-                    text = "오늘 수면",
+                    text = "Today's Sleep",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
@@ -1544,7 +1558,7 @@ fun SleepMinimalCard() {
                         letterSpacing = (-1).sp
                     )
                     Text(
-                        text = " 시간",
+                        text = " hr",
                         color = Color(0xFF9B9B9B),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
@@ -1560,7 +1574,7 @@ fun SleepMinimalCard() {
                         letterSpacing = (-1).sp
                     )
                     Text(
-                        text = " 분",
+                        text = " min",
                         color = Color(0xFF9B9B9B),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
@@ -1613,7 +1627,7 @@ fun SleepStageMinimalCard() {
                     .padding(end = 8.dp)
             ) {
                 Text(
-                    text = "수면 단계",
+                    text = "Sleep Stages",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
@@ -1621,7 +1635,7 @@ fun SleepStageMinimalCard() {
                 Spacer(Modifier.height(10.dp))
 
                 Text(
-                    text = "양호",
+                    text = "Good",
                     color = sleepBlue,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
@@ -1659,8 +1673,8 @@ fun SleepStageMinimalCard() {
 @Composable
 fun CardioFitnessMinimalCard() {
     // Example values
-    val title = "유산소 피트니스"
-    val status = "평균 이하"
+    val title = "Cardio Fitness"
+    val status = "Below Average"
     val vo2 = 35.7
 
     // Ladder position config
@@ -1756,20 +1770,20 @@ fun MinimalStackedBarCard() {
                     .padding(end = 10.dp)
             ) {
                 Text(
-                    text = "스트레스",
+                    text = "Stress",
                     color = Color.Black,
                     letterSpacing = 0.2.sp
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "높음",
+                    text = "High",
                     color = Color.Black,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "오늘 평균",
+                    text = "Today's Average",
                     color = Color(0xFF9B9B9B),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp
@@ -1797,7 +1811,7 @@ fun MinimalStackedBarCard() {
                     segments = segments,
                     trackColor = Color(0xFFEDEDED),
                     selectedSegmentIndex = 2, // points to orange
-                    label = "높음",
+                    label = "High",
                     bubbleColor = Color(0xFFD6F5DF),
                     bubbleTextColor = Color(0xFF0A7A32),
                     barHeight = 12.dp
@@ -1810,7 +1824,7 @@ fun MinimalStackedBarCard() {
 @Composable
 fun MinimalProgressBarCard() {
     val progress = 0.78f
-    val title = "오늘 걸음 수"
+    val title = "Today's Step Count"
     val valueText = "4,680"
 
     Card(
@@ -1847,7 +1861,7 @@ fun MinimalProgressBarCard() {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "/6,000 걸음",
+                    text = "/6,000 steps",
                     color = Color(0xFF9B9B9B),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
@@ -1879,9 +1893,9 @@ fun MinimalProgressBarCard() {
 @Composable
 fun MinimalMultiSegmentGaugeCard() {
     // Dummy example values
-    val title = "최종당화산물 지수"
-    val status = "보통"
-    val desc = "오늘 기준"
+    val title = "Advanced Glycation End-products"
+    val status = "Normal"
+    val desc = "As of Today"
 
     // Marker position (0..1)
     val markerRatio = 0.35f
@@ -1943,7 +1957,7 @@ fun MinimalMultiSegmentGaugeCard() {
             // RIGHT gauge
             Box(
                 modifier = Modifier
-                    .width(120.dp)
+                    .width(140.dp)
                     .height(52.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
@@ -1951,7 +1965,7 @@ fun MinimalMultiSegmentGaugeCard() {
                     modifier = Modifier.fillMaxSize(),
                     segments = segments,
                     markerRatio = markerRatio,
-                    label = "높음",
+                    label = "High",
                     barHeight = 14.dp,
                     markerWidth = 36.dp,
                     markerHeight = 20.dp,
@@ -1968,9 +1982,9 @@ fun StackedBarChart_1() {
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = stackedData,
         segmentLabels = segmentLabels,
-        title = "요일별 영양소 섭취량",
-        yLabel = "영양소 (g)",
-        xLabel = "요일",
+        title = "Nutrient Intake by Day",
+        yLabel = "Nutrients (g)",
+        xLabel = "Day",
         showLegend = true,
         barWidthRatio = 0.8f,
         windowSize = 3,
@@ -1978,9 +1992,9 @@ fun StackedBarChart_1() {
         yAxisPosition = YAxisPosition.RIGHT,
         interactionType = InteractionType.StackedBar.TOUCH_AREA,
         colors = listOf(
-            Color(0xFF2196F3), // 파랑 (단백질)
-            Color(0xFFFF9800), // 주황 (지방)
-            Color(0xFF4CAF50)  // 초록 (탄수화물)
+            Color(0xFF2196F3), // blue (protein)
+            Color(0xFFFF9800), // orange (fat)
+            Color(0xFF4CAF50)  // green (carbs)
         ),
         unit = "g"
     )
@@ -1992,9 +2006,9 @@ fun StackedBarChart_Paged_LeftAxis() {
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = stackedData,
         segmentLabels = segmentLabels,
-        title = "요일별 영양소 (Paged + Fixed Left Axis)",
-        yLabel = "영양소 (g)",
-        xLabel = "요일",
+        title = "Nutrients by Day (Paged + Fixed Left Axis)",
+        yLabel = "Nutrients (g)",
+        xLabel = "Day",
         showLegend = true,
         legendPosition = LegendPosition.BOTTOM,
         barWidthRatio = 0.8f,
@@ -2015,9 +2029,9 @@ fun RangeBarChart_1() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = rangeData,
-        title = "일별 심박수 범위",
-        yLabel = "심박수 (bpm)",
-        xLabel = "날짜",
+        title = "Daily Heart Rate Range",
+        yLabel = "Heart Rate (bpm)",
+        xLabel = "Date",
         barWidthRatio = 0.8f,
         barColor = Color(0xFFFF9800),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
@@ -2036,9 +2050,9 @@ fun RangeBarChart_HeartRate() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = rangeMarks,
-        title = "시간별 심박수 범위",
-        yLabel = "심박수 (bpm)",
-        xLabel = "시간",
+        title = "Hourly Heart Rate Range",
+        yLabel = "Heart Rate (bpm)",
+        xLabel = "Hour",
         barWidthRatio = 0.8f,
         barColor = Color(0xFFE91E63),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
@@ -2121,9 +2135,9 @@ fun VerticalRangePlot_HeartRate() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(200.dp),
         data = rangeMarks,
-        title = "심박수 범위 (일간)",
-        yLabel = "심박수 (bpm)",
-        xLabel = "시간",
+        title = "Heart Rate Range (Daily)",
+        yLabel = "Heart Rate (bpm)",
+        xLabel = "Hour",
         barWidthRatio = 0.4f,
         barColor = Color(0xFFE91E63),
         interactionType = InteractionType.RangeBar.TOUCH_AREA,
@@ -2150,12 +2164,12 @@ fun RangeBarChart_BloodGlucose() {
     RangeBarChart(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = rangeMarks,
-        title = "일별 혈당 범위",
-        xLabel = "날짜",
-        yLabel = "혈당 (mg/dL)",
+        title = "Daily Blood Glucose Range",
+        xLabel = "Date",
+        yLabel = "Blood Glucose (mg/dL)",
         legendItems = listOf(
-            LegendItem(label = "목표 수면 시간대", color = Color(0xFFFF7A00), shape = LegendShape.Box),
-            LegendItem(label = "범위(최소~최대)", color = Color(0xFF4CAF50), shape = LegendShape.Dot),
+            LegendItem(label = "Target Sleep Period", color = Color(0xFFFF7A00), shape = LegendShape.Box),
+            LegendItem(label = "Range (Min~Max)", color = Color(0xFF4CAF50), shape = LegendShape.Dot),
         ),
         barWidthRatio = 0.8f,
         barColor = Color(0xFF4CAF50),
@@ -2192,7 +2206,7 @@ fun RangeBarChart_FreeScroll_FixedAxis() {
         modifier = Modifier.fillMaxWidth().height(400.dp),
         data = rangeData,
         title = "Free-scroll + Fixed Y-Axis",
-        yLabel = "심박수 (bpm)",
+        yLabel = "Heart Rate (bpm)",
         windowSize = 7,
         yTickStep = 10.0,
         barWidthRatio = 0.7f,
@@ -2235,13 +2249,13 @@ fun ProgressBarChart_1() {
     val progressData = SampleDataProvider.getActivityProgressData()
     ProgressChart(
         data = progressData,
-        title = "일일 활동 진행률",
+        title = "Daily Activity Progress",
         isDonut = false,
         isPercentage = true,
         colors = listOf(
-            Color(0xFF00C7BE), // 청록색 (Move)
-            Color(0xFFFF6B35), // 주황색 (Exercise)
-            Color(0xFF3A86FF)  // 파란색 (Stand)
+            Color(0xFF00C7BE), // teal (Move)
+            Color(0xFFFF6B35), // orange (Exercise)
+            Color(0xFF3A86FF)  // blue (Stand)
         ),
         strokeWidth = 80.dp,
     )
@@ -2252,14 +2266,14 @@ fun ProgressBarChart_2() {
     val progressData = SampleDataProvider.getActivityProgressData()
     ProgressChart(
         data = progressData,
-        title = "일일 활동 진행률",
+        title = "Daily Activity Progress",
         isDonut = true,
         isPercentage = false,
         showLabels = false,
         colors = listOf(
-            Color(0xFFE91E63), // 핑크
-            Color(0xFF4CAF50), // 초록
-            Color(0xFF9C27B0), // 보라
+            Color(0xFFE91E63), // pink
+            Color(0xFF4CAF50), // green
+            Color(0xFF9C27B0), // purple
         ),
         strokeWidth = 20.dp,
         showLegend = true,
@@ -2367,14 +2381,14 @@ fun HorizontalRangeBarChart() {
     }
 
     HorizontalRangeBarChart(
-        title = "수면 규칙성",
-        datePeriodText = "11월 3일 - 9일",
+        title = "Sleep Regularity",
+        datePeriodText = "Nov 3 - 9",
         data = rangeMarks,
         minX = 0.0,
         maxX = 8.0,
         rowLabels = listOf("3","4","5","6","7","8","9"),
-        bottomStartLabel = "오전\n12:00",
-        bottomEndLabel = "오전\n8:00",
+        bottomStartLabel = "AM\n12:00",
+        bottomEndLabel = "AM\n8:00",
         isGood = { mark ->
             // example: treat duration >= 6h as good
             val dur = abs(mark.maxPoint.y - mark.minPoint.y)
@@ -2389,36 +2403,36 @@ fun HorizontalStackedBarChart() {
     val rows = remember {
         listOf(
             HorizontalStackedBarRow(
-                title = "탄수화물",
+                title = "Carbohydrates",
                 unit = "g",
                 total = 287.4f,
                 segments = listOf(131.0f, 87.3f, 40.1f),
-                segmentLabels = listOf("부대찌개", "토마토파스타", "붕어빵"),
+                segmentLabels = listOf("Army Stew", "Tomato Pasta", "Fish Bread"),
                 trackMax = 300f
             ),
 
                     HorizontalStackedBarRow(
-                title = "포화 지방",
+                title = "Saturated Fat",
                 unit = "g",
                 total = 18.4f,
                 segments = listOf(15.2f, 2.6f, 0.6f),
-                segmentLabels = listOf("부대찌개", "붕어빵", "토마토파스타"),
+                segmentLabels = listOf("Army Stew", "Fish Bread", "Tomato Pasta"),
                 trackMax = 45f
             ),
             HorizontalStackedBarRow(
-                title = "나트륨",
+                title = "Sodium",
                 unit = "mg",
                 total = 3775.3f,
                 segments = listOf(2913f, 672.3f, 190f),
-                segmentLabels = listOf("부대찌개", "토마토파스타", "붕어빵"),
+                segmentLabels = listOf("Army Stew", "Tomato Pasta", "Fish Bread"),
                 trackMax = 5000f
             )
         )
     }
 
     HorizontalStackedBarChartList(
-        title = "영양정보",
-        datePeriodText = "11월 3일 - 9일",
+        title = "Nutrition Info",
+        datePeriodText = "Nov 3 - 9",
         rows = rows,
         onRowClick = { _, _, _ -> }
     )
@@ -2438,7 +2452,7 @@ fun RangeGaugeChart() {
             rangeEnd = 98f,
             recentValue = 75f,
             unit = "bpm",
-            recentLabel = "최근기록 오후 3:40",
+            recentLabel = "Recent PM 3:40",
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -2454,7 +2468,7 @@ fun MultiSegmentGauge_Fitness() {
     )
 
     MultiSegmentGaugeChart(
-        title = "적절함",
+        title = "Appropriate",
         value = 342f,
         minValue = 120f,
         maxValue = 646f,
@@ -2474,15 +2488,15 @@ fun BarChart_StepCount_Legend() {
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.SUM
         ),
-        title = "일별 걸음 수",
-        yLabel = "걸음 수",
-        xLabel = "날짜",
+        title = "Daily Step Count",
+        yLabel = "Steps",
+        xLabel = "Date",
         barColor = Color(0xFF4CAF50),
         barWidthRatio = 0.6f,
         showLegend = true,
-        legendLabel = "걸음 수",
+        legendLabel = "Steps",
         legendPosition = LegendPosition.BOTTOM,
-        unit = "보"
+        unit = "steps"
     )
 }
 
@@ -2495,13 +2509,13 @@ fun LineChart_Weight_Legend() {
             timeUnit = TimeUnitGroup.DAY,
             aggregationType = AggregationType.DAILY_AVERAGE
         ),
-        title = "일별 체중",
-        yLabel = "체중 (kg)",
-        xLabel = "날짜",
+        title = "Daily Weight",
+        yLabel = "Weight (kg)",
+        xLabel = "Date",
         lineColor = Color(0xFF2196F3),
         showLegend = true,
         showPoint = true,
-        legendLabel = "체중 (kg)",
+        legendLabel = "Weight (kg)",
         legendPosition = LegendPosition.BOTTOM,
         unit = "kg"
     )
@@ -2517,14 +2531,14 @@ fun ScatterPlot_BloodPressure_Legend() {
     ScatterPlot(
         modifier = Modifier.fillMaxWidth().height(500.dp),
         data = allPoints,
-        title = "일별 혈압",
-        yLabel = "혈압 (mmHg)",
-        xLabel = "날짜",
+        title = "Daily Blood Pressure",
+        yLabel = "Blood Pressure (mmHg)",
+        xLabel = "Date",
         pointColor = Color(0xFFE91E63),
         pointType = PointType.Circle,
         pointSize = 3.dp,
         showLegend = true,
-        legendLabel = "혈압 (mmHg)",
+        legendLabel = "Blood Pressure (mmHg)",
         legendPosition = LegendPosition.BOTTOM,
         unit = "mmHg"
     )
@@ -2535,21 +2549,21 @@ fun HorizontalStackedBarChart_Legend() {
     val rows = remember {
         listOf(
             HorizontalStackedBarRow(
-                title = "탄수화물",
+                title = "Carbohydrates",
                 unit = "g",
                 total = 287.4f,
                 segments = listOf(131.0f, 87.3f, 40.1f),
                 trackMax = 300f
             ),
             HorizontalStackedBarRow(
-                title = "포화 지방",
+                title = "Saturated Fat",
                 unit = "g",
                 total = 18.4f,
                 segments = listOf(15.2f, 2.6f, 0.6f),
                 trackMax = 45f
             ),
             HorizontalStackedBarRow(
-                title = "나트륨",
+                title = "Sodium",
                 unit = "mg",
                 total = 3775.3f,
                 segments = listOf(2913f, 672.3f, 190f),
@@ -2558,12 +2572,12 @@ fun HorizontalStackedBarChart_Legend() {
         )
     }
     HorizontalStackedBarChartList(
-        title = "영양정보",
-        datePeriodText = "11월 3일 - 9일",
+        title = "Nutrition Info",
+        datePeriodText = "Nov 3 - 9",
         rows = rows,
         colors = listOf(Color(0xFF20C95A), Color(0xFF0FA958), Color(0xFFFF8A3D)),
         showLegend = true,
-        legendLabels = listOf("부대찌개", "토마토파스타", "붕어빵"),
+        legendLabels = listOf("Army Stew", "Tomato Pasta", "Fish Bread"),
         legendPosition = LegendPosition.BOTTOM
     )
 }
@@ -2590,7 +2604,7 @@ fun ReferenceLinesDemo_LineChart() {
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "체중 - 평균선",
+            title = "Weight - Average Line",
             unit = "kg",
             yLabel = "kg",
             lineColor = Primary_Purple,
@@ -2600,7 +2614,7 @@ fun ReferenceLinesDemo_LineChart() {
                     type = ReferenceLineType.AVERAGE,
                     color = Color(0xFFE91E63),
                     showLabel = true,
-                    labelFormat = "평균: %.1f",
+                    labelFormat = "Avg: %.1f",
                 )
             )
         )
@@ -2609,7 +2623,7 @@ fun ReferenceLinesDemo_LineChart() {
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "체중 - 추세선",
+            title = "Weight - Trend Line",
             unit = "kg",
             yLabel = "kg",
             lineColor = Primary_Purple,
@@ -2620,7 +2634,7 @@ fun ReferenceLinesDemo_LineChart() {
                     color = Color(0xFF9C27B0),
                     style = LineStyle.DASHDOT,
                     showLabel = true,
-                    labelFormat = "추세: %.1f",
+                    labelFormat = "Trend: %.1f",
                 )
             )
         )
@@ -2629,7 +2643,7 @@ fun ReferenceLinesDemo_LineChart() {
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "체중 - 목표선 (68kg)",
+            title = "Weight - Goal Line (68kg)",
             unit = "kg",
             yLabel = "kg",
             lineColor = Primary_Purple,
@@ -2640,7 +2654,7 @@ fun ReferenceLinesDemo_LineChart() {
                     y = 68.0,
                     color = Color(0xFFFF7A00),
                     style = LineStyle.DASHED,
-                    label = "목표 68kg",
+                    label = "Goal 68kg",
                     showLabel = true,
                 )
             )
@@ -2650,7 +2664,7 @@ fun ReferenceLinesDemo_LineChart() {
         LineChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "체중 - 정상 범위 (65~70kg)",
+            title = "Weight - Normal Range (65~70kg)",
             unit = "kg",
             yLabel = "kg",
             lineColor = Primary_Purple,
@@ -2661,7 +2675,7 @@ fun ReferenceLinesDemo_LineChart() {
                     y = 65.0,
                     yEnd = 70.0,
                     color = Color(0xFF4CAF50),
-                    label = "정상 범위",
+                    label = "Normal Range",
                     showLabel = true,
                 )
             )
@@ -2688,8 +2702,8 @@ fun ReferenceLinesDemo_BarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "걸음수 - 평균선",
-            unit = "보",
+            title = "Step Count - Average Line",
+            unit = "steps",
             barColor = Primary_Purple,
             showLabel = false,
             referenceLines = listOf(
@@ -2697,7 +2711,7 @@ fun ReferenceLinesDemo_BarChart() {
                     type = ReferenceLineType.AVERAGE,
                     color = Color(0xFFE91E63),
                     showLabel = true,
-                    labelFormat = "평균: %.0f",
+                    labelFormat = "Avg: %.0f",
                 )
             )
         )
@@ -2706,8 +2720,8 @@ fun ReferenceLinesDemo_BarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "걸음수 - 추세선",
-            unit = "보",
+            title = "Step Count - Trend Line",
+            unit = "steps",
             barColor = Primary_Purple,
             showLabel = false,
             referenceLines = listOf(
@@ -2716,7 +2730,7 @@ fun ReferenceLinesDemo_BarChart() {
                     color = Color(0xFF9C27B0),
                     style = LineStyle.DASHDOT,
                     showLabel = true,
-                    labelFormat = "추세: %.0f",
+                    labelFormat = "Trend: %.0f",
                 )
             )
         )
@@ -2725,8 +2739,8 @@ fun ReferenceLinesDemo_BarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "걸음수 - 목표선 (10,000보)",
-            unit = "보",
+            title = "Step Count - Goal Line (10,000 steps)",
+            unit = "steps",
             barColor = Primary_Purple,
             showLabel = false,
             referenceLines = listOf(
@@ -2735,7 +2749,7 @@ fun ReferenceLinesDemo_BarChart() {
                     y = 10000.0,
                     color = Color(0xFFFF7A00),
                     style = LineStyle.DASHED,
-                    label = "목표 10,000보",
+                    label = "Goal 10,000 steps",
                     showLabel = true,
                 )
             )
@@ -2745,8 +2759,8 @@ fun ReferenceLinesDemo_BarChart() {
         BarChart(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "걸음수 - 권장 범위 (7,500~12,000보)",
-            unit = "보",
+            title = "Step Count - Recommended Range (7,500~12,000 steps)",
+            unit = "steps",
             barColor = Primary_Purple,
             showLabel = false,
             referenceLines = listOf(
@@ -2755,7 +2769,7 @@ fun ReferenceLinesDemo_BarChart() {
                     y = 7500.0,
                     yEnd = 12000.0,
                     color = Color(0xFF4CAF50),
-                    label = "권장 범위",
+                    label = "Recommended Range",
                     showLabel = true,
                 )
             )
@@ -2786,7 +2800,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
         ScatterPlot(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "혈압 - 평균선",
+            title = "Blood Pressure - Average Line",
             unit = "mmHg",
             yLabel = "mmHg",
             pointColor = Primary_Purple,
@@ -2798,7 +2812,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
                     type = ReferenceLineType.AVERAGE,
                     color = Color(0xFFE91E63),
                     showLabel = true,
-                    labelFormat = "평균: %.0f",
+                    labelFormat = "Avg: %.0f",
                 )
             )
         )
@@ -2807,7 +2821,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
         ScatterPlot(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "혈압 - 추세선",
+            title = "Blood Pressure - Trend Line",
             unit = "mmHg",
             yLabel = "mmHg",
             pointColor = Primary_Purple,
@@ -2828,7 +2842,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
         ScatterPlot(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "혈압 - 고혈압 경계선 (140mmHg)",
+            title = "Blood Pressure - Hypertension Threshold (140mmHg)",
             unit = "mmHg",
             yLabel = "mmHg",
             pointColor = Primary_Purple,
@@ -2842,7 +2856,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
                     y = 120.0,
                     color = Color(0xFFE53935),
                     style = LineStyle.DASHED,
-                    label = "고혈압 경계",
+                    label = "Hypertension Threshold",
                     showLabel = true,
                 )
             )
@@ -2852,7 +2866,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
         ScatterPlot(
             modifier = Modifier.fillMaxWidth().height(250.dp),
             data = data,
-            title = "혈압 - 정상 범위 (90~120mmHg)",
+            title = "Blood Pressure - Normal Range (90~120mmHg)",
             unit = "mmHg",
             yLabel = "mmHg",
             pointColor = Primary_Purple,
@@ -2866,7 +2880,7 @@ fun ReferenceLinesDemo_ScatterPlot() {
                     y = 90.0,
                     yEnd = 120.0,
                     color = Color(0xFF4CAF50),
-                    label = "정상 범위",
+                    label = "Normal Range",
                     showLabel = true,
                 )
             )
@@ -2890,9 +2904,9 @@ fun ReferenceLinesDemo_RangeBarChart() {
         RangeBarChart(
             modifier = Modifier.fillMaxWidth().height(350.dp),
             data = rangeData,
-            title = "심박수 - 경계선 (120bpm)",
-            yLabel = "심박수 (bpm)",
-            xLabel = "시간",
+            title = "Heart Rate - Threshold (120bpm)",
+            yLabel = "Heart Rate (bpm)",
+            xLabel = "Hour",
             barColor = Color(0xFFE91E63),
             barWidthRatio = 0.7f,
             unit = "bpm",
@@ -2903,7 +2917,7 @@ fun ReferenceLinesDemo_RangeBarChart() {
                     y = 120.0,
                     color = Color(0xFFFF7A00),
                     style = LineStyle.DASHED,
-                    label = "경고",
+                    label = "Warning",
                     showLabel = true,
                 )
             )
@@ -2913,9 +2927,9 @@ fun ReferenceLinesDemo_RangeBarChart() {
         RangeBarChart(
             modifier = Modifier.fillMaxWidth().height(350.dp),
             data = rangeData,
-            title = "심박수 - 정상 범위 (60~100bpm)",
-            yLabel = "심박수 (bpm)",
-            xLabel = "시간",
+            title = "Heart Rate - Normal Range (60~100bpm)",
+            yLabel = "Heart Rate (bpm)",
+            xLabel = "Hour",
             barColor = Color(0xFFE91E63),
             barWidthRatio = 0.7f,
             unit = "bpm",
@@ -2926,7 +2940,7 @@ fun ReferenceLinesDemo_RangeBarChart() {
                     y = 60.0,
                     yEnd = 100.0,
                     color = Color(0xFF4CAF50),
-                    label = "정상 범위",
+                    label = "Normal Range",
                     showLabel = true,
                 )
             )
@@ -3272,8 +3286,454 @@ fun ColorSchemesDemo() {
     }
 }
 
+@Composable
+fun PaperFigureMarksAndPrimitives() {
+    val pointMarks = remember {
+        listOf(
+            ChartMark(x = 0.0, y = 42.0, label = "Mon"),
+            ChartMark(x = 1.0, y = 64.0, label = "Tue"),
+            ChartMark(x = 2.0, y = 56.0, label = "Wed"),
+            ChartMark(x = 3.0, y = 78.0, label = "Thu"),
+            ChartMark(x = 4.0, y = 70.0, label = "Fri"),
+        )
+    }
+    val rangeMarks = remember {
+        listOf(
+            RangeChartMark(
+                x = 0.0,
+                minPoint = ChartMark(x = 0.0, y = 54.0),
+                maxPoint = ChartMark(x = 0.0, y = 96.0),
+                label = "Rest"
+            ),
+            RangeChartMark(
+                x = 1.0,
+                minPoint = ChartMark(x = 1.0, y = 72.0),
+                maxPoint = ChartMark(x = 1.0, y = 142.0),
+                label = "Walk"
+            ),
+            RangeChartMark(
+                x = 2.0,
+                minPoint = ChartMark(x = 2.0, y = 88.0),
+                maxPoint = ChartMark(x = 2.0, y = 168.0),
+                label = "Run"
+            ),
+        )
+    }
+    val progressMarks = remember {
+        listOf(
+            ProgressChartMark(x = 0.0, current = 420.0, max = 600.0, label = "Move", unit = "kcal"),
+            ProgressChartMark(x = 1.0, current = 32.0, max = 45.0, label = "Exercise", unit = "min"),
+            ProgressChartMark(x = 2.0, current = 9.0, max = 12.0, label = "Stand", unit = "h"),
+        )
+    }
+    val allYValues = remember(pointMarks, rangeMarks, progressMarks) {
+        pointMarks.map { it.y } +
+            rangeMarks.flatMap { listOf(it.minPoint.y, it.maxPoint.y) } +
+            progressMarks.map { it.percentage }
+    }
+    val yAxisRange = remember(allYValues) {
+        ChartMath.computeYAxisRange(
+            values = allYValues,
+            chartType = ChartType.LINE,
+            tickCount = 4
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Text(
+            text = "Paper Figure — Marks, Math & Drawing Primitives",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Text(
+            text = "Only four focused concepts: ChartMark, RangeChartMark, ProgressChartMark, and Chart Math & Canvas primitives.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.DarkGray,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        FigureSectionCard(
+            title = "A. ChartMark — point datum",
+            subtitle = "Single logical point: x, y, label.",
+            accentColor = Color(0xFF3A86FF)
+        ) {
+            FocusedMarkDiagram(
+                kind = FigureMarkKind.Point,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+            MarkRows(
+                rows = listOf("ChartMark(x=2, y=56, label=\"Wed\")")
+            )
+        }
+
+        FigureSectionCard(
+            title = "B. RangeChartMark — interval datum",
+            subtitle = "One x with minPoint and maxPoint; y = max - min.",
+            accentColor = Color(0xFFFF8A00)
+        ) {
+            FocusedMarkDiagram(
+                kind = FigureMarkKind.Range,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+            MarkRows(
+                rows = listOf("RangeChartMark(x=1, minPoint.y=72, maxPoint.y=142, y=70)")
+            )
+        }
+
+        FigureSectionCard(
+            title = "C. ProgressChartMark — normalized progress datum",
+            subtitle = "Goal progress: progress = current / max, y = progress.",
+            accentColor = Color(0xFFE91E63)
+        ) {
+            FocusedMarkDiagram(
+                kind = FigureMarkKind.Progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+            MarkRows(
+                rows = listOf("ProgressChartMark(current=420, max=600, progress=0.70, percentage=70%)")
+            )
+        }
+
+        FigureSectionCard(
+            title = "D. Chart Math & Primitives",
+            subtitle = "Math maps logical values to pixels; primitives draw the figure.",
+            accentColor = Color(0xFF303030)
+        ) {
+            Text(
+                text = "YAxisRange(min=${yAxisRange.minY.toIntText()}, max=${yAxisRange.maxY.toIntText()}, ticks=${yAxisRange.yTicks.map { it.toIntText() }})",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            ChartMathStepDiagrams(yAxisRange = yAxisRange)
+        }
+    }
+}
+
+@Composable
+private fun FigureSectionCard(
+    title: String,
+    subtitle: String,
+    accentColor: Color,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 5.dp, height = 28.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(accentColor)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            }
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)
+            )
+            content()
+        }
+    }
+}
+
+private enum class FigureMarkKind { Point, Range, Progress }
+
+@Composable
+private fun FocusedMarkDiagram(
+    kind: FigureMarkKind,
+    modifier: Modifier = Modifier
+) {
+    val color = when (kind) {
+        FigureMarkKind.Point -> Color(0xFF3A86FF)
+        FigureMarkKind.Range -> Color(0xFFFF8A00)
+        FigureMarkKind.Progress -> Color(0xFFE91E63)
+    }
+    val label = when (kind) {
+        FigureMarkKind.Point -> "x, y"
+        FigureMarkKind.Range -> "min → max"
+        FigureMarkKind.Progress -> "current / max"
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFF8F9FC))
+            .padding(8.dp)
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val left = 36f
+            val right = size.width - 36f
+            val top = 20f
+            val bottom = size.height - 26f
+            val axis = Color(0xFF32343A)
+            val grid = Color(0xFFE4E7EF)
+
+            drawLine(grid, Offset(left, top), Offset(left, bottom), strokeWidth = 1.6f)
+            drawLine(grid, Offset(left, bottom), Offset(right, bottom), strokeWidth = 1.6f)
+
+            when (kind) {
+                FigureMarkKind.Point -> {
+                    val p = Offset(left + (right - left) * 0.55f, top + (bottom - top) * 0.35f)
+                    drawLine(axis.copy(alpha = 0.45f), Offset(p.x, bottom), p, strokeWidth = 2f)
+                    drawLine(axis.copy(alpha = 0.45f), Offset(left, p.y), p, strokeWidth = 2f)
+                    drawCircle(color, radius = 18f, center = p)
+                    drawCircle(Color.White, radius = 7f, center = p)
+                }
+                FigureMarkKind.Range -> {
+                    val x = left + (right - left) * 0.52f
+                    val minY = top + (bottom - top) * 0.72f
+                    val maxY = top + (bottom - top) * 0.22f
+                    drawLine(color, Offset(x, minY), Offset(x, maxY), strokeWidth = 18f, cap = StrokeCap.Round)
+                    drawCircle(Color.White, radius = 7f, center = Offset(x, minY))
+                    drawCircle(Color.White, radius = 7f, center = Offset(x, maxY))
+                }
+                FigureMarkKind.Progress -> {
+                    val y = top + (bottom - top) * 0.5f
+                    drawLine(Color(0xFFDADDE6), Offset(left, y), Offset(right, y), strokeWidth = 18f, cap = StrokeCap.Round)
+                    drawLine(color, Offset(left, y), Offset(left + (right - left) * 0.70f, y), strokeWidth = 18f, cap = StrokeCap.Round)
+                    drawArc(
+                        color = color,
+                        startAngle = -90f,
+                        sweepAngle = 252f,
+                        useCenter = false,
+                        topLeft = Offset(right - 72f, top + 6f),
+                        size = Size(54f, 54f),
+                        style = Stroke(width = 8f, cap = StrokeCap.Round)
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+        )
+    }
+}
+
+@Composable
+private fun MarkRows(rows: List<String>) {
+    Column(
+        modifier = Modifier.padding(top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        rows.forEach { row ->
+            Text(
+                text = row,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF4A4A4A)
+            )
+        }
+    }
+}
+
+private enum class ChartMathFigureKind { AxisTicks, Metrics, Mapping, Primitives }
+
+@Composable
+private fun ChartMathStepDiagrams(yAxisRange: ChartMath.YAxisRange) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ChartMathStepDiagram(
+            title = "1. Axis range & ticks",
+            caption = "values → min/max → nice ticks",
+            kind = ChartMathFigureKind.AxisTicks,
+            yAxisRange = yAxisRange
+        )
+        ChartMathStepDiagram(
+            title = "2. Drawable metrics",
+            caption = "canvas size − padding = chartWidth/chartHeight",
+            kind = ChartMathFigureKind.Metrics,
+            yAxisRange = yAxisRange
+        )
+        ChartMathStepDiagram(
+            title = "3. Value → pixel mapping",
+            caption = "pixelY = bottom − normalized(value) × chartHeight",
+            kind = ChartMathFigureKind.Mapping,
+            yAxisRange = yAxisRange
+        )
+        ChartMathStepDiagram(
+            title = "4. Draw primitives",
+            caption = "drawLine / drawCircle / drawArc / drawRoundRect",
+            kind = ChartMathFigureKind.Primitives,
+            yAxisRange = yAxisRange
+        )
+    }
+}
+
+@Composable
+private fun ChartMathStepDiagram(
+    title: String,
+    caption: String,
+    kind: ChartMathFigureKind,
+    yAxisRange: ChartMath.YAxisRange
+) {
+    Column {
+        Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        Text(caption, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(116.dp)
+                .padding(top = 6.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFFF8F9FC))
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val accent = Color(0xFF303030)
+                val blue = Color(0xFF3A86FF)
+                val orange = Color(0xFFFF8A00)
+                val pink = Color(0xFFE91E63)
+                val grid = Color(0xFFE2E5EE)
+                val left = 42f
+                val right = size.width - 28f
+                val top = 20f
+                val bottom = size.height - 24f
+                val chartWidth = right - left
+                val chartHeight = bottom - top
+                val minY = yAxisRange.minY
+                val maxY = yAxisRange.maxY
+                fun y(value: Double): Float =
+                    bottom - (((value - minY) / (maxY - minY)).toFloat().coerceIn(0f, 1f) * chartHeight)
+
+                when (kind) {
+                    ChartMathFigureKind.AxisTicks -> {
+                        drawLine(accent, Offset(left, top), Offset(left, bottom), strokeWidth = 2.4f)
+                        yAxisRange.yTicks.forEach { tick ->
+                            val tickY = y(tick)
+                            drawLine(grid, Offset(left, tickY), Offset(right, tickY), strokeWidth = 1.4f)
+                            drawCircle(blue, radius = 5f, center = Offset(left, tickY))
+                        }
+                    }
+                    ChartMathFigureKind.Metrics -> {
+                        drawRoundRect(
+                            color = grid,
+                            topLeft = Offset(22f, 14f),
+                            size = Size(size.width - 44f, size.height - 28f),
+                            style = Stroke(width = 3f)
+                        )
+                        drawRoundRect(
+                            color = blue,
+                            topLeft = Offset(left, top),
+                            size = Size(chartWidth, chartHeight),
+                            style = Stroke(width = 5f)
+                        )
+                        drawLine(orange, Offset(22f, top), Offset(left, top), strokeWidth = 5f, cap = StrokeCap.Round)
+                        drawLine(orange, Offset(left, bottom), Offset(left, size.height - 14f), strokeWidth = 5f, cap = StrokeCap.Round)
+                    }
+                    ChartMathFigureKind.Mapping -> {
+                        val value = 78.0
+                        val mappedY = y(value)
+                        val normalized = ((value - minY) / (maxY - minY)).toFloat().coerceIn(0f, 1f)
+                        val mappedX = left + chartWidth * 0.66f
+                        drawLine(grid, Offset(left, top), Offset(left, bottom), strokeWidth = 2f)
+                        drawLine(grid, Offset(left, bottom), Offset(right, bottom), strokeWidth = 2f)
+                        drawLine(blue, Offset(left, mappedY), Offset(mappedX, mappedY), strokeWidth = 3f)
+                        drawLine(orange, Offset(mappedX, bottom), Offset(mappedX, mappedY), strokeWidth = 3f)
+                        drawCircle(pink, radius = 10f, center = Offset(mappedX, mappedY))
+                        drawLine(
+                            color = pink.copy(alpha = 0.35f),
+                            start = Offset(right - 70f, bottom),
+                            end = Offset(right - 70f, bottom - chartHeight * normalized),
+                            strokeWidth = 12f,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                    ChartMathFigureKind.Primitives -> {
+                        val baseY = bottom - 8f
+                        drawLine(blue, Offset(left, baseY), Offset(left + 70f, top + 14f), strokeWidth = 6f, cap = StrokeCap.Round)
+                        drawCircle(orange, radius = 18f, center = Offset(left + 128f, top + 36f))
+                        drawArc(
+                            color = pink,
+                            startAngle = -90f,
+                            sweepAngle = 250f,
+                            useCenter = false,
+                            topLeft = Offset(left + 190f, top + 10f),
+                            size = Size(62f, 62f),
+                            style = Stroke(width = 8f, cap = StrokeCap.Round)
+                        )
+                        drawRoundRect(
+                            color = Color(0xFF4CAF50),
+                            topLeft = Offset(right - 110f, top + 28f),
+                            size = Size(84f, 24f)
+                        )
+                    }
+                }
+            }
+
+            when (kind) {
+                ChartMathFigureKind.AxisTicks -> {
+                    Text(
+                        "ticks",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+                    )
+                }
+                ChartMathFigureKind.Metrics -> {
+                    Text(
+                        "drawable area",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3A86FF),
+                        modifier = Modifier.align(Alignment.Center).padding(10.dp)
+                    )
+                }
+                ChartMathFigureKind.Mapping -> {
+                    Text(
+                        "value y=78",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE91E63),
+                        modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+                    )
+                }
+                ChartMathFigureKind.Primitives -> {
+                    Text(
+                        "Canvas primitives",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun Double.toIntText(): String {
+    val rounded = roundToInt()
+    return if (abs(this - rounded) < 1e-6) rounded.toString() else "%.1f".format(this)
+}
+
 @Preview(showBackground = true)
 @Composable
 fun BarChartPreview() {
-    StackedBarChart_1()
+    PaperFigureMarksAndPrimitives()
 }

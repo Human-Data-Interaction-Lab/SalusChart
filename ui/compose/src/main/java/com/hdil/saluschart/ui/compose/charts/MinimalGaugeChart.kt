@@ -129,9 +129,6 @@ fun MinimalGaugeChart(
             val pointerW = pointerWidth.toPx()
             val pointerH = pointerHeight.toPx()
             val gap = bubbleGapFromBar.toPx()
-            val textBaselineCorrection = (textLayout.firstBaseline - textLayout.size.height / 2f)
-                .coerceAtLeast(0f)
-
             val bubbleMaxLeft = (size.width - bubbleW).coerceAtLeast(0f)
             val bubbleLeft = (selectedCenterX - bubbleW / 2f).coerceIn(0f, bubbleMaxLeft)
             val bubbleTop = (barTop - gap - pointerH - bubbleH).coerceAtLeast(0f)
@@ -164,7 +161,7 @@ fun MinimalGaugeChart(
                 textLayoutResult = textLayout,
                 topLeft = Offset(
                     x = bubbleLeft + (bubbleW - textLayout.size.width) / 2f,
-                    y = bubbleTop + (bubbleH - textLayout.size.height) / 2f - textBaselineCorrection
+                    y = bubbleTop + (bubbleH - textLayout.size.height) / 2f
                 )
             )
         }

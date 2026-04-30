@@ -730,7 +730,7 @@ private fun RangeBarChartContent(
                                 val slotWidth = m.chartWidth / dataSize.toFloat()
                                 val activeIndex = selectedIndex
 
-                                Canvas(modifier = Modifier.matchParentSize()) {
+                                Canvas(modifier = Modifier.matchParentSize().zIndex(2f)) {
                                     pointValues.forEachIndexed { index, values ->
                                         if (index >= dataSize) return@forEachIndexed
 

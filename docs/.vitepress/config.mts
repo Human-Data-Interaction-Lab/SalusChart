@@ -10,7 +10,7 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'Charts', link: '/charts/' },
       { text: 'Examples', link: '/examples/' },
-      { text: 'API', link: '/api/index.html' },
+      { text: 'API', link: '/guide/api-reference' },
       { text: 'GitHub', link: 'https://github.com/HDIL-YS/SalusChart' },
     ],
 

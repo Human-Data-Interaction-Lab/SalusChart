@@ -6,7 +6,9 @@ API reference is generated with [Dokka](https://kotlinlang.org/docs/dokka-introd
 
 ## Browse API Reference
 
-<a class="api-reference-button" href="../api/index.html">Open generated API reference</a>
+The generated API reference is published here:
+
+<a class="api-reference-button" href="https://hdil-ys.github.io/SalusChart/api/index.html">Open generated API reference</a>
 
 The API reference is served from `docs/public/api` in the VitePress site. Regenerate it after changing public Kotlin APIs.
 

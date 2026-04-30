@@ -400,11 +400,11 @@ private fun DocsExampleContent(name: String) {
             yLabel = "bpm",
             barColor = Color(0xFFFF9800),
             pointValues = listOf(
-                listOf(75.0),
-                listOf(80.0),
-                listOf(72.0),
-                listOf(85.0),
-                listOf(78.0),
+                listOf(44.0),
+                listOf(150.0),
+                listOf(44.0),
+                listOf(44.0),
+                listOf(44.0),
             )
         )
 

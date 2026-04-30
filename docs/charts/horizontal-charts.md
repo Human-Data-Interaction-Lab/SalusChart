@@ -41,24 +41,86 @@ HorizontalRangeBarChart(
 )
 ```
 
-### Key parameters
+### Parameters
+
+#### Data
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `data` | `List<RangeChartMark>` | — | Range data |
-| `minX` | `Double` | — | Scale minimum (required) |
-| `maxX` | `Double` | — | Scale maximum (required) |
+| `data` | `List<RangeChartMark>` | — | Range data (required) |
+| `minX` | `Double` | — | Axis minimum value (required) |
+| `maxX` | `Double` | — | Axis maximum value (required) |
+
+#### Header
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
 | `title` | `String?` | `null` | Card title |
-| `rowLabels` | `List<String>` | auto | Label for each row |
-| `goodColor` | `Color` | `Color.Unspecified` | Bar fill color for normal ranges |
-| `badColor` | `Color` | `Color(0xFFD6D6D6)` | Bar fill color when `isGood` returns false |
-| `isGood` | `(RangeChartMark) -> Boolean` | `{ true }` | Per-bar color selector |
-| `barThickness` | `Dp` | `10.dp` | Bar height |
+| `datePeriodText` | `String?` | `null` | Date range subtitle below title |
+
+#### Row labels
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `rowLabels` | `List<String>` | auto (1, 2, …) | Label for each row; must have `>= data.size` entries |
+| `leftLabelWidth` | `Dp` | `36.dp` | Width reserved for row labels |
+| `leftLabelColor` | `Color` | `onBackground` | Row label text color |
+| `labelTextSizeSp` | `Float` | `14f` | Row label font size (sp) |
+
+#### Layout
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
 | `rowHeight` | `Dp` | `42.dp` | Height of each row slot |
+| `rowSpacing` | `Dp` | `12.dp` | Gap between rows |
+| `barThickness` | `Dp` | `10.dp` | Bar height |
+| `barCornerRadius` | `Dp` | `999.dp` | Bar corner radius (default: pill shape) |
+| `chartStartPadding` | `Dp` | `18.dp` | Padding before chart area starts |
+| `chartEndPadding` | `Dp` | `22.dp` | Padding after chart area ends |
+
+#### Color
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `goodColor` | `Color` | theme primary | Bar fill color for rows where `isGood` returns `true` |
+| `badColor` | `Color` | `Color(0xFFD6D6D6)` | Bar fill color for rows where `isGood` returns `false` |
+| `isGood` | `(RangeChartMark) -> Boolean` | `{ true }` | Per-row color selector |
+
+#### Guide lines
+
+Two vertical "pillar" markers with dashed center lines. Useful for marking target bedtime / wake time.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `showGuides` | `Boolean` | `true` | Show pillar guides |
+| `guideStartX` | `Double` | `minX` | X value for the left pillar |
+| `guideEndX` | `Double` | `maxX` | X value for the right pillar |
+| `pillarWidth` | `Dp` | `30.dp` | Width of each pillar background |
+| `pillarFill` | `Color` | `Color(0xFF6E86FF, alpha=0.06)` | Pillar background fill |
+| `dashColor` | `Color` | `Color(0xFF6E86FF, alpha=0.55)` | Dashed center line color |
+| `dashWidth` | `Dp` | `1.dp` | Dashed line stroke width |
+| `dashOn` | `Float` | `6f` | Dash length (px) |
+| `dashOff` | `Float` | `6f` | Gap length (px) |
+
+#### Bottom axis labels
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
 | `bottomStartLabel` | `String` | `""` | Label below left end of axis |
 | `bottomEndLabel` | `String` | `""` | Label below right end of axis |
-| `unit` | `String` | `"시간"` | Unit shown in tooltip |
+| `bottomLabelTopPadding` | `Dp` | `10.dp` | Gap above bottom labels |
+| `bottomLabelTextColor` | `Color` | `Color(0xFF6E86FF)` | Bottom label text color |
+
+#### Tooltip
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
 | `enableTooltip` | `Boolean` | `true` | Show tooltip on tap |
+| `unit` | `String` | `"시간"` | Unit string shown in tooltip |
+
+::: tip Tooltip format
+The tooltip automatically formats sleep duration as `"N시간 M분"` or `"M분"` based on the tap position. The `unit` parameter is overridden by this automatic formatting.
+:::
 
 ---
 
@@ -115,18 +177,19 @@ HorizontalStackedBarChartList(
 )
 ```
 
-### Key parameters
+### Parameters
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `title` | `String` | — | Section title |
-| `rows` | `List<HorizontalStackedBarRow>` | — | Row data |
-| `colors` | `List<Color>` | `[]` | Segment colors (in order) |
-| `legendLabels` | `List<String>` | `[]` | Legend labels (in order) |
-| `showLegend` | `Boolean` | `false` | Show legend |
-| `legendPosition` | `LegendPosition` | `BOTTOM` | Legend placement |
+| `title` | `String` | — | Section title (required) |
+| `datePeriodText` | `String?` | `null` | Date range subtitle below title |
+| `rows` | `List<HorizontalStackedBarRow>` | — | Row data (required) |
+| `colors` | `List<Color>` | theme palette | Segment colors in order; cycles if fewer than max segment count |
 | `barTrackColor` | `Color` | `Color(0xFFF1F1F1)` | Background track color |
-| `onRowClick` | `((Int, Int?, Float) -> Unit)?` | `null` | Tap callback: (rowIndex, segmentIndex?, value) |
+| `showLegend` | `Boolean` | `false` | Show legend |
+| `legendPosition` | `LegendPosition` | `BOTTOM` | Legend placement (`TOP`, `BOTTOM`, `LEFT`, `RIGHT`) |
+| `legendLabels` | `List<String>` | `[]` | Labels for legend entries; aligned with `colors` by index |
+| `onRowClick` | `((Int, Int?, Float) -> Unit)?` | `null` | Tap callback: (rowIndex, segmentIndex, segmentValue) |
 
 ### HorizontalStackedBarRow fields
 

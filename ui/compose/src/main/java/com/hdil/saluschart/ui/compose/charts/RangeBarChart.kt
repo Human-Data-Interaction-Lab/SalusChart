@@ -72,6 +72,38 @@ data class LegendItem(
     val shape: LegendShape = LegendShape.Dot
 )
 
+private data class RangeBarAutoSizing(
+    val barWidthRatio: Float,
+    val pointRadiusPx: Float
+)
+
+private fun resolveRangeBarAutoSizing(
+    metrics: ChartMath.ChartMetrics,
+    dataSize: Int,
+    requestedBarWidthRatio: Float,
+    requestedPointRadiusPx: Float,
+    hasPointValues: Boolean,
+    autoFitOverlayPoints: Boolean,
+): RangeBarAutoSizing {
+    val safeBarWidthRatio = requestedBarWidthRatio.coerceIn(0.05f, 1f)
+    val safePointRadiusPx = requestedPointRadiusPx.coerceAtLeast(0f)
+    val slotWidthPx = metrics.chartWidth / dataSize.coerceAtLeast(1).toFloat()
+
+    if (slotWidthPx <= 0f || !hasPointValues || safePointRadiusPx == 0f || !autoFitOverlayPoints) {
+        return RangeBarAutoSizing(
+            barWidthRatio = safeBarWidthRatio,
+            pointRadiusPx = safePointRadiusPx
+        )
+    }
+
+    val effectiveBarWidthRatio = ((safePointRadiusPx * 2f) / slotWidthPx).coerceAtLeast(0.05f)
+
+    return RangeBarAutoSizing(
+        barWidthRatio = effectiveBarWidthRatio,
+        pointRadiusPx = safePointRadiusPx
+    )
+}
+
 @JvmName("RangeBarChartRangeMarks")
 @Composable
 /**
@@ -119,6 +151,8 @@ data class LegendItem(
  *   Each entry corresponds to the item at the same list position in [data].
  * @param pointColor Color used to draw overlay points.
  * @param pointRadius Radius of overlay points.
+ * @param autoFitOverlayPoints Whether to automatically match bar width to the overlay point diameter.
+ *   Disable this to preserve the exact [barWidthRatio] and [pointRadius] values.
  * @param barCornerRadiusFraction Uniform corner radius fraction applied to bars (recommended 0.0–0.5).
  * @param barCornerRadiusFractions Optional per-corner radius configuration. Takes priority over [barCornerRadiusFraction].
  * @param roundTopOnly If true, only the top corners are rounded for bars.
@@ -158,6 +192,7 @@ fun RangeBarChart(
     pointValues: List<List<Double>>? = null,
     pointColor: Color = Color.Unspecified,
     pointRadius: Dp = 3.dp,
+    autoFitOverlayPoints: Boolean = true,
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
     roundTopOnly: Boolean = true,
@@ -204,6 +239,7 @@ fun RangeBarChart(
             pointValues = pointValues,
             pointColor = pointColor,
             pointRadius = pointRadius,
+            autoFitOverlayPoints = autoFitOverlayPoints,
             pageSize = requestedPageSize,
             yTickStep = yTickStep,
             initialPageIndex = initialPageIndex,
@@ -244,6 +280,7 @@ fun RangeBarChart(
         pointValues = pointValues,
         pointColor = pointColor,
         pointRadius = pointRadius,
+        autoFitOverlayPoints = autoFitOverlayPoints,
         barCornerRadiusFraction = barCornerRadiusFraction,
         barCornerRadiusFractions = barCornerRadiusFractions,
         roundTopOnly = roundTopOnly,
@@ -284,6 +321,8 @@ fun RangeBarChart(
  * @param pointValues Optional overlay points per bar index.
  * @param pointColor Color of overlay points.
  * @param pointRadius Radius of overlay points.
+ * @param autoFitOverlayPoints Whether to automatically match bar width to the overlay point diameter.
+ *   Disable this to preserve the exact [barWidthRatio] and [pointRadius] values.
  * @param barCornerRadiusFraction Uniform corner radius fraction for bars.
  * @param barCornerRadiusFractions Per-corner radius configuration; overrides [barCornerRadiusFraction].
  * @param roundTopOnly If true, only the top corners of bars are rounded.
@@ -321,6 +360,7 @@ fun RangeBarChart(
     pointValues: List<List<Double>>? = null,
     pointColor: Color = Color.Unspecified,
     pointRadius: Dp = 3.dp,
+    autoFitOverlayPoints: Boolean = true,
     barCornerRadiusFraction: Float = 0f,
     barCornerRadiusFractions: BarCornerRadiusFractions? = null,
     roundTopOnly: Boolean = true,
@@ -363,6 +403,7 @@ fun RangeBarChart(
         pointValues = pointValues,
         pointColor = pointColor,
         pointRadius = pointRadius,
+        autoFitOverlayPoints = autoFitOverlayPoints,
         barCornerRadiusFraction = barCornerRadiusFraction,
         barCornerRadiusFractions = barCornerRadiusFractions,
         roundTopOnly = roundTopOnly,
@@ -401,6 +442,7 @@ private fun RangeBarChartContent(
     pointValues: List<List<Double>>?,
     pointColor: Color,
     pointRadius: Dp,
+    autoFitOverlayPoints: Boolean,
     barCornerRadiusFraction: Float,
     barCornerRadiusFractions: BarCornerRadiusFractions?,
     roundTopOnly: Boolean,
@@ -474,6 +516,7 @@ private fun RangeBarChartContent(
             }
 
             val density = LocalDensity.current
+            val requestedPointRadiusPx = with(density) { pointRadius.toPx() }
             val effectiveYAxisWidth = if (useExternalYAxis) {
                 val valuesForAdaptive = buildList {
                     addAll(rangeData.map { it.minPoint.y })
@@ -649,6 +692,15 @@ private fun RangeBarChartContent(
                             when (interactionType) {
                                 InteractionType.RangeBar.TOUCH_AREA -> {
                                     chartMetrics?.let { m ->
+                                        val autoSizing = resolveRangeBarAutoSizing(
+                                            metrics = m,
+                                            dataSize = rangeData.size,
+                                            requestedBarWidthRatio = barWidthRatio,
+                                            requestedPointRadiusPx = requestedPointRadiusPx,
+                                            hasPointValues = !pointValues.isNullOrEmpty(),
+                                            autoFitOverlayPoints = autoFitOverlayPoints,
+                                        )
+
                                         // Visual bars
                                         ChartDraw.Bar.BarMarker(
                                             data = rangeData,
@@ -656,7 +708,7 @@ private fun RangeBarChartContent(
                                             maxValues = maxValues,
                                             metrics = m,
                                             color = barColor,
-                                            barWidthRatio = barWidthRatio,
+                                            barWidthRatio = autoSizing.barWidthRatio,
                                             interactive = false,
                                             chartType = chartType,
                                             unit = unit,
@@ -693,13 +745,22 @@ private fun RangeBarChartContent(
 
                                 InteractionType.RangeBar.BAR -> {
                                     chartMetrics?.let { m ->
+                                        val autoSizing = resolveRangeBarAutoSizing(
+                                            metrics = m,
+                                            dataSize = rangeData.size,
+                                            requestedBarWidthRatio = barWidthRatio,
+                                            requestedPointRadiusPx = requestedPointRadiusPx,
+                                            hasPointValues = !pointValues.isNullOrEmpty(),
+                                            autoFitOverlayPoints = autoFitOverlayPoints,
+                                        )
+
                                         ChartDraw.Bar.BarMarker(
                                             data = rangeData,
                                             minValues = minValues,
                                             maxValues = maxValues,
                                             metrics = m,
                                             color = barColor,
-                                            barWidthRatio = barWidthRatio,
+                                            barWidthRatio = autoSizing.barWidthRatio,
                                             interactive = false,
                                             onBarClick = { idx, _ ->
                                                 selectedIndex =
@@ -725,7 +786,14 @@ private fun RangeBarChartContent(
                         // Overlay points (Canvas layer)
                         if (!pointValues.isNullOrEmpty()) {
                             chartMetrics?.let { m ->
-                                val radiusPx = with(LocalDensity.current) { pointRadius.toPx() }
+                                val radiusPx = resolveRangeBarAutoSizing(
+                                    metrics = m,
+                                    dataSize = rangeData.size,
+                                    requestedBarWidthRatio = barWidthRatio,
+                                    requestedPointRadiusPx = requestedPointRadiusPx,
+                                    hasPointValues = true,
+                                    autoFitOverlayPoints = autoFitOverlayPoints,
+                                ).pointRadiusPx
                                 val dataSize = rangeData.size
                                 val slotWidth = m.chartWidth / dataSize.toFloat()
                                 val activeIndex = selectedIndex
@@ -940,6 +1008,7 @@ private fun RangeBarChartPagedInternal(
     pointValues: List<List<Double>>? = null,
     pointColor: Color = Color.Unspecified,
     pointRadius: Dp = 3.dp,
+    autoFitOverlayPoints: Boolean = true,
     pageSize: Int,
     yTickStep: Double?,
     initialPageIndex: Int?,
@@ -1061,6 +1130,7 @@ private fun RangeBarChartPagedInternal(
                         pointValues = pagePoints,
                         pointColor = pointColor,
                         pointRadius = pointRadius,
+                        autoFitOverlayPoints = autoFitOverlayPoints,
                         barCornerRadiusFraction = barCornerRadiusFraction,
                         barCornerRadiusFractions = barCornerRadiusFractions,
                         roundTopOnly = roundTopOnly,

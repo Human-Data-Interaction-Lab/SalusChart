@@ -1,0 +1,1 @@
+sourceset_dependencies = '{":core:transform/main":[],":core:transform/release":[],":core:util/main":[],":ui:compose/main":[],":ui:compose/release":[],":data:model/main":[],":ui:theme/main":[],":ui:theme/release":[],":ui:wear-compose/main":[],":ui:wear-compose/release":[],":core:chart/main":[],":core:chart/release":[]}'

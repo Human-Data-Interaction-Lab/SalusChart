@@ -2146,7 +2146,7 @@ fun VerticalRangePlot_HeartRate() {
         pageSize = 7,
         pointValues = pointValues,
         pointColor = Color(0xFFE91E63),
-        pointRadius = 3.dp,
+        pointRadius = 5.dp,
         barCornerRadiusFraction = 0.5f,
         roundTopOnly = false,
     )

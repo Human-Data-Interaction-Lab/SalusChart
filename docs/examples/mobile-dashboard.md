@@ -183,14 +183,14 @@ Transform raw health data before passing it to charts:
 
 ```kotlin
 import com.hdil.saluschart.core.transform.transform
-import com.hdil.saluschart.core.transform.transformToChartMark
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 
 // Raw step records → daily totals → ChartMark list
-val dailySteps = rawStepData
-    .transform(TimeUnitGroup.DAY, AggregationType.SUM)
-    .transformToChartMark()
+val dailySteps = rawStepData.transform(
+    timeUnit = TimeUnitGroup.DAY,
+    aggregationType = AggregationType.SUM,
+)
 
 BarChart(data = dailySteps, title = "Daily steps")
 ```

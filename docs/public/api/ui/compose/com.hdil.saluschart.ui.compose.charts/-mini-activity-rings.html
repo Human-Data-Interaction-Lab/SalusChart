@@ -1,0 +1,117 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>MiniActivityRings</title>
+<link href="../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../index.html" tabindex="1">
+                    SalusChart
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":ui:compose/main">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":ui:compose/main" data-filter=":ui:compose/main">
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    SalusChart
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="member" id="content" pageids="compose::com.hdil.saluschart.ui.compose.charts//MiniActivityRings/#androidx.compose.ui.Modifier#kotlin.collections.List[com.hdil.saluschart.core.chart.ProgressChartMark]#kotlin.collections.List[androidx.compose.ui.graphics.Color]#kotlin.Float#kotlin.Int#kotlin.Float#kotlin.Float#kotlin.Float#kotlin.Float#kotlin.Float/PointingToDeclaration//1069871677">
+  <div class="breadcrumbs"><a href="../index.html">compose</a><span class="delimiter">/</span><a href="index.html">com.hdil.saluschart.ui.compose.charts</a><span class="delimiter">/</span><span class="current">MiniActivityRings</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Mini</span><wbr><span>Activity</span><wbr><span><span>Rings</span></span></h1>
+  </div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":ui:compose/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/compose/runtime/Composable.html"><span class="token annotation builtin">Composable</span></a></div></div><span class="token keyword">fun </span><a href="-mini-activity-rings.html"><span class="token function">MiniActivityRings</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">modifier<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/Modifier.html">Modifier</a><span class="token operator"> = </span>Modifier<span class="token punctuation">, </span></span><span class="parameter ">rings<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../core/chart/com.hdil.saluschart.core.chart/-progress-chart-mark/index.html">ProgressChartMark</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">colors<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/graphics/Color.html">Color</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">strokeWidth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token punctuation">, </span></span><span class="parameter ">maxLaps<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">2</span><span class="token punctuation">, </span></span><span class="parameter ">trackAlpha<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.2f</span><span class="token punctuation">, </span></span><span class="parameter ">gapRatio<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.14f</span><span class="token punctuation">, </span></span><span class="parameter ">startAngle<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span>-90f<span class="token punctuation">, </span></span><span class="parameter ">shadowAlpha<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.1f</span><span class="token punctuation">, </span></span><span class="parameter ">shadowExtraWidthRatio<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.45f</span></span></span><span class="token punctuation">)</span></div><p class="paragraph">Renders a compact set of concentric activity rings, similar to the Apple Watch Activity display.</p><p class="paragraph">Each ring corresponds to one <a href="../../../core/chart/com.hdil.saluschart.core.chart/-progress-chart-mark/index.html">ProgressChartMark</a> and fills proportionally to <code class="lang-kotlin">current / max</code>. Progress beyond 100 % wraps up to <a href="-mini-activity-rings.html">maxLaps</a> full rotations.</p><h4 class="tableheader">Parameters</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>modifier</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Modifier applied to the Canvas.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>rings</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Ordered list of progress marks; index 0 is the outermost ring.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>colors</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Colors for each ring by index; cycles if fewer than <a href="-mini-activity-rings.html">rings</a> size.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>stroke</span><wbr><span><span>Width</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Ring stroke width in pixels.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>max</span><wbr><span><span>Laps</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Maximum number of full rotations allowed (e.g., 2 = up to 200 %).</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>track</span><wbr><span><span>Alpha</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Alpha applied to the background track arc of each ring.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>gap</span><wbr><span><span>Ratio</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Gap between rings as a fraction of <a href="-mini-activity-rings.html">strokeWidth</a>.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>start</span><wbr><span><span>Angle</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Starting angle in degrees (−90 = 12 o'clock).</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>shadow</span><wbr><span><span>Alpha</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Alpha of the drop shadow drawn behind each filled arc.</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":ui:compose/main" data-filterable-set=":ui:compose/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>shadow</span><wbr><span>Extra</span><wbr><span>Width</span><wbr><span><span>Ratio</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Extra width of the shadow stroke relative to <a href="-mini-activity-rings.html">strokeWidth</a>.</p></div></div></div></div></div></div></div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

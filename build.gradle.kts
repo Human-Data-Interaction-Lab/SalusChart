@@ -6,10 +6,39 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     alias(libs.plugins.android.library) apply false
     id("com.vanniktech.maven.publish") version "0.36.0" apply false
+    id("org.jetbrains.dokka") version "2.2.0"
+}
+
+val dokkaModules = setOf(
+    "core:chart",
+    "core:transform",
+    "core:util",
+    "data:model",
+    "ui:compose",
+    "ui:theme",
+    "ui:wear-compose",
+)
+
+dependencies {
+    dokkaModules.forEach { modulePath ->
+        dokka(project(":$modulePath"))
+    }
+}
+
+tasks.register<Sync>("syncDokkaToVitePress") {
+    description = "Copy generated Dokka HTML into VitePress public assets."
+    group = "documentation"
+    dependsOn(tasks.named("dokkaGenerate"))
+    from(layout.buildDirectory.dir("dokka/html"))
+    into(layout.projectDirectory.dir("docs/public/api"))
 }
 
 // Apply lint configuration to all Android modules
 subprojects {
+    if (path.removePrefix(":") in dokkaModules) {
+        apply(plugin = "org.jetbrains.dokka")
+    }
+
     afterEvaluate {
         if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
             configure<com.android.build.gradle.BaseExtension> {

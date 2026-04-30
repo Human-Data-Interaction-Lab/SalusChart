@@ -84,16 +84,18 @@ LineChart(
     data = data,
     referenceLines = listOf(
         ReferenceLineSpec(
-            value = 8000.0,
+            type = ReferenceLineType.THRESHOLD,
+            y = 8000.0,
             label = "Goal",
-            lineStyle = LineStyle.DASHED,
+            style = LineStyle.DASHED,
             color = Color(0xFFFF5722),
+            showLabel = true,
         )
     )
 )
 ```
 
-`ReferenceLineType` controls whether the line is `HORIZONTAL` or `VERTICAL`.
+`ReferenceLineType` supports `AVERAGE`, `TREND`, `THRESHOLD`, and `ZONE`.
 
 ## Y-axis position
 
@@ -107,6 +109,8 @@ BarChart(
 ```
 
 ## Interaction types
+
+For a complete guide to tap targets, tooltips, callbacks, paging, and coordinated dashboards, see [Interactions](./interactions).
 
 ```kotlin
 import com.hdil.saluschart.core.chart.InteractionType
@@ -131,7 +135,7 @@ import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
 
 BarChart(
     data = data,
-    cornerRadiusFractions = BarCornerRadiusFractions(
+    barCornerRadiusFractions = BarCornerRadiusFractions(
         topStart = 0.4f,
         topEnd = 0.4f,
         bottomStart = 0f,
@@ -141,6 +145,8 @@ BarChart(
 ```
 
 ## Tooltips
+
+For chart-wide tooltip patterns, see [Interactions](./interactions).
 
 ```kotlin
 ProgressChart(
@@ -166,3 +172,5 @@ ProgressChart(
 ## Limits
 
 Parameters not exposed by the public API (internal padding, fixed layout dimensions, etc.) require either opening an issue or forking the repo. The library does not support runtime injection of internal drawing parameters.
+
+See [Known Limitations](./known-limitations) for current API boundaries.

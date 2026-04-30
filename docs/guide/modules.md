@@ -60,17 +60,17 @@ Aggregates raw health data into chart marks:
 
 ```kotlin
 import com.hdil.saluschart.core.transform.transform
-import com.hdil.saluschart.core.transform.transformToChartMark
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 
-val chartData = healthData
-    .transform(TimeUnitGroup.DAY, AggregationType.SUM)
-    .transformToChartMark()
+val chartData = stepRecords.transform(
+    timeUnit = TimeUnitGroup.DAY,
+    aggregationType = AggregationType.SUM,
+)
 ```
 
-Available aggregation types: `SUM`, `AVERAGE`, `DURATION_SUM`, `MIN`, `MAX`.
-Available time units: `HOUR`, `DAY`, `WEEK`, `MONTH`.
+Available aggregation types: `SUM`, `DAILY_AVERAGE`, `DURATION_SUM`, `MIN_MAX`.
+Available time units: `MINUTE`, `HOUR`, `DAY`, `WEEK`, `MONTH`, `YEAR`.
 
 ## core:util
 
@@ -90,4 +90,6 @@ Health-domain data classes:
 
 ## ui:wear-compose
 
-Wear OS-optimized chart variants. See [Wear OS Charts](../charts/wear-os-charts).
+Wear OS-optimized chart variants. Use this module when building watch screens or complication-style health summaries.
+
+See [Wear OS Charts](../charts/wear-os-charts), [Wear OS Examples](../examples/wear-os), and the [Wear OS Sample](../examples/wear-os-sample).

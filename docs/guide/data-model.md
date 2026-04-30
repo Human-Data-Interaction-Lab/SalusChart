@@ -92,6 +92,8 @@ One cell in a `CalendarChart`.
 
 ```kotlin
 import com.hdil.saluschart.ui.compose.charts.CalendarEntry
+import com.hdil.saluschart.ui.compose.charts.CellMarkerType
+import com.hdil.saluschart.ui.compose.charts.BubbleType
 import java.time.LocalDate
 
 data class CalendarEntry(
@@ -101,6 +103,91 @@ data class CalendarEntry(
     val rings: List<ProgressChartMark>? = null  // for MINI_RINGS marker type
 )
 ```
+
+### CellMarkerType
+
+Controls how each calendar cell is decorated.
+
+| Value | Description |
+|---|---|
+| `BUBBLE` | Draws a circle or rectangle proportional to `value` |
+| `MINI_RINGS` | Draws compact activity rings using `rings` (requires `ProgressChartMark` list) |
+
+### BubbleType
+
+Shape of the bubble when `CellMarkerType.BUBBLE` is used.
+
+| Value | Description |
+|---|---|
+| `CIRCLE` | Circular bubble |
+| `RECTANGLE` | Rounded rectangle bubble |
+
+## BarCornerRadiusFractions
+
+Per-corner radius fractions for bar charts. Each value is in the range `0f..1f`, where `1f` equals the bar's maximum possible corner radius (half of bar width).
+
+```kotlin
+import com.hdil.saluschart.core.chart.model.BarCornerRadiusFractions
+
+data class BarCornerRadiusFractions(
+    val topStart: Float = 0f,
+    val topEnd: Float = 0f,
+    val bottomStart: Float = 0f,
+    val bottomEnd: Float = 0f
+)
+```
+
+Used by: `BarChart` (`barCornerRadiusFractions` parameter).
+
+```kotlin
+// Rounded top only (pill-top bar)
+BarChart(
+    data = data,
+    barCornerRadiusFractions = BarCornerRadiusFractions(
+        topStart = 0.4f, topEnd = 0.4f,
+        bottomStart = 0f, bottomEnd = 0f,
+    )
+)
+```
+
+::: tip
+For a uniform radius on all corners, use `barCornerRadiusFraction: Float` instead.
+Use `roundTopOnly = true` as a quick shorthand for rounding only the top two corners.
+:::
+
+## HorizontalStackedBarRow
+
+One row in a `HorizontalStackedBarChartList`.
+
+```kotlin
+import com.hdil.saluschart.ui.compose.charts.HorizontalStackedBarRow
+
+data class HorizontalStackedBarRow(
+    val title: String,                        // row label (e.g. day name)
+    val unit: String,                         // unit shown in tooltip and total
+    val total: Float,                         // total value displayed in the header
+    val segments: List<Float>,                // segment values in order
+    val segmentLabels: List<String> = emptyList(), // per-segment labels (optional)
+    val trackMax: Float? = null               // override max for track width; defaults to total
+)
+```
+
+Used by: `HorizontalStackedBarChartList`.
+
+```kotlin
+HorizontalStackedBarRow(
+    title = "Monday",
+    unit = "g",
+    total = 390f,
+    segments = listOf(250f, 80f, 60f),
+    segmentLabels = listOf("Carbs", "Protein", "Fat"),
+)
+```
+
+::: tip trackMax
+Set `trackMax` when comparing rows against a shared maximum (e.g., daily calorie goal)
+rather than each row's own total.
+:::
 
 ## GaugeSegment
 
@@ -118,7 +205,29 @@ data class GaugeSegment(
 
 ## Health data models
 
-These live in `data:model` and are inputs to `core:transform`.
+These live in `data:model` and are inputs to `core:transform`. They provide a common shape for health data before it becomes chart marks.
+
+| Model | Use |
+|---|---|
+| `StepCount` | interval step totals |
+| `Exercise` | interval calories burned |
+| `HeartRate` | session with timestamped BPM samples |
+| `Weight` | point-in-time body weight with `Mass` |
+| `BloodPressure` | point-in-time systolic and diastolic values |
+| `BloodGlucose` | point-in-time glucose level |
+| `BodyFat` | point-in-time body fat percentage |
+| `SkeletalMuscleMass` | point-in-time skeletal muscle mass |
+| `Diet` | interval meal calories and macro nutrients |
+| `SleepSession` | sleep interval with optional sleep stages |
+
+Platform SDKs can expose different raw record types. Map those records into these models first, then transform them with `core:transform`.
+
+```text
+Apple Health / Samsung Health / Wear OS records
+    -> data:model records
+    -> ChartMark / RangeChartMark
+    -> chart composables
+```
 
 ### SleepSession
 
@@ -163,15 +272,17 @@ weight.toPounds()    // 154.3...
 
 ## Transforming health data
 
-Use `core:transform` to aggregate raw health records into chart marks:
+Use `core:transform` to aggregate health records into chart marks:
 
 ```kotlin
 import com.hdil.saluschart.core.transform.transform
-import com.hdil.saluschart.core.transform.transformToChartMark
 import com.hdil.saluschart.core.util.AggregationType
 import com.hdil.saluschart.core.util.TimeUnitGroup
 
-val chartMarks = rawHealthData
-    .transform(TimeUnitGroup.DAY, AggregationType.SUM)
-    .transformToChartMark()
+val chartMarks = stepRecords.transform(
+    timeUnit = TimeUnitGroup.DAY,
+    aggregationType = AggregationType.SUM,
+)
 ```
+
+See [Data Transform](./data-transform) for daily, weekly, monthly, and min/max examples.

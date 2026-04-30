@@ -1,12 +1,36 @@
 # API Reference
 
-## Hosted API Reference
+## Generate API Reference
 
-Hosted API reference is not available yet. Generate it locally with [Dokka](https://kotlinlang.org/docs/dokka-introduction.html).
+API reference is generated with [Dokka](https://kotlinlang.org/docs/dokka-introduction.html).
 
-This repository does not currently apply a Dokka Gradle plugin, so there is no checked-in `dokkaHtml` or `dokkaHtmlMultiModule` task to run yet. After Dokka is configured for the project, use the Gradle task name produced by that configuration to generate the local API site.
+## Browse API Reference
 
-Track hosted API reference progress in the [SalusChart repository](https://github.com/HDIL-YS/SalusChart).
+[Open generated API reference](../api/index.html)
+
+The API reference is served from `docs/public/api` in the VitePress site. Regenerate it after changing public Kotlin APIs.
+
+Generate the multi-module API site locally:
+
+```bash
+./gradlew syncDokkaToVitePress
+```
+
+This task runs Dokka and copies `build/dokka/html` into `docs/public/api`.
+
+## Documented modules
+
+Dokka is configured for the public library modules:
+
+- `:core:chart`
+- `:core:transform`
+- `:core:util`
+- `:data:model`
+- `:ui:compose`
+- `:ui:theme`
+- `:ui:wear-compose`
+
+Demo and sample app modules are intentionally excluded from API reference generation.
 
 ## Source reference
 
@@ -44,6 +68,6 @@ The chart composable signatures are documented inline with KDoc. To browse them:
 | `CellMarkerType` | `BUBBLE`, `MINI_RINGS` |
 | `BubbleType` | `CIRCLE`, `RECTANGLE` |
 | `SleepStageType` | `AWAKE`, `REM`, `LIGHT`, `DEEP`, `UNKNOWN` |
-| `AggregationType` | `SUM`, `AVERAGE`, `DURATION_SUM`, `MIN`, `MAX` |
-| `TimeUnitGroup` | `HOUR`, `DAY`, `WEEK`, `MONTH` |
+| `AggregationType` | `SUM`, `DAILY_AVERAGE`, `DURATION_SUM`, `MIN_MAX` |
+| `TimeUnitGroup` | `MINUTE`, `HOUR`, `DAY`, `WEEK`, `MONTH`, `YEAR` |
 | `MassUnit` | `KILOGRAM`, `POUND`, `GRAM`, `OUNCE` |

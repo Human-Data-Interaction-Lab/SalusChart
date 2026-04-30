@@ -1,0 +1,374 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>TemporalDataSet</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
+                    SalusChart
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":core:transform/main">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":core:transform/main" data-filter=":core:transform/main">
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    SalusChart
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="transform::com.hdil.saluschart.core.transform/TemporalDataSet///PointingToDeclaration//776924280">
+  <div class="breadcrumbs"><a href="../../index.html">transform</a><span class="delimiter">/</span><a href="../index.html">com.hdil.saluschart.core.transform</a><span class="delimiter">/</span><span class="current">TemporalDataSet</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Temporal</span><wbr><span>Data</span><wbr><span><span>Set</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>x<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://developer.android.com/reference/kotlin/java/time/Instant.html">Instant</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>y<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>yMultiple<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeUnit<span class="token operator">: </span><a href="../../../../core/util/com.hdil.saluschart.core.util/-time-unit-group/index.html">TimeUnitGroup</a><span class="token operator"> = </span>TimeUnitGroup.HOUR</span></span><span class="token punctuation">)</span></div><p class="paragraph">Normalized time-series container used internally by SalusChart.</p><p class="paragraph">This class represents time-indexed numeric data before it is mapped to chart-specific models (e.g., ChartMark).</p><p class="paragraph">Invariants:</p><ul><li><p class="paragraph">Either <a href="../../../../core/transform/com.hdil.saluschart.core.transform/-temporal-data-set/--root--.html">y</a> (single-value series) OR <a href="../../../../core/transform/com.hdil.saluschart.core.transform/-temporal-data-set/--root--.html">yMultiple</a> (multi-value series) must be provided.</p></li><li><p class="paragraph">Not both.</p></li><li><p class="paragraph">All value lists must match the size of <a href="../../../../core/transform/com.hdil.saluschart.core.transform/-temporal-data-set/--root--.html">x</a>.</p></li></ul><h4 class="tableheader">Parameters</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>x</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Time axis values (Instant).</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>y</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Single-value series (nullable if multi-value).</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>y</span><wbr><span><span>Multiple</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Multi-value series map (nullable if single-value).</p></div></div></div></div><div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>time</span><wbr><span><span>Unit</span></span></u></div></span></div><div><div class="title"><p class="paragraph">Granularity of the dataset.</p></div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION,EXTENSION_PROPERTY,EXTENSION_FUNCTION">Members &amp; Extensions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="tableheader">Constructors</h2>
+        <div class="table"><a data-name="2072213614%2FConstructors%2F776924280" anchor-label="TemporalDataSet" id="2072213614%2FConstructors%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-temporal-data-set.html"><span>Temporal</span><wbr><span>Data</span><wbr><span><span>Set</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2072213614%2FConstructors%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">x<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://developer.android.com/reference/kotlin/java/time/Instant.html">Instant</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">y<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">yMultiple<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">timeUnit<span class="token operator">: </span><a href="../../../../core/util/com.hdil.saluschart.core.util/-time-unit-group/index.html">TimeUnitGroup</a><span class="token operator"> = </span>TimeUnitGroup.HOUR</span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="1074635194%2FProperties%2F776924280" anchor-label="isMultiValue" id="1074635194%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-multi-value.html"><span>is</span><wbr><span>Multi</span><wbr><span><span>Value</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1074635194%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="is-multi-value.html">isMultiValue</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">True if this dataset represents a multi-value time series.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="617518527%2FProperties%2F776924280" anchor-label="isSingleValue" id="617518527%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-single-value.html"><span>is</span><wbr><span>Single</span><wbr><span><span>Value</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="617518527%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="is-single-value.html">isSingleValue</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">True if this dataset represents a single-value time series.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-682201013%2FProperties%2F776924280" anchor-label="propertyNames" id="-682201013%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="property-names.html"><span>property</span><wbr><span><span>Names</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-682201013%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="property-names.html">propertyNames</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns property names for multi-value datasets. Returns empty set for single-value datasets.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="583005867%2FProperties%2F776924280" anchor-label="timeUnit" id="583005867%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-unit.html"><span>time</span><wbr><span><span>Unit</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="583005867%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-unit.html">timeUnit</a><span class="token operator">: </span><a href="../../../../core/util/com.hdil.saluschart.core.util/-time-unit-group/index.html">TimeUnitGroup</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1226049446%2FProperties%2F776924280" anchor-label="values" id="-1226049446%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="values.html"><span><span>values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1226049446%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="values.html">values</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Convenience accessor for single-value datasets. Returns empty list if this is a multi-value dataset.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="288841574%2FProperties%2F776924280" anchor-label="x" id="288841574%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="x.html"><span><span>x</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="288841574%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="x.html">x</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://developer.android.com/reference/kotlin/java/time/Instant.html">Instant</a><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="319861381%2FProperties%2F776924280" anchor-label="y" id="319861381%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="y.html"><span><span>y</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="319861381%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="y.html">y</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-869976491%2FProperties%2F776924280" anchor-label="yMultiple" id="-869976491%2FProperties%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="y-multiple.html"><span>y</span><wbr><span><span>Multiple</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-869976491%2FProperties%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="y-multiple.html">yMultiple</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1483253791%2FFunctions%2F776924280" anchor-label="fillTemporalGaps" id="-1483253791%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../fill-temporal-gaps.html"><span>fill</span><wbr><span>Temporal</span><wbr><span><span>Gaps</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1483253791%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">.</span><a href="../fill-temporal-gaps.html"><span class="token function">fillTemporalGaps</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fillValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">0.0</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">TemporalDataSet</a></div><div class="brief "><p class="paragraph">Fills missing time buckets inside a <a href="index.html">TemporalDataSet</a> so charts can render continuous time axes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="109965796%2FFunctions%2F776924280" anchor-label="generateTimeLabels" id="109965796%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../generate-time-labels.html"><span>generate</span><wbr><span>Time</span><wbr><span><span>Labels</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="109965796%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">.</span><a href="../generate-time-labels.html"><span class="token function">generateTimeLabels</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Generates time labels based on the dataset's timeUnit.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1772126206%2FFunctions%2F776924280" anchor-label="getValues" id="1772126206%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-values.html"><span>get</span><wbr><span><span>Values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1772126206%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-values.html"><span class="token function">getValues</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">property<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">&gt;</span><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Returns values for a specific property in multi-value datasets. Returns null if this is a single-value dataset or property does not exist.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1347684780%2FFunctions%2F776924280" anchor-label="toChartMarks" id="1347684780%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../to-chart-marks.html"><span>to</span><wbr><span>Chart</span><wbr><span><span>Marks</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1347684780%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">.</span><a href="../to-chart-marks.html"><span class="token function">toChartMarks</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fillGaps<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter ">fillValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">0.0</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../../core/chart/com.hdil.saluschart.core.chart/-chart-mark/index.html">ChartMark</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Converts a single-value <a href="index.html">TemporalDataSet</a> into a list of <a href="../../../../core/chart/com.hdil.saluschart.core.chart/-chart-mark/index.html">ChartMark</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="877175355%2FFunctions%2F776924280" anchor-label="toChartMarksByProperty" id="877175355%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../to-chart-marks-by-property.html"><span>to</span><wbr><span>Chart</span><wbr><span>Marks</span><wbr><span>By</span><wbr><span><span>Property</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="877175355%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">.</span><a href="../to-chart-marks-by-property.html"><span class="token function">toChartMarksByProperty</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">property<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">fillGaps<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter ">fillValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">0.0</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../../core/chart/com.hdil.saluschart.core.chart/-chart-mark/index.html">ChartMark</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Converts a multi-value <a href="index.html">TemporalDataSet</a> into <a href="../../../../core/chart/com.hdil.saluschart.core.chart/-chart-mark/index.html">ChartMark</a> list for a single <a href="../to-chart-marks-by-property.html">property</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1412908412%2FFunctions%2F776924280" anchor-label="toChartMarksMap" id="-1412908412%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../to-chart-marks-map.html"><span>to</span><wbr><span>Chart</span><wbr><span>Marks</span><wbr><span><span>Map</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1412908412%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">.</span><a href="../to-chart-marks-map.html"><span class="token function">toChartMarksMap</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fillGaps<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter ">fillValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">0.0</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../../core/chart/com.hdil.saluschart.core.chart/-chart-mark/index.html">ChartMark</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Converts a multi-value <a href="index.html">TemporalDataSet</a> into a map of property -&gt;<a href="../../../../core/chart/com.hdil.saluschart.core.chart/-chart-mark/index.html">ChartMark</a> list.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="339131927%2FFunctions%2F776924280" anchor-label="toRangeChartMarksFromMinMax" id="339131927%2FFunctions%2F776924280" data-filterable-set=":core:transform/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":core:transform/main" data-filterable-set=":core:transform/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../to-range-chart-marks-from-min-max.html"><span>to</span><wbr><span>Range</span><wbr><span>Chart</span><wbr><span>Marks</span><wbr><span>From</span><wbr><span>Min</span><wbr><span><span>Max</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="339131927%2FFunctions%2F776924280"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:transform/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">TemporalDataSet</a><span class="token punctuation">.</span><a href="../to-range-chart-marks-from-min-max.html"><span class="token function">toRangeChartMarksFromMinMax</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fillGaps<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">fillValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">0.0</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../../core/chart/com.hdil.saluschart.core.chart/-range-chart-mark/index.html">RangeChartMark</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Converts a MIN_MAX aggregated <a href="index.html">TemporalDataSet</a> (with "min" and "max" properties) into a list of <a href="../../../../core/chart/com.hdil.saluschart.core.chart/-range-chart-mark/index.html">RangeChartMark</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

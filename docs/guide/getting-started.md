@@ -26,11 +26,16 @@ Add the core dependency:
 ```kotlin
 // build.gradle.kts (app or module)
 dependencies {
-    implementation("io.github.hdilys:saluschart-ui-compose:0.1.6")
-    implementation("io.github.hdilys:saluschart-ui-theme:0.1.6")
-    implementation("io.github.hdilys:saluschart-data-model:0.1.6")
+    val salusVersion = "<latest>"
+    implementation("io.github.hdilys:saluschart-ui-compose:$salusVersion")
+    implementation("io.github.hdilys:saluschart-ui-theme:$salusVersion")
+    implementation("io.github.hdilys:saluschart-data-model:$salusVersion")
+    implementation("io.github.hdilys:saluschart-core-transform:$salusVersion")
+    implementation("io.github.hdilys:saluschart-core-util:$salusVersion")
 }
 ```
+
+See [Releases](./releases) for the latest version.
 
 ## Your first chart
 
@@ -65,9 +70,68 @@ fun StepCountChart() {
 }
 ```
 
+## From health records
+
+Most health apps start from platform records, map them into SalusChart's health models, then aggregate them into chart marks.
+
+```kotlin
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.hdil.saluschart.core.transform.transform
+import com.hdil.saluschart.core.util.AggregationType
+import com.hdil.saluschart.core.util.TimeUnitGroup
+import com.hdil.saluschart.data.model.model.StepCount
+import com.hdil.saluschart.ui.compose.charts.BarChart
+import java.time.Instant
+
+@Composable
+fun DailyStepsFromHealthRecords() {
+    val records = listOf(
+        StepCount(
+            startTime = Instant.parse("2026-04-27T00:00:00Z"),
+            endTime = Instant.parse("2026-04-27T23:59:00Z"),
+            stepCount = 7_842,
+        ),
+        StepCount(
+            startTime = Instant.parse("2026-04-28T00:00:00Z"),
+            endTime = Instant.parse("2026-04-28T23:59:00Z"),
+            stepCount = 9_120,
+        ),
+    )
+
+    val dailySteps = records.transform(
+        timeUnit = TimeUnitGroup.DAY,
+        aggregationType = AggregationType.SUM,
+    )
+
+    BarChart(
+        modifier = Modifier.fillMaxWidth().height(300.dp),
+        data = dailySteps,
+        title = "Daily steps",
+        yLabel = "Steps",
+        unit = "steps",
+        barColor = Color(0xFF7C4DFF),
+    )
+}
+```
+
+The same flow works for platform integrations:
+
+```text
+platform records -> data:model -> core:transform -> chart composable
+```
+
 ## Next steps
 
 - [Installation details →](./installation)
 - [Module overview →](./modules)
 - [Data model →](./data-model)
+- [Data transform →](./data-transform)
+- [Interactions →](./interactions)
+- [Platform integrations →](./platform-integrations)
+- [Releases →](./releases)
 - [All chart types →](../charts/)

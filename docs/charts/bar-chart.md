@@ -23,17 +23,28 @@ fun BarChart(
     yAxisPosition: YAxisPosition = YAxisPosition.LEFT,
     interactionType: InteractionType.Bar = InteractionType.Bar.BAR,
     onBarClick: ((index: Int, value: Double) -> Unit)? = null,
-    showTitle: Boolean = true,
+    showTitle: Boolean = false,
     showYAxis: Boolean = true,
     showLabel: Boolean = false,
+    xLabelAutoSkip: Boolean = true,
+    maxXTicksLimit: Int? = null,
+    yTickStep: Double? = null,
+    unit: String = "",
+    showYAxisHighlight: Boolean = false,
     windowSize: Int? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
     pageSize: Int? = null,
     unifyYAxisAcrossPages: Boolean = true,
+    initialPageIndex: Int? = null,
+    yAxisFixedWidth: Dp = 20.dp,
+    barCornerRadiusFraction: Float = 0f,
+    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    roundTopOnly: Boolean = false,
     referenceLines: List<ReferenceLineSpec> = emptyList(),
     showLegend: Boolean = false,
     legendLabel: String = "",
     legendPosition: LegendPosition = LegendPosition.BOTTOM,
-    barCornerRadiusFractions: BarCornerRadiusFractions? = null,
+    tooltipColor: Color = Color.Unspecified,
 )
 ```
 
@@ -123,22 +134,67 @@ BarChart(
 
 ## Parameters
 
+#### Data & labels
+
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `data` | `List<ChartMark>` | — | Chart data |
+| `data` | `List<ChartMark>` | — | Chart data (required) |
 | `xLabel` | `String` | `"Time"` | X-axis label |
 | `yLabel` | `String` | `"Value"` | Y-axis label |
 | `title` | `String` | `"Bar Chart Example"` | Chart title |
-| `barColor` | `Color` | `Color.Unspecified` | Bar fill color |
+| `unit` | `String` | `""` | Unit string appended to tooltip values (e.g. `"kg"`, `"bpm"`) |
+
+#### Appearance
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `barColor` | `Color` | theme primary | Bar fill color |
+| `barWidthRatio` | `Float` | `0.8f` | Bar width as fraction of slot width (0–1) |
+| `barCornerRadiusFraction` | `Float` | `0f` | Uniform corner radius as a fraction of bar half-width |
+| `barCornerRadiusFractions` | `BarCornerRadiusFractions?` | `null` | Per-corner radius fractions; overrides `barCornerRadiusFraction` |
+| `roundTopOnly` | `Boolean` | `false` | When `true`, only the top two corners are rounded |
+| `tooltipColor` | `Color` | `barColor` | Tooltip bubble background color |
+| `xLabelTextSize` | `Float` | `28f` | X-axis tick label text size (px) |
+| `tooltipTextSize` | `Float` | `32f` | Tooltip label text size (px) |
+| `contentPadding` | `PaddingValues` | `PaddingValues(16.dp)` | Padding applied around the chart content area |
+
+#### Axes
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
 | `minY` | `Double?` | `null` | Y-axis minimum (auto if null) |
 | `maxY` | `Double?` | `null` | Y-axis maximum (auto if null) |
-| `barWidthRatio` | `Float` | `0.8f` | Bar width as fraction of slot (0–1) |
-| `windowSize` | `Int?` | `null` | Visible bars when scrolling |
-| `pageSize` | `Int?` | `null` | Bars per page when paging |
-| `unifyYAxisAcrossPages` | `Boolean` | `true` | Same Y scale on all pages |
-| `interactionType` | `InteractionType.Bar` | `BAR` | Tap target: bar or full-height zone |
-| `referenceLines` | `List<ReferenceLineSpec>` | `[]` | Horizontal/vertical guide lines |
+| `yTickStep` | `Double?` | `null` | Fixed interval between Y-axis grid lines; auto-calculated when null |
+| `yAxisPosition` | `YAxisPosition` | `LEFT` | Y-axis side (`LEFT` or `RIGHT`) |
+| `yAxisFixedWidth` | `Dp` | `20.dp` | Width reserved for Y-axis pane in scroll/highlight mode |
+| `showYAxis` | `Boolean` | `true` | Show Y-axis line and tick labels |
+| `showYAxisHighlight` | `Boolean` | `false` | Highlight reference-line values on the Y-axis |
+| `xLabelAutoSkip` | `Boolean` | `true` | Skip overlapping X-axis tick labels automatically |
+| `maxXTicksLimit` | `Int?` | `null` | Cap on the number of X-axis tick labels rendered |
+
+#### Display toggles
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `showTitle` | `Boolean` | `false` | Show the `title` above the chart |
+| `showLabel` | `Boolean` | `false` | Show value labels on top of each bar |
 | `showLegend` | `Boolean` | `false` | Show legend |
-| `showLabel` | `Boolean` | `false` | Show value label on top of each bar |
-| `yAxisPosition` | `YAxisPosition` | `LEFT` | Y-axis side |
-| `cornerRadiusFractions` | `BarCornerRadiusFractions` | default | Corner rounding per corner |
+| `legendLabel` | `String` | `""` | Legend entry text |
+| `legendPosition` | `LegendPosition` | `BOTTOM` | Legend placement (`TOP`, `BOTTOM`, `LEFT`, `RIGHT`) |
+
+#### Scrolling & paging
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `windowSize` | `Int?` | `null` | Visible bar count for free-scroll mode (mutually exclusive with `pageSize`) |
+| `pageSize` | `Int?` | `null` | Bars per page for pager mode (mutually exclusive with `windowSize`) |
+| `unifyYAxisAcrossPages` | `Boolean` | `true` | Share the same Y scale across all pages |
+| `initialPageIndex` | `Int?` | `null` | Starting page index; defaults to last page when null |
+
+#### Interaction
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `interactionType` | `InteractionType.Bar` | `BAR` | Tap target: `BAR` (bar itself) or `TOUCH_AREA` (full-height zone) |
+| `onBarClick` | `((Int, Double) -> Unit)?` | `null` | Callback with tapped bar index and Y value |
+| `referenceLines` | `List<ReferenceLineSpec>` | `[]` | Horizontal reference lines drawn across the plot |

@@ -7,11 +7,13 @@ Charts from the `ui:wear-compose` module are optimized for round watch faces and
 ```kotlin
 // build.gradle.kts (wear module)
 dependencies {
-    val salusVersion = "0.1.6"
+    val salusVersion = "<latest>"
     implementation("io.github.hdilys:saluschart-ui-wear-compose:$salusVersion")
     implementation("io.github.hdilys:saluschart-data-model:$salusVersion")
 }
 ```
+
+See [Releases](../guide/releases) for the latest version.
 
 ## Activity rings watch face
 

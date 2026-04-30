@@ -6,11 +6,13 @@ The `ui:wear-compose` module provides chart variants optimized for round Wear OS
 
 ```kotlin
 dependencies {
-    val salusVersion = "0.1.6"
+    val salusVersion = "<latest>"
     implementation("io.github.hdilys:saluschart-ui-wear-compose:$salusVersion")
     implementation("io.github.hdilys:saluschart-data-model:$salusVersion")
 }
 ```
+
+See [Releases](../guide/releases) for the latest version.
 
 ## Available charts
 

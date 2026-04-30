@@ -9,7 +9,7 @@ API reference is generated with [Dokka](https://kotlinlang.org/docs/dokka-introd
 The generated API reference is published here:
 
 <p class="api-reference-action">
-  <a class="api-reference-link" href="https://hdil-ys.github.io/SalusChart/api/index.html">
+  <a class="api-reference-link" href="https://hdil-ys.github.io/SalusChart/api/index.html" target="_blank" rel="noreferrer">
     Open generated API reference
     <span aria-hidden="true">→</span>
   </a>
